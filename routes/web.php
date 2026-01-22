@@ -60,6 +60,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     
     // Registration Rules Management
     Route::resource('registration-rules', App\Http\Controllers\Admin\RegistrationRuleController::class);
+    
+    // Sessions, Campuses, and Intakes Management
+    Route::resource('sessions', App\Http\Controllers\Admin\SessionController::class);
+    Route::resource('campuses', App\Http\Controllers\Admin\CampusController::class);
+    Route::resource('intakes', App\Http\Controllers\Admin\IntakeController::class);
 });
 
 // HOD Routes
@@ -110,7 +115,19 @@ Route::get('/admission', function () {
         }])
         ->orderBy('sort_order')
         ->get();
-    return view('admission.form', compact('departments'));
+    
+    // Fetch all active programs for order of preferences
+    $allPrograms = \App\Models\Program::where('is_active', true)
+        ->orderBy('name')
+        ->pluck('name')
+        ->toArray();
+    
+    // Fetch dynamic sessions, campuses, and intakes
+    $sessions = \App\Models\Session::active()->ordered()->get();
+    $campuses = \App\Models\Campus::active()->ordered()->get();
+    $intakes = \App\Models\Intake::active()->ordered()->get();
+    
+    return view('admission.form', compact('departments', 'allPrograms', 'sessions', 'campuses', 'intakes'));
 })->name('admission.form');
 
 // Public registration (buy form)

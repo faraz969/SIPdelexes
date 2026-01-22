@@ -596,9 +596,15 @@
           <select id="preferred_session" name="preferred_session">
             <option value="">-- Select --</option>
             @php $ps = $prefill['preferred_session'] ?? '' @endphp
-            <option {{ $ps==='Morning' ? 'selected' : '' }}>Morning</option>
-            <option {{ $ps==='Evening' ? 'selected' : '' }}>Evening</option>
-            <option {{ $ps==='Weekend' ? 'selected' : '' }}>Weekend</option>
+            @if(isset($sessions) && $sessions->count() > 0)
+              @foreach($sessions as $session)
+                <option value="{{ $session->name }}" {{ $ps === $session->name ? 'selected' : '' }}>{{ $session->name }}</option>
+              @endforeach
+            @else
+              <option {{ $ps==='Morning' ? 'selected' : '' }}>Morning</option>
+              <option {{ $ps==='Evening' ? 'selected' : '' }}>Evening</option>
+              <option {{ $ps==='Weekend' ? 'selected' : '' }}>Weekend</option>
+            @endif
           </select>
         </div>
         <div>
@@ -606,7 +612,13 @@
           <select id="preferred_campus" name="preferred_campus">
             <option value="">-- Select --</option>
             @php $pc = $prefill['preferred_campus'] ?? '' @endphp
-            <option {{ $pc==='Delexes (Dawhenya)' ? 'selected' : '' }}>Delexes (Dawhenya)</option>
+            @if(isset($campuses) && $campuses->count() > 0)
+              @foreach($campuses as $campus)
+                <option value="{{ $campus->name }}" {{ $pc === $campus->name ? 'selected' : '' }}>{{ $campus->name }}</option>
+              @endforeach
+            @else
+              <option {{ $pc==='Delexes (Dawhenya)' ? 'selected' : '' }}>Delexes (Dawhenya)</option>
+            @endif
           </select>
         </div>
         <div>
@@ -614,9 +626,15 @@
           <select id="intake_option" name="intake_option">
             <option value="">-- Select --</option>
             @php $io = $prefill['intake_option'] ?? '' @endphp
-            <option {{ $io==='January' ? 'selected' : '' }}>January</option>
-            <option {{ $io==='May' ? 'selected' : '' }}>May</option>
-            <option {{ $io==='September' ? 'selected' : '' }}>September</option>
+            @if(isset($intakes) && $intakes->count() > 0)
+              @foreach($intakes as $intake)
+                <option value="{{ $intake->name }}" {{ $io === $intake->name ? 'selected' : '' }}>{{ $intake->name }}</option>
+              @endforeach
+            @else
+              <option {{ $io==='January' ? 'selected' : '' }}>January</option>
+              <option {{ $io==='May' ? 'selected' : '' }}>May</option>
+              <option {{ $io==='September' ? 'selected' : '' }}>September</option>
+            @endif
           </select>
         </div>
       </div>
@@ -627,7 +645,8 @@
       <legend style="font-size:1rem;">Order of Preference (Repeat Selected Programmes)</legend>
       <div class="row three">
         @php 
-          $prefOptions = [
+          // Use dynamic programs if available, otherwise fallback to hardcoded list
+          $prefOptions = isset($allPrograms) && count($allPrograms) > 0 ? $allPrograms : [
             'BSc Nursing',
             'BSc Midwifery',
             'BSc Marketing',

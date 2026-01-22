@@ -100,6 +100,16 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.registration-rules.index') }}">
                                             <i class="fas fa-rules"></i> Registration Rules
                                         </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.sessions.index') }}">
+                                            <i class="fas fa-clock"></i> Sessions
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.campuses.index') }}">
+                                            <i class="fas fa-building"></i> Campuses
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.intakes.index') }}">
+                                            <i class="fas fa-calendar"></i> Intakes
+                                        </a></li>
                                     </ul>
                                 </li>
                             @else

@@ -57,6 +57,17 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        // Fetch all active programs for order of preferences
+        $allPrograms = \App\Models\Program::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
+        // Fetch dynamic sessions, campuses, and intakes
+        $sessions = \App\Models\Session::active()->ordered()->get();
+        $campuses = \App\Models\Campus::active()->ordered()->get();
+        $intakes = \App\Models\Intake::active()->ordered()->get();
+
         // Load exam records for submitted view
         $examRecords = [];
         if ($submitted && $application) {
@@ -65,7 +76,7 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        return view('admission.form', compact('action', 'prefill', 'submitted', 'uploadedFiles', 'departments', 'application', 'examRecords'));
+        return view('admission.form', compact('action', 'prefill', 'submitted', 'uploadedFiles', 'departments', 'application', 'examRecords', 'allPrograms', 'sessions', 'campuses', 'intakes'));
     }
 
     public function applicationSave(Request $request)
