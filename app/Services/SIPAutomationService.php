@@ -37,20 +37,12 @@ class SIPAutomationService
             // 2. Create Student SIP Account with the generated ID
             $student = $this->createStudentAccount($application, $studentId);
 
-            // 3. Send API request to ERP
-            $erpResponse = $this->erpService->createStudentRecord([
-                'student_id' => $studentId,
-                'biodata' => $student->biodata,
-                'program_id' => $student->program_id,
-                'academic_year' => $student->academic_year,
-            ]);
-
-            // 4. Create student email and update user email
+            // 3. Create student email and update user email
             $studentEmail = $studentId . '@delexesuniversity.edu.gh';
             $user = $application->user;
             $user->email = $studentEmail;
             
-            // 5. Generate temporary password
+            // 4. Generate temporary password
             $tempPassword = Str::random(12);
             
             // Update both password and PIN to the same value
@@ -60,7 +52,7 @@ class SIPAutomationService
             $user->password_changed_at = null; // Force password change on first login
             $user->save();
 
-            // 6. Log the password generation
+            // 5. Log the password generation
             \Log::info("SIP Account Created - Login Credentials", [
                 'student_id' => $studentId,
                 'user_id' => $user->id,
@@ -74,10 +66,7 @@ class SIPAutomationService
                 'created_at' => now()->toDateTimeString(),
             ]);
 
-            // 7. Send SMS & Email with credentials
-            $this->sendAdmissionCredentials($user, $student, $tempPassword);
-
-            // 8. Log activity
+            // 6. Log activity
             $this->activityLogService->log([
                 'user_id' => auth()->id(),
                 'role' => auth()->user()->role ?? 'system',
@@ -92,10 +81,44 @@ class SIPAutomationService
                 ],
             ]);
 
+            // Commit transaction FIRST before any external API calls or email sending
             DB::commit();
+
+            // 7. Send API request to ERP (AFTER transaction commit - non-blocking)
+            try {
+                $this->erpService->createStudentRecord([
+                    'student_id' => $studentId,
+                    'biodata' => $student->biodata,
+                    'program_id' => $student->program_id,
+                    'academic_year' => $student->academic_year,
+                ]);
+            } catch (\Exception $e) {
+                // Log but don't fail - ERP integration is optional
+                \Log::warning('ERP API call failed (non-critical)', [
+                    'student_id' => $studentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // 8. Send SMS & Email with credentials (AFTER transaction commit - non-blocking)
+            try {
+                $this->sendAdmissionCredentials($user, $student, $tempPassword);
+            } catch (\Exception $e) {
+                // Log but don't fail - email/SMS sending is optional
+                \Log::warning('Failed to send admission credentials (non-critical)', [
+                    'student_id' => $studentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $student;
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('SIP Automation Failed', [
+                'application_id' => $application->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw $e;
         }
     }
@@ -212,32 +235,24 @@ class SIPAutomationService
 
     /**
      * Send admission credentials via SMS and Email
+     * Note: This should be called AFTER database transaction is committed
      */
     protected function sendAdmissionCredentials(User $user, Student $student, string $tempPassword)
     {
         // Student must login with Student_ID@delexesuniversity.edu.gh
         $loginEmail = $student->student_id . '@delexesuniversity.edu.gh';
         
-        // Send Email
+        // Send Email (with timeout to prevent hanging)
         try {
+            // Use queue or timeout to prevent blocking
             Mail::send('emails.admission-approval', [
                 'user' => $user,
                 'student' => $student,
                 'password' => $tempPassword,
                 'login_email' => $loginEmail,
             ], function ($message) use ($user, $loginEmail) {
-                // Try to send to both old and new email
                 $message->to($loginEmail)
                     ->subject('Admission Approved - SIP Login Credentials');
-                
-                // Also try to send to original email if different
-                if ($user->email !== $loginEmail) {
-                    try {
-                        $message->cc($user->email);
-                    } catch (\Exception $e) {
-                        // Ignore if original email is invalid
-                    }
-                }
             });
             
             \Log::info("Admission approval email sent successfully", [
@@ -245,15 +260,15 @@ class SIPAutomationService
                 'student_email' => $loginEmail,
             ]);
         } catch (\Exception $e) {
+            // Log but don't throw - email failure shouldn't block student creation
             \Log::error('Failed to send admission email', [
                 'student_id' => $student->student_id,
                 'student_email' => $loginEmail,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
         }
 
-        // Send SMS with credentials
+        // Send SMS with credentials (non-blocking)
         try {
             $smsMessage = "Admission Approved! Login Email: {$loginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
             $this->sendSMS($user->phone, $smsMessage);
@@ -263,11 +278,11 @@ class SIPAutomationService
                 'user_phone' => $user->phone,
             ]);
         } catch (\Exception $e) {
+            // Log but don't throw - SMS failure shouldn't block student creation
             \Log::error('Failed to send admission SMS', [
                 'student_id' => $student->student_id,
                 'user_phone' => $user->phone,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

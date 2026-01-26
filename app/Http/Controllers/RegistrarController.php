@@ -101,14 +101,19 @@ class RegistrarController extends Controller
         // Trigger SIP automation after approval
         try {
             $this->sipAutomationService->processAdmissionApproval($application);
-        } catch (\Exception $e) {
-            \Log::error('SIP Automation Error: ' . $e->getMessage());
+            
             return redirect()->route('registrar.dashboard')
-                ->with('warning', 'Application approved but SIP automation encountered an error. Please check logs.');
+                ->with('success', 'Application approved successfully. SIP account created.');
+        } catch (\Exception $e) {
+            \Log::error('SIP Automation Error', [
+                'application_id' => $application->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return redirect()->route('registrar.dashboard')
+                ->with('error', 'Application approved but SIP automation failed: ' . $e->getMessage() . '. Please check logs and try again.');
         }
-
-        return redirect()->route('registrar.dashboard')
-            ->with('success', 'Application approved successfully. SIP account created.');
     }
 
     public function rejectApplication(Request $request, Application $application)

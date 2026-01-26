@@ -25,10 +25,11 @@ class ERPIntegrationService
     public function createStudentRecord(array $data)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->erpApiKey,
-                'Content-Type' => 'application/json',
-            ])->post("{$this->erpBaseUrl}/students", $data);
+            $response = Http::timeout(5) // 5 second timeout
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Content-Type' => 'application/json',
+                ])->post("{$this->erpBaseUrl}/students", $data);
 
             if ($response->successful()) {
                 $this->activityLogService->log([
@@ -55,10 +56,11 @@ class ERPIntegrationService
     public function syncInvoice(array $invoiceData)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->erpApiKey,
-                'Content-Type' => 'application/json',
-            ])->get("{$this->erpBaseUrl}/invoices/{$invoiceData['erp_invoice_id']}");
+            $response = Http::timeout(5) // 5 second timeout
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Content-Type' => 'application/json',
+                ])->get("{$this->erpBaseUrl}/invoices/{$invoiceData['erp_invoice_id']}");
 
             if ($response->successful()) {
                 return $response->json();
@@ -77,10 +79,11 @@ class ERPIntegrationService
     public function processPayment(array $paymentData)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->erpApiKey,
-                'Content-Type' => 'application/json',
-            ])->post("{$this->erpBaseUrl}/payments", $paymentData);
+            $response = Http::timeout(5) // 5 second timeout
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Content-Type' => 'application/json',
+                ])->post("{$this->erpBaseUrl}/payments", $paymentData);
 
             if ($response->successful()) {
                 $this->activityLogService->log([
@@ -107,9 +110,10 @@ class ERPIntegrationService
     public function getStudentBalance($studentId)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->erpApiKey,
-            ])->get("{$this->erpBaseUrl}/students/{$studentId}/balance");
+            $response = Http::timeout(5) // 5 second timeout
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                ])->get("{$this->erpBaseUrl}/students/{$studentId}/balance");
 
             if ($response->successful()) {
                 return $response->json();
@@ -128,10 +132,11 @@ class ERPIntegrationService
     public function notifyDeferment($studentId, $deferData)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->erpApiKey,
-                'Content-Type' => 'application/json',
-            ])->post("{$this->erpBaseUrl}/students/{$studentId}/defer", $deferData);
+            $response = Http::timeout(5) // 5 second timeout
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Content-Type' => 'application/json',
+                ])->post("{$this->erpBaseUrl}/students/{$studentId}/defer", $deferData);
 
             if ($response->successful()) {
                 return $response->json();
