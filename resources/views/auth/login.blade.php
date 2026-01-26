@@ -30,7 +30,10 @@
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
-                    <small class="form-text text-muted">You can login with your email, serial number (e.g., DUC927121), or Student ID (e.g., STU26656196)</small>
+                    <small class="form-text text-muted">
+                        <strong>Students:</strong> Use your Student Email (e.g., 11000001@delexesuniversity.edu.gh) or Student ID (e.g., 11000001)<br>
+                        <strong>Others:</strong> Use your email, serial number (e.g., DUC927121), or Student ID
+                    </small>
                 </div>
 
                 <div class="form-group">

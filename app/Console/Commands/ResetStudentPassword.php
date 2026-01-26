@@ -50,8 +50,10 @@ class ResetStudentPassword extends Command
         $newPassword = $this->option('new-password') ?? Str::random(12);
         
         // Update both password and PIN to the same value
+        // Set password_changed_at to null to force password change on next login
         $user->password = Hash::make($newPassword);
         $user->pin = $newPassword; // Store PIN in plain text for SMS/display
+        $user->password_changed_at = null; // Force password change on next login
         $user->save();
         
         // Log the password reset

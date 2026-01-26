@@ -14,26 +14,23 @@
     <h3>Your Login Credentials:</h3>
     <ul>
         <li><strong>Student ID:</strong> {{ $student->student_id }}</li>
-        <li><strong>Email:</strong> {{ $user->email }}</li>
-        <li><strong>Temporary Password:</strong> {{ $password }}</li>
+        <li><strong>Student Email:</strong> {{ $login_email ?? ($student->student_id . '@delexesuniversity.edu.gh') }}</li>
+        <li><strong>Temporary Password/PIN:</strong> {{ $password }}</li>
     </ul>
     
-    <p><strong>Important:</strong> Please change your password immediately after logging in for the first time.</p>
+    <p><strong>Important:</strong> You <strong>MUST</strong> change your password when you log in for the first time. This is required for security purposes.</p>
     
     <h3>Login Instructions:</h3>
-    <p>You can login using any of the following:</p>
-    <ul>
-        <li><strong>Student ID:</strong> {{ $student->student_id }}</li>
-        <li><strong>Email:</strong> {{ $user->email }}</li>
-        <li><strong>Serial Number:</strong> {{ $user->serial_number ?? 'N/A' }}</li>
-    </ul>
+    <p><strong>You must login using your Student Email:</strong> {{ $login_email ?? ($student->student_id . '@delexesuniversity.edu.gh') }}</p>
     <ol>
         <li>Visit: <a href="{{ url('/login') }}">{{ url('/login') }}</a></li>
-        <li>Enter your Student ID, Email, or Serial Number in the login field</li>
-        <li>Enter your temporary password: <strong>{{ $password }}</strong></li>
-        <li>After logging in, you will be redirected to your SIP dashboard</li>
-        <li>Change your password in the profile section</li>
+        <li>Enter your Student Email: <strong>{{ $login_email ?? ($student->student_id . '@delexesuniversity.edu.gh') }}</strong></li>
+        <li>Enter your temporary password/PIN: <strong>{{ $password }}</strong></li>
+        <li>After logging in, you will be <strong>required</strong> to change your password before accessing your dashboard</li>
+        <li>Once you change your password, you can access all SIP features</li>
     </ol>
+    
+    <p><strong>Note:</strong> Your Student Email ({{ $login_email ?? ($student->student_id . '@delexesuniversity.edu.gh') }}) is your official university email address. The administration will create your webmail account manually.</p>
     
     <h3>Payment Instructions:</h3>
     <p>After logging in, you can view your school fees invoice and make payments through the SIP portal. You can pay using:</p>

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'nationality',
         'form_type_id',
         'password',
+        'password_changed_at',
         'pin',
         'serial_number',
         'role',
@@ -55,6 +56,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'pin_expires_at' => 'datetime',
+        'password_changed_at' => 'datetime',
     ];
 
     public function applications()

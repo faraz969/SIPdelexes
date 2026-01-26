@@ -97,6 +97,9 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.erp.dashboard') }}">
                                             <i class="fas fa-cogs"></i> ERP Management
                                         </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.erp.student-emails') }}">
+                                            <i class="fas fa-envelope"></i> Student Emails & Passwords
+                                        </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.registration-rules.index') }}">
                                             <i class="fas fa-rules"></i> Registration Rules
                                         </a></li>

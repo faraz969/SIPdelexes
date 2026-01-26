@@ -13,6 +13,7 @@ class Student extends Model
         'user_id',
         'application_id',
         'student_id',
+        'masters_student_id_reference',
         'program_id',
         'department_id',
         'academic_year',

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Student;
 use App\Models\StudentAcademicRecord;
 use App\Models\CourseRegistration;
@@ -50,6 +52,13 @@ class SIPController extends Controller
     public function dashboard()
     {
         $student = $this->getStudent();
+        
+        // Check if password needs to be changed (first login)
+        $user = Auth::user();
+        if (is_null($user->password_changed_at)) {
+            return redirect()->route('sip.change-password')
+                ->with('warning', 'Please change your password to continue.');
+        }
 
         $this->activityLogService->log([
             'user_id' => Auth::id(),
@@ -70,6 +79,79 @@ class SIPController extends Controller
         ];
 
         return view('sip.dashboard', compact('student', 'stats'));
+    }
+
+    /**
+     * Show change password form (for first-time login)
+     */
+    public function showChangePasswordForm()
+    {
+        $student = $this->getStudent();
+        $user = Auth::user();
+        
+        // If password already changed, redirect to dashboard
+        if (!is_null($user->password_changed_at)) {
+            return redirect()->route('sip.dashboard');
+        }
+        
+        return view('sip.change-password', compact('student'));
+    }
+
+    /**
+     * Process password change
+     */
+    public function changePassword(Request $request)
+    {
+        $student = $this->getStudent();
+        $user = Auth::user();
+        
+        // If password already changed, redirect to dashboard
+        if (!is_null($user->password_changed_at)) {
+            return redirect()->route('sip.dashboard');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Please enter your current password.',
+            'new_password.required' => 'Please enter a new password.',
+            'new_password.min' => 'Password must be at least 8 characters.',
+            'new_password.confirmed' => 'Password confirmation does not match.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return redirect()->back()
+                ->withErrors(['current_password' => 'Current password is incorrect.'])
+                ->withInput();
+        }
+
+        // Update password and PIN
+        $user->password = Hash::make($request->new_password);
+        $user->pin = $request->new_password; // Update PIN to match new password
+        $user->password_changed_at = now();
+        $user->save();
+
+        // Log activity
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'password_changed',
+            'model_type' => \App\Models\User::class,
+            'model_id' => $user->id,
+            'system_source' => 'SIP',
+            'description' => 'Student changed password on first login',
+        ]);
+
+        return redirect()->route('sip.dashboard')
+            ->with('success', 'Password changed successfully. You can now access your dashboard.');
     }
 
     /**

@@ -56,6 +56,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/payments/{payment}/process', [App\Http\Controllers\Admin\ERPController::class, 'processPayment'])->name('payments.process');
         Route::get('/activity-logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('/activity-logs/{activityLog}', [App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('activity-logs.show');
+        Route::get('/student-emails', [App\Http\Controllers\Admin\ERPController::class, 'studentEmails'])->name('student-emails');
     });
     
     // Registration Rules Management
@@ -191,6 +192,10 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::post('/', [App\Http\Controllers\SIPDefermentController::class, 'submitDeferment'])->name('submit');
         Route::get('/status', [App\Http\Controllers\SIPDefermentController::class, 'viewDefermentStatus'])->name('status');
     });
+    
+    // Password Change (for first-time login)
+    Route::get('/change-password', [App\Http\Controllers\SIPController::class, 'showChangePasswordForm'])->name('change-password');
+    Route::post('/change-password', [App\Http\Controllers\SIPController::class, 'changePassword'])->name('change-password.post');
 });
 
 // Staff WAEC utilities (Admin, HOD, Registrar, President)

@@ -59,6 +59,23 @@ class LoginController extends Controller
     {
         $login = $request->get('login');
         
+        // Check if it's a Student ID email format: Student_ID@delexesuniversity.edu.gh
+        if (preg_match('/^(\d{8})@delexesuniversity\.edu\.gh$/', $login, $matches)) {
+            $studentId = $matches[1];
+            $student = \App\Models\Student::where('student_id', $studentId)
+                ->where('sip_account_created', true)
+                ->with('user')
+                ->first();
+            
+            if ($student && $student->user) {
+                // Return credentials using the user's email (which should be the student email)
+                return [
+                    'email' => $student->user->email,
+                    'password' => $request->get('password')
+                ];
+            }
+        }
+        
         // Check if the input is an email
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             // It's an email
@@ -68,9 +85,9 @@ class LoginController extends Controller
             ];
         }
         
-        // Check if it's a Student ID (starts with STU followed by numbers)
-        if (preg_match('/^STU\d+$/', strtoupper($login))) {
-            $student = \App\Models\Student::where('student_id', strtoupper($login))
+        // Check if it's a Student ID (numeric 8 digits: 11000000, 12000000, etc.)
+        if (preg_match('/^\d{8}$/', $login)) {
+            $student = \App\Models\Student::where('student_id', $login)
                 ->where('sip_account_created', true)
                 ->with('user')
                 ->first();
@@ -100,6 +117,20 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
+        // Check if user has a SIP account and needs to change password
+        $student = \App\Models\Student::where('user_id', $user->id)
+            ->where('sip_account_created', true)
+            ->first();
+        
+        if ($student) {
+            // Check if password needs to be changed (first login)
+            if (is_null($user->password_changed_at)) {
+                return redirect()->route('sip.change-password')
+                    ->with('warning', 'Please change your password to continue.');
+            }
+            return redirect()->route('sip.dashboard');
+        }
+
         // Redirect users to their specific dashboards based on role
         if ($user->isHOD()) {
             return redirect()->route('hod.dashboard');
@@ -111,15 +142,6 @@ class LoginController extends Controller
             return redirect()->route('admin.dashboard');
         } elseif ($user->isBank()) {
             return redirect()->route('bank.dashboard');
-        }
-
-        // Check if user has a SIP account - redirect to SIP dashboard
-        $student = \App\Models\Student::where('user_id', $user->id)
-            ->where('sip_account_created', true)
-            ->first();
-        
-        if ($student) {
-            return redirect()->route('sip.dashboard');
         }
 
         // Redirect regular users to portal dashboard

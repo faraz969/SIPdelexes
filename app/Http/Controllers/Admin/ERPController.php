@@ -309,5 +309,18 @@ class ERPController extends Controller
         
         return view('admin.erp.student-show', compact('student'));
     }
+
+    /**
+     * View student emails and passwords for webmail creation
+     */
+    public function studentEmails()
+    {
+        $students = Student::with(['user', 'program', 'department'])
+            ->where('sip_account_created', true)
+            ->orderBy('student_id')
+            ->paginate(50);
+
+        return view('admin.erp.student-emails', compact('students'));
+    }
 }
 

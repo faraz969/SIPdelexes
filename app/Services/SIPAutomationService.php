@@ -45,21 +45,28 @@ class SIPAutomationService
                 'academic_year' => $student->academic_year,
             ]);
 
-            // 4. Generate temporary password
-            $tempPassword = Str::random(12);
+            // 4. Create student email and update user email
+            $studentEmail = $studentId . '@delexesuniversity.edu.gh';
             $user = $application->user;
+            $user->email = $studentEmail;
+            
+            // 5. Generate temporary password
+            $tempPassword = Str::random(12);
             
             // Update both password and PIN to the same value
+            // Set password_changed_at to null to force password change on first login
             $user->password = Hash::make($tempPassword);
             $user->pin = $tempPassword; // Store PIN in plain text for SMS/display
+            $user->password_changed_at = null; // Force password change on first login
             $user->save();
 
-            // 5. Log the password generation
+            // 6. Log the password generation
             \Log::info("SIP Account Created - Login Credentials", [
                 'student_id' => $studentId,
                 'user_id' => $user->id,
                 'user_name' => $user->name,
-                'user_email' => $user->email,
+                'student_email' => $studentEmail,
+                'old_email' => $application->admissionForm->email ?? $user->email ?? 'N/A',
                 'serial_number' => $user->serial_number,
                 'password' => $tempPassword,
                 'pin' => $tempPassword,
@@ -67,10 +74,10 @@ class SIPAutomationService
                 'created_at' => now()->toDateTimeString(),
             ]);
 
-            // 6. Send SMS & Email with credentials
+            // 7. Send SMS & Email with credentials
             $this->sendAdmissionCredentials($user, $student, $tempPassword);
 
-            // 7. Log activity
+            // 8. Log activity
             $this->activityLogService->log([
                 'user_id' => auth()->id(),
                 'role' => auth()->user()->role ?? 'system',
@@ -138,16 +145,48 @@ class SIPAutomationService
 
     /**
      * Generate Unique Student ID / Index Number
+     * Pattern: 11000000, 12000000, 13000000
+     * - First digit: 1 = undergraduate
+     * - Second digit: 1 = ICT, 2 = Business, 3 = Healthcare
+     * - Last 6 digits: student number in that department
      */
     protected function generateStudentId(Application $application)
     {
-        $year = date('y');
-        $prefix = 'STU';
+        // Get department ID from application
+        $departmentId = $application->department_id;
         
-        do {
-            $random = str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
-            $studentId = $prefix . $year . $random;
-        } while (Student::where('student_id', $studentId)->exists());
+        // Map department ID to student ID prefix
+        // Department 1 (ICT) -> 11, Department 2 (Business) -> 12, Department 3 (Healthcare) -> 13
+        $departmentPrefix = '1' . $departmentId; // 1 (undergraduate) + department ID
+        
+        // Get the last student number for this department
+        $lastStudent = Student::where('student_id', 'like', $departmentPrefix . '%')
+            ->orderBy('student_id', 'desc')
+            ->first();
+        
+        $studentNumber = 1;
+        if ($lastStudent) {
+            // Extract the last 6 digits and increment
+            $lastNumber = (int) substr($lastStudent->student_id, -6);
+            $studentNumber = $lastNumber + 1;
+        }
+        
+        // Ensure student number doesn't exceed 999999
+        if ($studentNumber > 999999) {
+            throw new \Exception("Maximum student capacity reached for department {$departmentId}");
+        }
+        
+        // Format: 11000001, 12000001, etc.
+        $studentId = $departmentPrefix . str_pad($studentNumber, 6, '0', STR_PAD_LEFT);
+        
+        // Double-check uniqueness (shouldn't happen, but safety check)
+        if (Student::where('student_id', $studentId)->exists()) {
+            // If exists, find next available number
+            do {
+                $studentNumber++;
+                $studentId = $departmentPrefix . str_pad($studentNumber, 6, '0', STR_PAD_LEFT);
+            } while (Student::where('student_id', $studentId)->exists() && $studentNumber <= 999999);
+        }
 
         return $studentId;
     }
@@ -176,8 +215,8 @@ class SIPAutomationService
      */
     protected function sendAdmissionCredentials(User $user, Student $student, string $tempPassword)
     {
-        // Prepare login options message
-        $loginOptions = "Login with Student ID: {$student->student_id}, Email: {$user->email}, or Serial: {$user->serial_number}";
+        // Student must login with Student_ID@delexesuniversity.edu.gh
+        $loginEmail = $student->student_id . '@delexesuniversity.edu.gh';
         
         // Send Email
         try {
@@ -185,19 +224,30 @@ class SIPAutomationService
                 'user' => $user,
                 'student' => $student,
                 'password' => $tempPassword,
-            ], function ($message) use ($user) {
-                $message->to($user->email)
+                'login_email' => $loginEmail,
+            ], function ($message) use ($user, $loginEmail) {
+                // Try to send to both old and new email
+                $message->to($loginEmail)
                     ->subject('Admission Approved - SIP Login Credentials');
+                
+                // Also try to send to original email if different
+                if ($user->email !== $loginEmail) {
+                    try {
+                        $message->cc($user->email);
+                    } catch (\Exception $e) {
+                        // Ignore if original email is invalid
+                    }
+                }
             });
             
             \Log::info("Admission approval email sent successfully", [
                 'student_id' => $student->student_id,
-                'user_email' => $user->email,
+                'student_email' => $loginEmail,
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send admission email', [
                 'student_id' => $student->student_id,
-                'user_email' => $user->email,
+                'student_email' => $loginEmail,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -205,7 +255,7 @@ class SIPAutomationService
 
         // Send SMS with credentials
         try {
-            $smsMessage = "Admission Approved! Student ID: {$student->student_id}. Password/PIN: {$tempPassword}. Login: " . url('/login') . " - {$loginOptions}";
+            $smsMessage = "Admission Approved! Login Email: {$loginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
             $this->sendSMS($user->phone, $smsMessage);
             
             \Log::info("Admission approval SMS sent successfully", [
