@@ -254,7 +254,8 @@ class DashboardController extends Controller
         $phoneNumber = $request->input('telephone') ?? $user->phone;
         if ($phoneNumber) {
             $username = $request->input('full_name', $user->name);
-            $this->sendApplicationSMS($phoneNumber, $username);
+            $applicationId = $application->application_number;
+            $this->sendApplicationSMS($phoneNumber, $username, $applicationId);
         }
         
         return redirect()->route('portal.dashboard')->with('status', 'Application submitted');
@@ -368,9 +369,9 @@ class DashboardController extends Controller
     /**
      * Send SMS notification when application is submitted
      */
-    private function sendApplicationSMS($phone, $username)
+    private function sendApplicationSMS($phone, $username, $applicationId)
     {
-        $message = "Thank you {$username}, your application has been received by DUC. Your application will be processed and the decision will be communicated to you at the appropriate time.";
+        $message = "Dear {$username} your application has been submitted successfully, your application number is {$applicationId}";
         
         // Clean phone number (remove any non-numeric characters except +)
         $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
@@ -392,6 +393,7 @@ class DashboardController extends Controller
                 'phone' => $naloPhone,
                 'original_phone' => $cleanPhone,
                 'username' => $username,
+                'application_id' => $applicationId,
             ]);
             
             $naloResponse = Http::timeout(10)
