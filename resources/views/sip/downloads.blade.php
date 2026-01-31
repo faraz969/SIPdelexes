@@ -53,9 +53,7 @@
                                         <a href="{{ route('sip.downloads.file', $download->id) }}" class="btn btn-info btn-sm" target="_blank">
                                             <i class="fas fa-eye"></i> View
                                         </a>
-                                        <a href="{{ route('sip.downloads.pdf', $download->id) }}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-file-pdf"></i> Download PDF
-                                        </a>
+                                       
                                     @else
                                         <a href="{{ route('sip.downloads.file', $download->id) }}" class="btn btn-primary btn-sm">
                                             <i class="fas fa-download"></i> Download

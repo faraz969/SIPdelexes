@@ -403,11 +403,7 @@
         <button onclick="window.print()" class="btn btn-info">
             <i class="fas fa-print"></i> Print
         </button>
-        @if(isset($download))
-        <a href="{{ route('sip.downloads.pdf', $download->id) }}" class="btn btn-primary">
-            <i class="fas fa-file-pdf"></i> Download as PDF
-        </a>
-        @endif
+       
         <a href="{{ route('sip.downloads') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Downloads
         </a>
