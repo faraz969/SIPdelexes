@@ -6,15 +6,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Application;
 use App\Models\Department;
+use App\Models\AdmissionFormData;
 use App\Services\SIPAutomationService;
+use App\Services\AdmissionFormService;
 
 class RegistrarController extends Controller
 {
     protected $sipAutomationService;
+    protected $admissionFormService;
 
-    public function __construct(SIPAutomationService $sipAutomationService)
+    public function __construct(SIPAutomationService $sipAutomationService, AdmissionFormService $admissionFormService)
     {
         $this->sipAutomationService = $sipAutomationService;
+        $this->admissionFormService = $admissionFormService;
     }
     public function dashboard()
     {
@@ -86,7 +90,16 @@ class RegistrarController extends Controller
         }
 
         $request->validate([
-            'comments' => 'nullable|string|max:1000'
+            'comments' => 'nullable|string|max:1000',
+            // Admission form data validation
+            'total_fees' => 'nullable|numeric|min:0',
+            'minimum_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'balance_percentage' => 'nullable|numeric|min:0|max:100',
+            'paid_fees_by_date' => 'nullable|date',
+            'registration_begins' => 'nullable|date',
+            'orientation_new_students' => 'nullable|date',
+            'faculty_orientation' => 'nullable|date',
+            'lectures_begin' => 'nullable|date',
         ]);
 
         $application->update([
@@ -100,7 +113,40 @@ class RegistrarController extends Controller
 
         // Trigger SIP automation after approval
         try {
-            $this->sipAutomationService->processAdmissionApproval($application);
+            $student = $this->sipAutomationService->processAdmissionApproval($application);
+            
+            // Save admission form data if provided
+            if ($request->has('total_fees') || $request->has('registration_begins')) {
+                $formData = AdmissionFormData::updateOrCreate(
+                    ['student_id' => $student->id],
+                    [
+                        'application_id' => $application->id,
+                        'total_fees' => $request->total_fees,
+                        'minimum_fee_percentage' => $request->minimum_fee_percentage,
+                        'balance_percentage' => $request->balance_percentage,
+                        'paid_fees_by_date' => $request->paid_fees_by_date,
+                        'registration_begins' => $request->registration_begins,
+                        'orientation_new_students' => $request->orientation_new_students,
+                        'faculty_orientation' => $request->faculty_orientation,
+                        'lectures_begin' => $request->lectures_begin,
+                    ]
+                );
+
+                // Create download record for admission form (HTML/PDF view)
+                try {
+                    $this->admissionFormService->createDownloadRecord($student);
+                    
+                    \Log::info("Admission form download record created", [
+                        'student_id' => $student->student_id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create admission form download record', [
+                        'student_id' => $student->student_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Don't fail the approval if download record creation fails
+                }
+            }
             
             return redirect()->route('registrar.dashboard')
                 ->with('success', 'Application approved successfully. SIP account created.');

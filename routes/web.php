@@ -164,6 +164,7 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/academic-records', [App\Http\Controllers\SIPController::class, 'academicRecords'])->name('academic-records');
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{download}/file', [App\Http\Controllers\SIPController::class, 'downloadDocument'])->name('downloads.file');
+    Route::get('/downloads/{download}/pdf', [App\Http\Controllers\SIPController::class, 'downloadAdmissionFormPdf'])->name('downloads.pdf');
     
     // Payments
     Route::prefix('payments')->name('payments.')->group(function () {

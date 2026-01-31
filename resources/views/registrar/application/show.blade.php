@@ -263,13 +263,15 @@
                         <h5 class="mb-0">Registrar Review</h5>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ route('registrar.applications.approve', $application->id) }}" class="mb-3">
+                        <form method="POST" action="{{ route('registrar.applications.approve', $application->id) }}" id="approveForm" class="mb-3">
                             @csrf
                             <div class="mb-3">
                                 <label for="approve_comments" class="form-label">Comments (Optional)</label>
                                 <textarea class="form-control" id="approve_comments" name="comments" rows="3" placeholder="Add any comments for approval..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-success">Approve Application</button>
+                            <button type="button" class="btn btn-success" onclick="showAdmissionFormModal()">
+                                <i class="fas fa-check"></i> Approve Application
+                            </button>
                         </form>
 
                         <form method="POST" action="{{ route('registrar.applications.reject', $application->id) }}">
@@ -326,7 +328,106 @@
     </div>
 </div>
 
+<!-- Admission Form Data Modal -->
+<div class="modal fade" id="admissionFormModal" tabindex="-1" aria-labelledby="admissionFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="admissionFormModalLabel">
+                    <i class="fas fa-file-alt"></i> Admission Form Data
+                </h5>
+                <button type="button" class="btn-close" onclick="closeAdmissionFormModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Please fill in the admission form data. These fields will be populated in the admission form document that will be available for download in the student's SIP portal.
+                </div>
+                <form id="admissionFormDataForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="total_fees" class="form-label">Total Fees (GHS)</label>
+                            <input type="number" step="0.01" class="form-control" id="total_fees" name="total_fees" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="minimum_fee_percentage" class="form-label">Minimum Fee %</label>
+                            <input type="number" step="0.01" min="0" max="100" class="form-control" id="minimum_fee_percentage" name="minimum_fee_percentage" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="balance_percentage" class="form-label">Balance %</label>
+                            <input type="number" step="0.01" min="0" max="100" class="form-control" id="balance_percentage" name="balance_percentage" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="paid_fees_by_date" class="form-label">Paid Fees By Date</label>
+                            <input type="date" class="form-control" id="paid_fees_by_date" name="paid_fees_by_date">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="registration_begins" class="form-label">Registration Begins</label>
+                            <input type="date" class="form-control" id="registration_begins" name="registration_begins">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="orientation_new_students" class="form-label">Orientation for New Students</label>
+                            <input type="date" class="form-control" id="orientation_new_students" name="orientation_new_students">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="faculty_orientation" class="form-label">Faculty Orientation</label>
+                            <input type="date" class="form-control" id="faculty_orientation" name="faculty_orientation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lectures_begin" class="form-label">Lectures Begin</label>
+                            <input type="date" class="form-control" id="lectures_begin" name="lectures_begin">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAdmissionFormModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitApprovalWithFormData()">
+                    <i class="fas fa-check"></i> Approve & Generate Form
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+// Show admission form modal
+function showAdmissionFormModal() {
+    const modalElement = document.getElementById('admissionFormModal');
+    
+    // Try multiple methods to show modal
+    try {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else if (typeof $ !== 'undefined' && $.fn.modal) {
+            $(modalElement).modal('show');
+        } else {
+            // Fallback: show manually
+            modalElement.classList.add('show');
+            modalElement.style.display = 'block';
+            document.body.classList.add('modal-open');
+            // Add backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            document.body.appendChild(backdrop);
+        }
+    } catch (e) {
+        // If all else fails, show manually
+        modalElement.classList.add('show');
+        modalElement.style.display = 'block';
+        document.body.classList.add('modal-open');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+    }
+}
+
 // Print Application Function
 function printApplication() {
   const printBtn = event.target.closest('button');
@@ -337,6 +438,57 @@ function printApplication() {
   setTimeout(() => {
     if (printBtn) printBtn.style.display = 'flex';
   }, 100);
+}
+
+// Close admission form modal
+function closeAdmissionFormModal() {
+    const modalElement = document.getElementById('admissionFormModal');
+    
+    try {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+                return;
+            }
+        } else if (typeof $ !== 'undefined' && $.fn.modal) {
+            $(modalElement).modal('hide');
+            return;
+        }
+    } catch (e) {
+        console.log('Bootstrap modal API not available, using fallback');
+    }
+    
+    // Fallback: hide manually
+    modalElement.classList.remove('show');
+    modalElement.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+}
+
+// Submit approval with admission form data
+function submitApprovalWithFormData() {
+    const form = document.getElementById('approveForm');
+    const modalForm = document.getElementById('admissionFormDataForm');
+    
+    // Get all form data from modal
+    const formData = new FormData(modalForm);
+    
+    // Append admission form data to approval form
+    for (let [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+    
+    // Close modal
+    closeAdmissionFormModal();
+    
+    // Submit the form
+    form.submit();
 }
 
 // Add print-specific styles

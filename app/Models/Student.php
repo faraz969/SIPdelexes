@@ -90,6 +90,11 @@ class Student extends Model
         return $this->hasMany(Download::class);
     }
 
+    public function admissionFormData()
+    {
+        return $this->hasOne(AdmissionFormData::class);
+    }
+
     public function isActive()
     {
         return $this->academic_status === 'active';

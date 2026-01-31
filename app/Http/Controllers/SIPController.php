@@ -15,6 +15,7 @@ use App\Models\ExamPin;
 use App\Models\Deferment;
 use App\Models\Download;
 use App\Services\ActivityLogService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SIPController extends Controller
 {
@@ -195,7 +196,7 @@ class SIPController extends Controller
     }
 
     /**
-     * Download document
+     * Download document or view admission form
      */
     public function downloadDocument(Download $download)
     {
@@ -205,6 +206,12 @@ class SIPController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        // Handle admission form as HTML/PDF view
+        if ($download->document_type === 'admission_form' && $download->file_path === 'html') {
+            return $this->viewAdmissionForm($download);
+        }
+
+        // Handle regular file downloads
         $this->activityLogService->log([
             'user_id' => Auth::id(),
             'role' => 'student',
@@ -222,6 +229,81 @@ class SIPController extends Controller
         }
 
         return response()->download($filePath, $download->file_name);
+    }
+
+    /**
+     * View admission form as HTML
+     */
+    public function viewAdmissionForm(Download $download)
+    {
+        $student = $this->getStudent();
+
+        if ($download->student_id !== $student->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $formData = $student->admissionFormData;
+        if (!$formData) {
+            abort(404, 'Admission form data not found.');
+        }
+
+        $admissionFormService = app(\App\Services\AdmissionFormService::class);
+        $data = $admissionFormService->getAdmissionFormData($student, $formData);
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'admission_form_viewed',
+            'model_type' => Download::class,
+            'model_id' => $download->id,
+            'system_source' => 'SIP',
+            'description' => "Viewed admission form",
+        ]);
+
+        return view('sip.admission-form', compact('student', 'data', 'formData', 'download'));
+    }
+
+    /**
+     * Download admission form as PDF
+     */
+    public function downloadAdmissionFormPdf(Download $download)
+    {
+        $student = $this->getStudent();
+
+        if ($download->student_id !== $student->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $formData = $student->admissionFormData;
+        if (!$formData) {
+            abort(404, 'Admission form data not found.');
+        }
+
+        $admissionFormService = app(\App\Services\AdmissionFormService::class);
+        $data = $admissionFormService->getAdmissionFormData($student, $formData);
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'admission_form_downloaded_pdf',
+            'model_type' => Download::class,
+            'model_id' => $download->id,
+            'system_source' => 'SIP',
+            'description' => "Downloaded admission form as PDF",
+        ]);
+
+        // Pass isPdf flag to exclude Font Awesome and icons
+        $pdf = Pdf::loadView('sip.admission-form', compact('student', 'data', 'formData', 'download') + ['isPdf' => true])
+            ->setPaper('a4', 'portrait')
+            ->setOption('margin-top', 10)
+            ->setOption('margin-bottom', 10)
+            ->setOption('margin-left', 10)
+            ->setOption('margin-right', 10)
+            ->setOption('enable-remote', false); // Disable remote resources
+
+        $fileName = 'Admission_Form_' . $student->student_id . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }
 
