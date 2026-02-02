@@ -14,17 +14,23 @@ From your logs, I can see two issues:
 Add/update these lines in your `.env` file on the server:
 
 ```env
-# ERPNext Integration
-ERP_BASE_URL=https://your-erpnext-domain.com/api
+# ERPNext Integration - Use Standard REST API (No Custom Endpoint Needed!)
+ERP_BASE_URL=https://erpduc.delexesuniversity.edu.gh/api/resource
 ERP_API_KEY=your_api_key_here
 ERP_API_SECRET=your_api_secret_here
 ERP_AUTH_TYPE=token
 ```
 
 **Important**: 
-- Replace `your-erpnext-domain.com` with your actual ERPNext domain
+- Use `/api/resource` in the base URL to use ERPNext's standard Customer API
+- This requires NO custom code in ERPNext!
 - Get the API Key and Secret from ERPNext (see Step 2)
 - Use `token` for ERPNext standard API authentication
+
+**Alternative** (if you want to create a custom endpoint):
+```env
+ERP_BASE_URL=https://erpduc.delexesuniversity.edu.gh/api/method/your_app.api.student_api.create_student
+```
 
 ### Step 2: Get API Credentials from ERPNext
 

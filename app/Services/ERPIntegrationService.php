@@ -46,22 +46,36 @@ class ERPIntegrationService
         $endpoint = $this->erpBaseUrl; // Initialize for error logging
         
         try {
-            // Determine endpoint URL based on base URL
-            $endpoint = $this->erpBaseUrl;
-            
-            // If base URL doesn't contain '/method/' or '/resource/', assume custom endpoint
-            if (strpos($this->erpBaseUrl, '/method/') === false && strpos($this->erpBaseUrl, '/resource/') === false) {
-                // Custom endpoint format: /api/students
-                $endpoint = rtrim($this->erpBaseUrl, '/') . '/students';
-            }
-            
             // Prepare data for ERPNext Customer creation
             $studentId = $data['student_id'] ?? '';
             $biodata = $data['biodata'] ?? [];
             $studentName = $biodata['name'] ?? "Student {$studentId}";
             
-            // If using ERPNext standard REST API, format as Customer
-            if (strpos($endpoint, '/resource/Customer') !== false || strpos($endpoint, '/resource/') !== false) {
+            // Determine endpoint and data format based on base URL
+            $endpoint = $this->erpBaseUrl;
+            $useStandardAPI = false;
+            
+            // Check if using ERPNext standard REST API
+            if (strpos($this->erpBaseUrl, '/resource/') !== false) {
+                // Already has /resource/ - use as-is or append Customer
+                $useStandardAPI = true;
+                if (strpos($this->erpBaseUrl, '/resource/Customer') === false) {
+                    $endpoint = rtrim($this->erpBaseUrl, '/') . '/Customer';
+                }
+            } elseif (strpos($this->erpBaseUrl, '/method/') !== false) {
+                // Custom method endpoint - use as-is
+                $endpoint = $this->erpBaseUrl;
+            } elseif (strpos($this->erpBaseUrl, '/api') !== false && strpos($this->erpBaseUrl, '/resource') === false) {
+                // Base API URL without /resource/ - use standard Customer API
+                $useStandardAPI = true;
+                $endpoint = rtrim($this->erpBaseUrl, '/') . '/resource/Customer';
+            } else {
+                // Fallback: try custom /students endpoint
+                $endpoint = rtrim($this->erpBaseUrl, '/') . '/students';
+            }
+            
+            // Prepare customer data for ERPNext
+            if ($useStandardAPI) {
                 $customerData = [
                     'customer_name' => $studentName,
                     'customer_group' => 'Student',
@@ -74,19 +88,24 @@ class ERPIntegrationService
                     $customerData['student_id'] = $data['student_id'];
                 }
                 
-                $response = Http::timeout(10)
-                    ->withHeaders([
-                        'Authorization' => $this->getAuthHeader(),
-                        'Content-Type' => 'application/json',
-                    ])->post($endpoint, $customerData);
+                $requestData = $customerData;
             } else {
                 // Custom endpoint - send data as-is
-                $response = Http::timeout(10)
-                    ->withHeaders([
-                        'Authorization' => $this->getAuthHeader(),
-                        'Content-Type' => 'application/json',
-                    ])->post($endpoint, $data);
+                $requestData = $data;
             }
+            
+            Log::info('ERP Student Creation Request', [
+                'endpoint' => $endpoint,
+                'student_id' => $studentId,
+                'use_standard_api' => $useStandardAPI,
+                'auth_type' => $this->authType
+            ]);
+            
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'Authorization' => $this->getAuthHeader(),
+                    'Content-Type' => 'application/json',
+                ])->post($endpoint, $requestData);
 
             if ($response->successful()) {
                 $responseData = $response->json();
