@@ -39,31 +39,92 @@ class ERPIntegrationService
 
     /**
      * Create student record in ERP
+     * Supports both custom endpoints and ERPNext standard REST API
      */
     public function createStudentRecord(array $data)
     {
+        $endpoint = $this->erpBaseUrl; // Initialize for error logging
+        
         try {
-            $response = Http::timeout(5) // 5 second timeout
-                ->withHeaders([
-                    'Authorization' => $this->getAuthHeader(),
-                    'Content-Type' => 'application/json',
-                ])->post("{$this->erpBaseUrl}/students", $data);
+            // Determine endpoint URL based on base URL
+            $endpoint = $this->erpBaseUrl;
+            
+            // If base URL doesn't contain '/method/' or '/resource/', assume custom endpoint
+            if (strpos($this->erpBaseUrl, '/method/') === false && strpos($this->erpBaseUrl, '/resource/') === false) {
+                // Custom endpoint format: /api/students
+                $endpoint = rtrim($this->erpBaseUrl, '/') . '/students';
+            }
+            
+            // Prepare data for ERPNext Customer creation
+            $studentId = $data['student_id'] ?? '';
+            $biodata = $data['biodata'] ?? [];
+            $studentName = $biodata['name'] ?? "Student {$studentId}";
+            
+            // If using ERPNext standard REST API, format as Customer
+            if (strpos($endpoint, '/resource/Customer') !== false || strpos($endpoint, '/resource/') !== false) {
+                $customerData = [
+                    'customer_name' => $studentName,
+                    'customer_group' => 'Student',
+                    'territory' => 'Ghana',
+                    'customer_type' => 'Individual',
+                ];
+                
+                // Add custom fields if they exist in ERPNext
+                if (isset($data['student_id'])) {
+                    $customerData['student_id'] = $data['student_id'];
+                }
+                
+                $response = Http::timeout(10)
+                    ->withHeaders([
+                        'Authorization' => $this->getAuthHeader(),
+                        'Content-Type' => 'application/json',
+                    ])->post($endpoint, $customerData);
+            } else {
+                // Custom endpoint - send data as-is
+                $response = Http::timeout(10)
+                    ->withHeaders([
+                        'Authorization' => $this->getAuthHeader(),
+                        'Content-Type' => 'application/json',
+                    ])->post($endpoint, $data);
+            }
 
             if ($response->successful()) {
+                $responseData = $response->json();
+                
                 $this->activityLogService->log([
                     'action' => 'erp_student_created',
                     'system_source' => 'ERP',
-                    'description' => "Student record created in ERP: {$data['student_id']}",
-                    'metadata' => ['erp_response' => $response->json()],
+                    'description' => "Student record created in ERP: {$studentId}",
+                    'metadata' => ['erp_response' => $responseData],
                 ]);
 
-                return $response->json();
+                Log::info('ERP Student Created Successfully', [
+                    'student_id' => $studentId,
+                    'endpoint' => $endpoint,
+                    'response' => $responseData
+                ]);
+
+                return $responseData;
             }
+
+            // Log detailed error
+            Log::error('ERP API Error Response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'endpoint' => $endpoint,
+                'student_id' => $studentId
+            ]);
 
             throw new \Exception('ERP API Error: ' . $response->body());
         } catch (\Exception $e) {
-            Log::error('ERP Integration Error: ' . $e->getMessage());
-            // For now, return mock response since ERP is not integrated
+            Log::error('ERP Integration Error', [
+                'message' => $e->getMessage(),
+                'student_id' => $data['student_id'] ?? 'unknown',
+                'endpoint' => $endpoint ?? $this->erpBaseUrl,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return mock response for now (non-blocking)
             return $this->getMockResponse('create_student', $data);
         }
     }
