@@ -56,17 +56,19 @@ class ERPIntegrationService
             $useStandardAPI = false;
             
             // Check if using ERPNext standard REST API
-            if (strpos($this->erpBaseUrl, '/resource/') !== false) {
-                // Already has /resource/ - use as-is or append Customer
+            // Check for '/resource' (with or without trailing slash or doctype)
+            if (strpos($this->erpBaseUrl, '/resource') !== false) {
+                // Already has /resource - use standard Customer API
                 $useStandardAPI = true;
-                if (strpos($this->erpBaseUrl, '/resource/Customer') === false) {
-                    $endpoint = rtrim($this->erpBaseUrl, '/') . '/Customer';
-                }
+                // Extract base URL up to /resource
+                $baseResourceUrl = preg_replace('#(/resource).*$#', '$1', $this->erpBaseUrl);
+                // Always use /Customer doctype
+                $endpoint = rtrim($baseResourceUrl, '/') . '/Customer';
             } elseif (strpos($this->erpBaseUrl, '/method/') !== false) {
                 // Custom method endpoint - use as-is
                 $endpoint = $this->erpBaseUrl;
-            } elseif (strpos($this->erpBaseUrl, '/api') !== false && strpos($this->erpBaseUrl, '/resource') === false) {
-                // Base API URL without /resource/ - use standard Customer API
+            } elseif (strpos($this->erpBaseUrl, '/api') !== false) {
+                // Base API URL - use standard Customer API
                 $useStandardAPI = true;
                 $endpoint = rtrim($this->erpBaseUrl, '/') . '/resource/Customer';
             } else {
