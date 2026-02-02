@@ -11,12 +11,30 @@ class ERPIntegrationService
     protected $activityLogService;
     protected $erpBaseUrl;
     protected $erpApiKey;
+    protected $erpApiSecret;
+    protected $authType; // 'bearer' or 'token' (ERPNext format)
 
     public function __construct(ActivityLogService $activityLogService)
     {
         $this->activityLogService = $activityLogService;
         $this->erpBaseUrl = config('services.erp.base_url', 'http://localhost:8000/api');
         $this->erpApiKey = config('services.erp.api_key', '');
+        $this->erpApiSecret = config('services.erp.api_secret', '');
+        // Default to 'bearer' for custom endpoints, 'token' for ERPNext standard API
+        $this->authType = config('services.erp.auth_type', 'bearer');
+    }
+
+    /**
+     * Get authorization header based on auth type
+     */
+    protected function getAuthHeader()
+    {
+        if ($this->authType === 'token' && $this->erpApiSecret) {
+            // ERPNext format: token api_key:api_secret
+            return 'token ' . $this->erpApiKey . ':' . $this->erpApiSecret;
+        }
+        // Default: Bearer token
+        return 'Bearer ' . $this->erpApiKey;
     }
 
     /**
@@ -27,7 +45,7 @@ class ERPIntegrationService
         try {
             $response = Http::timeout(5) // 5 second timeout
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Authorization' => $this->getAuthHeader(),
                     'Content-Type' => 'application/json',
                 ])->post("{$this->erpBaseUrl}/students", $data);
 
@@ -58,7 +76,7 @@ class ERPIntegrationService
         try {
             $response = Http::timeout(5) // 5 second timeout
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Authorization' => $this->getAuthHeader(),
                     'Content-Type' => 'application/json',
                 ])->get("{$this->erpBaseUrl}/invoices/{$invoiceData['erp_invoice_id']}");
 
@@ -81,7 +99,7 @@ class ERPIntegrationService
         try {
             $response = Http::timeout(5) // 5 second timeout
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Authorization' => $this->getAuthHeader(),
                     'Content-Type' => 'application/json',
                 ])->post("{$this->erpBaseUrl}/payments", $paymentData);
 
@@ -112,7 +130,7 @@ class ERPIntegrationService
         try {
             $response = Http::timeout(5) // 5 second timeout
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Authorization' => $this->getAuthHeader(),
                 ])->get("{$this->erpBaseUrl}/students/{$studentId}/balance");
 
             if ($response->successful()) {
@@ -134,7 +152,7 @@ class ERPIntegrationService
         try {
             $response = Http::timeout(5) // 5 second timeout
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->erpApiKey,
+                    'Authorization' => $this->getAuthHeader(),
                     'Content-Type' => 'application/json',
                 ])->post("{$this->erpBaseUrl}/students/{$studentId}/defer", $deferData);
 

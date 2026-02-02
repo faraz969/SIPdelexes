@@ -34,6 +34,8 @@ return [
     'erp' => [
         'base_url' => env('ERP_BASE_URL', 'http://localhost:8000/api'),
         'api_key' => env('ERP_API_KEY', ''),
+        'api_secret' => env('ERP_API_SECRET', ''),
+        'auth_type' => env('ERP_AUTH_TYPE', 'bearer'), // 'bearer' or 'token' (for ERPNext standard API)
     ],
 
 ];
