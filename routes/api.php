@@ -18,47 +18,84 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('erp')->name('erp.')->group(function () {
     // Invoice sync from ERP
     Route::post('/invoices/sync', function (Request $request) {
-        // This endpoint receives invoice data from ERP
-        $request->validate([
-            'erp_invoice_id' => 'required|string',
-            'student_id' => 'required|string',
-            'invoice_number' => 'required|string',
-            'total_amount' => 'required|numeric',
-            'academic_year' => 'required|string',
-            'semester' => 'nullable|string',
+        // Log incoming request for debugging
+        \Log::info('ERP Invoice Sync Request Received', [
+            'data' => $request->all(),
+            'ip' => $request->ip(),
         ]);
 
-        $student = \App\Models\Student::where('student_id', $request->student_id)->first();
-        
-        if (!$student) {
-            return response()->json(['error' => 'Student not found'], 404);
+        try {
+            // This endpoint receives invoice data from ERP
+            $request->validate([
+                'erp_invoice_id' => 'required|string',
+                'student_id' => 'required|string',
+                'invoice_number' => 'required|string',
+                'total_amount' => 'required|numeric',
+                'academic_year' => 'required|string',
+                'semester' => 'nullable|string',
+            ]);
+
+            $student = \App\Models\Student::where('student_id', $request->student_id)->first();
+            
+            if (!$student) {
+                \Log::warning('ERP Invoice Sync Failed - Student Not Found', [
+                    'student_id' => $request->student_id,
+                    'erp_invoice_id' => $request->erp_invoice_id,
+                ]);
+                return response()->json(['error' => 'Student not found'], 404);
+            }
+
+            $invoice = \App\Models\Invoice::updateOrCreate(
+                ['erp_invoice_id' => $request->erp_invoice_id],
+                [
+                    'student_id' => $student->id,
+                    'invoice_number' => $request->invoice_number,
+                    'invoice_type' => $request->invoice_type ?? 'tuition',
+                    'academic_year' => $request->academic_year,
+                    'semester' => $request->semester,
+                    'total_amount' => $request->total_amount,
+                    'paid_amount' => $request->paid_amount ?? 0,
+                    'balance' => $request->balance ?? $request->total_amount,
+                    'status' => $request->status ?? 'pending',
+                    'due_date' => $request->due_date ?? now()->addDays(30),
+                    'issued_date' => $request->issued_date ?? now(),
+                    'line_items' => $request->line_items ?? [],
+                    'synced_from_erp' => true,
+                    'synced_at' => now(),
+                ]
+            );
+
+            \Log::info('ERP Invoice Synced Successfully', [
+                'invoice_id' => $invoice->id,
+                'erp_invoice_id' => $request->erp_invoice_id,
+                'student_id' => $request->student_id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'invoice_id' => $invoice->id,
+                'message' => 'Invoice synced successfully',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('ERP Invoice Sync Validation Error', [
+                'errors' => $e->errors(),
+                'data' => $request->all(),
+            ]);
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('ERP Invoice Sync Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $request->all(),
+            ]);
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        $invoice = \App\Models\Invoice::updateOrCreate(
-            ['erp_invoice_id' => $request->erp_invoice_id],
-            [
-                'student_id' => $student->id,
-                'invoice_number' => $request->invoice_number,
-                'invoice_type' => $request->invoice_type ?? 'tuition',
-                'academic_year' => $request->academic_year,
-                'semester' => $request->semester,
-                'total_amount' => $request->total_amount,
-                'paid_amount' => $request->paid_amount ?? 0,
-                'balance' => $request->balance ?? $request->total_amount,
-                'status' => $request->status ?? 'pending',
-                'due_date' => $request->due_date ?? now()->addDays(30),
-                'issued_date' => $request->issued_date ?? now(),
-                'line_items' => $request->line_items ?? [],
-                'synced_from_erp' => true,
-                'synced_at' => now(),
-            ]
-        );
-
-        return response()->json([
-            'success' => true,
-            'invoice_id' => $invoice->id,
-            'message' => 'Invoice synced successfully',
-        ]);
     });
 
     // Payment confirmation from ERP
