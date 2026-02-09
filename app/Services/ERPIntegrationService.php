@@ -109,7 +109,7 @@ class ERPIntegrationService
             ];
 
             // Use whitelisted method. Send as form-urlencoded (Frappe expects this for method calls on many setups).
-            $createMethod = 'education.education.education.api.create_student_applicant_from_sip';
+            $createMethod = 'education.education.api.create_student_applicant_from_sip';
             $applicantUrl = $this->getMethodUrl($createMethod);
             $body = $this->getMethodBody($createMethod, [
                 'data' => json_encode($applicantData),
