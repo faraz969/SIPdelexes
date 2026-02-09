@@ -50,11 +50,25 @@ class ERPIntegrationService
 
     protected function getMethodUrl(string $method): string
     {
+        if (config('services.erp.use_cmd_endpoint', false)) {
+            return $this->erpBaseUrl;
+        }
         $base = $this->erpBaseUrl;
         if (strpos($base, '/api') === false) {
             $base .= '/api';
         }
         return $base . '/method/' . $method;
+    }
+
+    /**
+     * For use_cmd_endpoint: build form body with cmd and other params
+     */
+    protected function getMethodBody(string $method, array $params): array
+    {
+        if (config('services.erp.use_cmd_endpoint', false)) {
+            return array_merge(['cmd' => $method], $params);
+        }
+        return $params;
     }
 
     /**
@@ -94,19 +108,25 @@ class ERPIntegrationService
                 'country' => $biodata['country'] ?? 'Ghana',
             ];
 
-            // Use whitelisted method to avoid API routing issues (run_method KeyError on some Frappe setups)
-            $applicantUrl = $this->getMethodUrl('education.education.education.api.create_student_applicant_from_sip');
+            // Use whitelisted method. Send as form-urlencoded (Frappe expects this for method calls on many setups).
+            $createMethod = 'education.education.education.api.create_student_applicant_from_sip';
+            $applicantUrl = $this->getMethodUrl($createMethod);
+            $body = $this->getMethodBody($createMethod, [
+                'data' => json_encode($applicantData),
+            ]);
             $response = Http::timeout(15)
                 ->withHeaders([
                     'Authorization' => $this->getAuthHeader(),
-                    'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
-                ])->post($applicantUrl, ['data' => json_encode($applicantData)]);
+                ])
+                ->asForm()
+                ->post($applicantUrl, $body);
 
             if (!$response->successful()) {
                 Log::error('ERP Student Applicant Creation Failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
+                    'url' => $applicantUrl,
                     'student_id' => $studentId,
                 ]);
                 throw new \Exception('ERP Student Applicant creation failed: ' . $response->body());
@@ -125,14 +145,16 @@ class ERPIntegrationService
             ]);
 
             // 2. Enroll student (creates Student + Program Enrollment)
-            $enrollUrl = $this->getMethodUrl('education.education.api.enroll_student');
+            $enrollMethod = 'education.education.api.enroll_student';
+            $enrollUrl = $this->getMethodUrl($enrollMethod);
+            $enrollBody = $this->getMethodBody($enrollMethod, ['source_name' => $applicantName]);
             $enrollResponse = Http::timeout(15)
                 ->withHeaders([
                     'Authorization' => $this->getAuthHeader(),
-                    'Content-Type' => 'application/json',
-                ])->post($enrollUrl, [
-                    'source_name' => $applicantName,
-                ]);
+                    'Accept' => 'application/json',
+                ])
+                ->asForm()
+                ->post($enrollUrl, $enrollBody);
 
             if (!$enrollResponse->successful()) {
                 Log::error('ERP Enroll Student Failed', [

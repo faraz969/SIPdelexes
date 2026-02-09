@@ -39,6 +39,8 @@ return [
         'default_program' => env('ERP_DEFAULT_PROGRAM', 'General'),
         'default_academic_term' => env('ERP_DEFAULT_ACADEMIC_TERM', 'Semester 1'),
         'program_mapping' => [], // [sip_program_id => erp_program_name] if names differ
+        // If your ERPNext host routes all API calls to one URL and expects "cmd" in body, set to true
+        'use_cmd_endpoint' => env('ERP_USE_CMD_ENDPOINT', false),
     ],
 
 ];
