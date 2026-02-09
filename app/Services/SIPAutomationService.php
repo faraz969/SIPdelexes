@@ -88,12 +88,15 @@ class SIPAutomationService
 
             // 7. Send API request to ERP (AFTER transaction commit - non-blocking)
             try {
-                $this->erpService->createStudentRecord([
+                $result = $this->erpService->createStudentRecord([
                     'student_id' => $studentId,
                     'biodata' => $student->biodata,
                     'program_id' => $student->program_id,
                     'academic_year' => $student->academic_year,
                 ]);
+                if (!empty($result['erp_student_name'])) {
+                    $student->update(['erp_student_name' => $result['erp_student_name']]);
+                }
             } catch (\Exception $e) {
                 // Log but don't fail - ERP integration is optional
                 \Log::warning('ERP API call failed (non-critical)', [

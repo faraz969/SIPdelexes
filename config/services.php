@@ -35,7 +35,10 @@ return [
         'base_url' => env('ERP_BASE_URL', 'http://localhost:8000/api'),
         'api_key' => env('ERP_API_KEY', ''),
         'api_secret' => env('ERP_API_SECRET', ''),
-        'auth_type' => env('ERP_AUTH_TYPE', 'bearer'), // 'bearer' or 'token' (for ERPNext standard API)
+        'auth_type' => env('ERP_AUTH_TYPE', 'token'), // 'token' for ERPNext standard API
+        'default_program' => env('ERP_DEFAULT_PROGRAM', 'General'),
+        'default_academic_term' => env('ERP_DEFAULT_ACADEMIC_TERM', 'Semester 1'),
+        'program_mapping' => [], // [sip_program_id => erp_program_name] if names differ
     ],
 
 ];

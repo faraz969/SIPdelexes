@@ -8,18 +8,24 @@ use App\Models\Student;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\ERPIntegrationService;
+use App\Services\ERPInvoiceSyncService;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Str;
 
 class SIPPaymentController extends Controller
 {
     protected $erpService;
+    protected $invoiceSyncService;
     protected $activityLogService;
 
-    public function __construct(ERPIntegrationService $erpService, ActivityLogService $activityLogService)
-    {
+    public function __construct(
+        ERPIntegrationService $erpService,
+        ERPInvoiceSyncService $invoiceSyncService,
+        ActivityLogService $activityLogService
+    ) {
         $this->middleware('auth');
         $this->erpService = $erpService;
+        $this->invoiceSyncService = $invoiceSyncService;
         $this->activityLogService = $activityLogService;
     }
 
@@ -39,11 +45,21 @@ class SIPPaymentController extends Controller
     }
 
     /**
-     * View invoices
+     * View invoices (syncs from ERP first if student has erp_student_name)
      */
     public function invoices()
     {
         $student = $this->getStudent();
+        if ($student->erp_student_name) {
+            try {
+                $this->invoiceSyncService->syncForStudent($student);
+            } catch (\Exception $e) {
+                \Log::warning('ERP invoice sync failed on view', [
+                    'student_id' => $student->student_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
         $invoices = $student->invoices()
             ->orderBy('created_at', 'desc')
             ->get();
@@ -100,30 +116,53 @@ class SIPPaymentController extends Controller
             'payment_method' => 'required|in:card,momo,bank',
         ]);
 
-        // Create payment record
+        $paymentReference = 'PAY-' . strtoupper(Str::random(12));
+        $amount = (float) $request->amount;
+
         $payment = Payment::create([
             'student_id' => $student->id,
             'invoice_id' => $invoice->id,
-            'payment_reference' => 'PAY-' . strtoupper(Str::random(12)),
+            'payment_reference' => $paymentReference,
             'payment_method' => $request->payment_method,
-            'amount' => $request->amount,
-            'status' => 'processing',
-        ]);
-
-        // For now, set payment as processing (admin will manually process it)
-        // In production, this would integrate with payment gateway and ERP
-        $payment->update([
+            'amount' => $amount,
             'status' => 'processing',
             'erp_status' => 'pending',
         ]);
 
-        \Log::info("Payment Initiated", [
+        $erpSynced = false;
+        if ($invoice->erp_invoice_id && $student->erp_student_name) {
+            try {
+                $result = $this->erpService->submitPaymentEntry(
+                    $invoice->erp_invoice_id,
+                    $amount,
+                    $paymentReference
+                );
+                if (!empty($result['erp_payment_id'])) {
+                    $payment->update([
+                        'erp_payment_id' => $result['erp_payment_id'],
+                        'erp_status' => 'synced',
+                        'erp_synced_at' => now(),
+                        'status' => 'completed',
+                    ]);
+                    $invoice->updateBalance();
+                    $erpSynced = true;
+                }
+            } catch (\Exception $e) {
+                \Log::error('ERP payment submission failed', [
+                    'payment_id' => $payment->id,
+                    'invoice' => $invoice->erp_invoice_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        \Log::info('Payment Initiated', [
             'payment_id' => $payment->id,
-            'payment_reference' => $payment->payment_reference,
+            'payment_reference' => $paymentReference,
             'student_id' => $student->student_id,
             'invoice_id' => $invoice->id,
-            'amount' => $payment->amount,
-            'payment_method' => $payment->payment_method,
+            'amount' => $amount,
+            'erp_synced' => $erpSynced,
         ]);
 
         $this->activityLogService->log([
@@ -133,13 +172,19 @@ class SIPPaymentController extends Controller
             'model_type' => Payment::class,
             'model_id' => $payment->id,
             'system_source' => 'SIP',
-            'description' => "Payment of GHS {$payment->amount} initiated for invoice {$invoice->invoice_number}. Status: Processing - Awaiting admin confirmation.",
+            'description' => $erpSynced
+                ? "Payment of GHS {$amount} submitted to ERP for invoice {$invoice->invoice_number}."
+                : "Payment of GHS {$amount} initiated for invoice {$invoice->invoice_number}. " .
+                  ($invoice->erp_invoice_id ? 'ERP sync failed - check logs.' : 'Awaiting admin confirmation.'),
         ]);
 
-        // TODO: In production, integrate with payment gateway here
-        // For now, return message that payment is pending admin approval
+        if ($erpSynced) {
+            return redirect()->route('sip.payments.history')
+                ->with('success', 'Payment of GHS ' . number_format($amount, 2) . ' submitted successfully.');
+        }
+
         return redirect()->route('sip.payments.history')
-            ->with('info', 'Payment initiated successfully. Your payment is being processed. An admin will confirm it shortly.');
+            ->with('info', 'Payment initiated. Your payment is being processed. An admin will confirm it shortly.');
     }
 }
 

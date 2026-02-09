@@ -14,6 +14,7 @@ class Student extends Model
         'application_id',
         'student_id',
         'masters_student_id_reference',
+        'erp_student_name',
         'program_id',
         'department_id',
         'academic_year',
