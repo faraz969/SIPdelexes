@@ -94,12 +94,14 @@ class ERPIntegrationService
                 'country' => $biodata['country'] ?? 'Ghana',
             ];
 
-            $applicantUrl = $this->getResourceUrl('Student Applicant');
+            // Use whitelisted method to avoid API routing issues (run_method KeyError on some Frappe setups)
+            $applicantUrl = $this->getMethodUrl('education.education.api.create_student_applicant_from_sip');
             $response = Http::timeout(15)
                 ->withHeaders([
                     'Authorization' => $this->getAuthHeader(),
                     'Content-Type' => 'application/json',
-                ])->post($applicantUrl, $applicantData);
+                    'Accept' => 'application/json',
+                ])->post($applicantUrl, ['data' => json_encode($applicantData)]);
 
             if (!$response->successful()) {
                 Log::error('ERP Student Applicant Creation Failed', [
@@ -111,7 +113,7 @@ class ERPIntegrationService
             }
 
             $applicantResponse = $response->json();
-            $applicantName = $applicantResponse['data']['name'] ?? $applicantResponse['name'] ?? null;
+            $applicantName = $applicantResponse['message']['name'] ?? $applicantResponse['name'] ?? $applicantResponse['data']['name'] ?? null;
 
             if (!$applicantName) {
                 throw new \Exception('No Student Applicant name in ERP response');
