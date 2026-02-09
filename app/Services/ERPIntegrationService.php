@@ -95,7 +95,7 @@ class ERPIntegrationService
             ];
 
             // Use whitelisted method to avoid API routing issues (run_method KeyError on some Frappe setups)
-            $applicantUrl = $this->getMethodUrl('education.education.api.create_student_applicant_from_sip');
+            $applicantUrl = $this->getMethodUrl('education.education.education.api.create_student_applicant_from_sip');
             $response = Http::timeout(15)
                 ->withHeaders([
                     'Authorization' => $this->getAuthHeader(),
