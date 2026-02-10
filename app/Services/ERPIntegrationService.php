@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\ActivityLogService;
 use App\Models\Program;
+use Carbon\Carbon;
 
 class ERPIntegrationService
 {
@@ -101,7 +102,7 @@ class ERPIntegrationService
                 'academic_term' => $academicTerm,
                 'application_status' => 'Approved',
                 'student_mobile_number' => $biodata['phone'] ?? null,
-                'date_of_birth' => $biodata['dob'] ?? null,
+                'date_of_birth' => $this->formatDateForErp($biodata['dob'] ?? null),
                 'gender' => $biodata['gender'] ?? null,
                 'nationality' => $biodata['nationality'] ?? null,
                 'address_line_1' => $biodata['address'] ?? null,
@@ -270,6 +271,33 @@ class ERPIntegrationService
             'middle' => $parts[1] ?? '',
             'last' => $parts[2] ?? '',
         ];
+    }
+
+    /**
+     * Format date for ERPNext (YYYY-MM-DD). Handles Carbon objects, ISO strings, and null.
+     */
+    protected function formatDateForErp($date): ?string
+    {
+        if (!$date) {
+            return null;
+        }
+
+        // If it's already a Carbon instance
+        if ($date instanceof Carbon) {
+            return $date->format('Y-m-d');
+        }
+
+        // If it's a string (ISO 8601 or other format), parse and format
+        if (is_string($date)) {
+            try {
+                return Carbon::parse($date)->format('Y-m-d');
+            } catch (\Exception $e) {
+                Log::warning('Failed to parse date for ERP', ['date' => $date, 'error' => $e->getMessage()]);
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /**
