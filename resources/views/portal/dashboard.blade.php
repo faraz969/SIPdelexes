@@ -87,7 +87,7 @@
                 </div>
                 <div class="card-body">
                     <p><strong>Application Number:</strong> {{ $application->application_number ?? 'N/A' }}</p>
-                    <p><strong>Academic Year:</strong> {{ $application->academic_year ?? '2025/2026, September' }}</p>
+                    <p><strong>Academic Year:</strong> {{ $application->academic_year ?? '2025-2026' }}</p>
                     
                    
                 </div>

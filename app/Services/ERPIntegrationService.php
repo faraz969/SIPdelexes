@@ -87,7 +87,7 @@ class ERPIntegrationService
         $nameParts = $this->splitFullName($fullName);
 
         $programName = $this->getErpProgramName($programId);
-        $academicTerm = $data['academic_term'] ?? config('services.erp.default_academic_term', 'Semester 1');
+        $academicTerm = $data['academic_term'] ?? config('services.erp.default_academic_term', '2025–2026 (Semester 1)');
 
         try {
             // 1. Create Student Applicant (Approved - ready for enrollment)

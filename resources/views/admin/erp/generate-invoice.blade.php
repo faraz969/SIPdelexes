@@ -46,7 +46,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="academic_year" name="academic_year" value="{{ old('academic_year', '2025/2026') }}" required>
+                                <input type="text" class="form-control" id="academic_year" name="academic_year" value="{{ old('academic_year', '2025-2026') }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="semester" class="form-label">Semester</label>
