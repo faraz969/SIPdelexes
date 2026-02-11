@@ -100,7 +100,7 @@ class BankController extends Controller
             'amount' => $amount,
             'form_type' => $formType->name,
             'transaction_date' => now()->format('Y-m-d H:i:s'),
-            'academic_year' => '2025-2026',
+            'academic_year' => '2025–2026',
             'voucher_for' => $validated['voucher_for'] ?? null,
         ]);
         $user->save();
