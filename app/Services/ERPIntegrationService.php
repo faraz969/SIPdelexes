@@ -348,26 +348,30 @@ class ERPIntegrationService
 
     /**
      * Submit Payment Entry to ERPNext against a Sales Invoice.
-     * Uses education billing.submit_fee_payment_from_sip for clean integration.
+     * Uses education.education.api.submit_fee_payment_from_sip (same request style as student applicant).
      */
     public function submitPaymentEntry(string $erpInvoiceName, float $amount, string $paymentReference, ?string $bankAccount = null): array
     {
         try {
-            $methodUrl = $this->getMethodUrl('education.education.api.submit_fee_payment_from_sip');
+            $method = 'education.education.api.submit_fee_payment_from_sip';
+            $methodUrl = $this->getMethodUrl($method);
             $params = [
                 'against_invoice' => $erpInvoiceName,
-                'amount' => $amount,
+                'amount' => (string) $amount,
                 'reference_no' => $paymentReference,
             ];
             if ($bankAccount) {
                 $params['bank_account'] = $bankAccount;
             }
+            $body = $this->getMethodBody($method, $params);
 
             $response = Http::timeout(15)
                 ->withHeaders([
                     'Authorization' => $this->getAuthHeader(),
-                    'Content-Type' => 'application/json',
-                ])->post($methodUrl, $params);
+                    'Accept' => 'application/json',
+                ])
+                ->asForm()
+                ->post($methodUrl, $body);
 
             if (!$response->successful()) {
                 throw new \Exception('Payment submission failed: ' . $response->body());
