@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Student;
+use App\Models\Course;
 use App\Models\CourseRegistration;
 use App\Models\RegistrationRule;
 use App\Services\ERPIntegrationService;
@@ -63,9 +64,23 @@ class SIPCourseRegistrationController extends Controller
         $semester = $request->get('semester', 'First Semester');
         $academicYear = $request->get('academic_year', $student->academic_year);
 
-        // Get available courses (this should come from ERP or a courses table)
-        // For now, using placeholder
-        $availableCourses = []; // TODO: Fetch from ERP or courses table
+        // Load courses by student's program (core + elective, active only)
+        $coreCourses = collect();
+        $electiveCourses = collect();
+        if ($student->program_id) {
+            $coreCourses = Course::where('program_id', $student->program_id)
+                ->where('is_elective', false)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('course_code')
+                ->get();
+            $electiveCourses = Course::where('program_id', $student->program_id)
+                ->where('is_elective', true)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('course_code')
+                ->get();
+        }
 
         // Check for existing registration
         $existingRegistration = CourseRegistration::where('student_id', $student->id)
@@ -73,7 +88,7 @@ class SIPCourseRegistrationController extends Controller
             ->where('academic_year', $academicYear)
             ->first();
 
-        return view('sip.course-registration.form', compact('student', 'availableCourses', 'semester', 'academicYear', 'existingRegistration'));
+        return view('sip.course-registration.form', compact('student', 'coreCourses', 'electiveCourses', 'semester', 'academicYear', 'existingRegistration'));
     }
 
     /**
@@ -92,8 +107,40 @@ class SIPCourseRegistrationController extends Controller
             'semester' => 'required|string',
             'academic_year' => 'required|string',
             'courses' => 'required|array|min:1',
-            'courses.*' => 'required|string',
+            'courses.*' => 'required|integer|exists:courses,id',
         ]);
+
+        if (!$student->program_id) {
+            return back()->with('error', 'You have no program assigned. Please contact the registrar.');
+        }
+
+        // Load selected courses and ensure they belong to student's program
+        $selectedCourses = Course::whereIn('id', $request->courses)
+            ->where('program_id', $student->program_id)
+            ->where('is_active', true)
+            ->get();
+
+        if ($selectedCourses->count() !== count($request->courses)) {
+            return back()->with('error', 'One or more selected courses are invalid or not available for your program.');
+        }
+
+        $maxCredits = 21;
+        $totalCredits = $selectedCourses->sum(function ($c) {
+            return (float) ($c->total_credit_units ?? $c->credit_units);
+        });
+        if ($totalCredits > $maxCredits) {
+            return back()->with('error', "Total credit units ({$totalCredits}) exceeds the maximum allowed ({$maxCredits}). Please select fewer or lower-credit courses.");
+        }
+
+        // Build courses payload for storage (id, code, title, credit_units)
+        $coursesPayload = $selectedCourses->map(function ($c) {
+            return [
+                'id' => $c->id,
+                'course_code' => $c->course_code,
+                'course_title' => $c->course_title,
+                'credit_units' => (float) ($c->total_credit_units ?? $c->credit_units),
+            ];
+        })->values()->toArray();
 
         // Check for late registration
         $rule = RegistrationRule::getActiveRule();
@@ -114,7 +161,7 @@ class SIPCourseRegistrationController extends Controller
             'student_id' => $student->id,
             'semester' => $request->semester,
             'academic_year' => $request->academic_year,
-            'courses' => $request->courses,
+            'courses' => $coursesPayload,
             'status' => $isLate ? 'late' : 'registered',
             'late_fee' => $lateFee,
             'is_late_registration' => $isLate,

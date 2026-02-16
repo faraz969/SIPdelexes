@@ -11,7 +11,11 @@
         </div>
     </div>
 
-    @if($existingRegistration)
+    @if(!$student->program_id)
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> You have no program assigned. Please contact the registrar before registering for courses.
+        </div>
+    @elseif($existingRegistration)
         <div class="alert alert-info">
             <i class="fas fa-info-circle"></i> You have already registered for {{ $semester }} {{ $academicYear }}.
             <a href="{{ route('sip.course-registration.list') }}" class="btn btn-sm btn-info">View Registration</a>
@@ -21,52 +25,66 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Register for Courses - {{ $semester }} {{ $academicYear }}</h5>
+                        <h5 class="mb-0">Register for Courses – {{ $semester }} {{ $academicYear }}</h5>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ route('sip.course-registration.register') }}">
+                        <p class="text-muted mb-3">Select courses below. <strong>Maximum total credit units: 21.</strong></p>
+
+                        <form method="POST" action="{{ route('sip.course-registration.register') }}" id="courseRegistrationForm">
                             @csrf
-                            
                             <input type="hidden" name="semester" value="{{ $semester }}">
                             <input type="hidden" name="academic_year" value="{{ $academicYear }}">
 
-                            <div class="mb-3">
-                                <label class="form-label">Select Courses</label>
+                            @if($coreCourses->isNotEmpty())
+                                <h6 class="text-primary mt-3 mb-2"><i class="fas fa-star"></i> Core Courses</h6>
+                                <div class="mb-3">
+                                    @foreach($coreCourses as $course)
+                                        @php $credits = (float)($course->total_credit_units ?? $course->credit_units); @endphp
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input course-checkbox" type="checkbox" name="courses[]" value="{{ $course->id }}" id="course_{{ $course->id }}" data-credits="{{ $credits }}">
+                                            <label class="form-check-label" for="course_{{ $course->id }}">
+                                                <strong>{{ $course->course_code }}</strong> – {{ $course->course_title }}
+                                                <span class="text-muted">({{ $credits }} credit{{ $credits != 1 ? 's' : '' }})</span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($electiveCourses->isNotEmpty())
+                                <h6 class="text-info mt-3 mb-2"><i class="fas fa-list"></i> Elective Courses</h6>
+                                <div class="mb-3">
+                                    @foreach($electiveCourses as $course)
+                                        @php $credits = (float)($course->total_credit_units ?? $course->credit_units); @endphp
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input course-checkbox" type="checkbox" name="courses[]" value="{{ $course->id }}" id="course_{{ $course->id }}" data-credits="{{ $credits }}">
+                                            <label class="form-check-label" for="course_{{ $course->id }}">
+                                                <strong>{{ $course->course_code }}</strong> – {{ $course->course_title }}
+                                                <span class="text-muted">({{ $credits }} credit{{ $credits != 1 ? 's' : '' }})</span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($coreCourses->isEmpty() && $electiveCourses->isEmpty())
                                 <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> 
-                                    Course list will be loaded from ERP. For now, this is a placeholder.
-                                    <br><small>In production, courses will be fetched from the ERP system based on your program.</small>
+                                    No courses are available for your program ({{ $student->program->name ?? 'N/A' }}). Please contact the admin.
                                 </div>
-                                
-                                <!-- Placeholder course selection -->
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="courses[]" value="course1" id="course1">
-                                    <label class="form-check-label" for="course1">
-                                        Introduction to Computer Science (3 Credits)
-                                    </label>
+                            @else
+                                <div class="alert alert-secondary mb-3">
+                                    <strong>Total selected:</strong> <span id="totalCredits">0</span> / 21 credit units
                                 </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="courses[]" value="course2" id="course2">
-                                    <label class="form-check-label" for="course2">
-                                        Mathematics for Computing (3 Credits)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="courses[]" value="course3" id="course3">
-                                    <label class="form-check-label" for="course3">
-                                        Programming Fundamentals (3 Credits)
-                                    </label>
-                                </div>
-                            </div>
+                                <p class="text-danger small" id="creditWarning" style="display:none;">Total credits exceed 21. Please reduce your selection.</p>
 
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>Note:</strong> Late registration may incur additional fees.
-                            </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Late registration may incur additional fees.
+                                </div>
 
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-check"></i> Register Courses
-                            </button>
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                    <i class="fas fa-check"></i> Submit Registration
+                                </button>
+                            @endif
                         </form>
                     </div>
                 </div>
@@ -83,6 +101,7 @@
                         <p><strong>Semester:</strong> {{ $semester }}</p>
                         <p><strong>Academic Year:</strong> {{ $academicYear }}</p>
                         <hr>
+                        <p><strong>Credit limit:</strong> 21 units max</p>
                         <p><strong>Payment Status:</strong></p>
                         <p>Current: {{ number_format($student->getPaymentPercentage(), 1) }}%</p>
                         <p class="text-success">✓ Registration Enabled</p>
@@ -90,7 +109,37 @@
                 </div>
             </div>
         </div>
+
+        @if($coreCourses->isNotEmpty() || $electiveCourses->isNotEmpty())
+        <script>
+        (function() {
+            var maxCredits = 21;
+            var checkboxes = document.querySelectorAll('.course-checkbox');
+            var totalEl = document.getElementById('totalCredits');
+            var warningEl = document.getElementById('creditWarning');
+            var submitBtn = document.getElementById('submitBtn');
+
+            function updateTotal() {
+                var total = 0;
+                checkboxes.forEach(function(cb) {
+                    if (cb.checked) total += parseFloat(cb.getAttribute('data-credits') || 0);
+                });
+                if (totalEl) totalEl.textContent = total;
+                if (warningEl) {
+                    warningEl.style.display = total > maxCredits ? 'block' : 'none';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = total > maxCredits || total === 0;
+                }
+            }
+
+            checkboxes.forEach(function(cb) {
+                cb.addEventListener('change', updateTotal);
+            });
+            updateTotal();
+        })();
+        </script>
+        @endif
     @endif
 </div>
 @endsection
-

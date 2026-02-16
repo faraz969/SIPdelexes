@@ -28,4 +28,14 @@ class Program extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function courses()
+    {
+        return $this->hasMany(Course::class)->orderBy('sort_order')->orderBy('course_code');
+    }
+
+    public function activeCourses()
+    {
+        return $this->hasMany(Course::class)->where('is_active', true)->orderBy('sort_order')->orderBy('course_code');
+    }
 }

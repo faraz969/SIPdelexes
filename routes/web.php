@@ -33,6 +33,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     
     // Program Management
     Route::resource('programs', App\Http\Controllers\Admin\ProgramController::class);
+
+    // Course Management
+    Route::resource('courses', App\Http\Controllers\Admin\CourseController::class);
     
     // User Management
     Route::resource('users', App\Http\Controllers\Admin\UserController::class);

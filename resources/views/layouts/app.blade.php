@@ -71,6 +71,9 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.programs.index') }}">
                                             <i class="fas fa-graduation-cap"></i> Programs
                                         </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.courses.index') }}">
+                                            <i class="fas fa-book"></i> Courses
+                                        </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">
                                             <i class="fas fa-users"></i> Users
                                         </a></li>
@@ -86,6 +89,9 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.programs.create') }}">
                                             <i class="fas fa-plus"></i> Add Program
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.courses.create') }}">
+                                            <i class="fas fa-plus"></i> Add Course
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.users.create') }}">
                                             <i class="fas fa-user-plus"></i> Add User

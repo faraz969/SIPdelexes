@@ -51,14 +51,29 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $regTotal = 0;
+                                    @endphp
                                     @foreach($registration->courses as $course)
+                                        @php
+                                            $cu = $course['credit_units'] ?? $course['credits'] ?? 0;
+                                            $regTotal += is_numeric($cu) ? (float)$cu : 0;
+                                        @endphp
                                         <tr>
-                                            <td>{{ $course['code'] ?? 'N/A' }}</td>
-                                            <td>{{ $course['name'] ?? 'N/A' }}</td>
-                                            <td>{{ $course['credits'] ?? 'N/A' }}</td>
+                                            <td>{{ $course['course_code'] ?? $course['code'] ?? 'N/A' }}</td>
+                                            <td>{{ $course['course_title'] ?? $course['name'] ?? 'N/A' }}</td>
+                                            <td>{{ $course['credit_units'] ?? $course['credits'] ?? 'N/A' }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
+                                @if($regTotal > 0)
+                                <tfoot>
+                                    <tr class="fw-bold">
+                                        <td colspan="2">Total</td>
+                                        <td>{{ $regTotal }}</td>
+                                    </tr>
+                                </tfoot>
+                                @endif
                             </table>
                         </div>
                     @else
