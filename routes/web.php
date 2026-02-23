@@ -35,6 +35,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('programs', App\Http\Controllers\Admin\ProgramController::class);
 
     // Course Management
+    Route::get('/courses/upload', [App\Http\Controllers\Admin\CourseController::class, 'uploadForm'])->name('courses.upload');
+    Route::post('/courses/upload', [App\Http\Controllers\Admin\CourseController::class, 'uploadProcess'])->name('courses.upload.process');
+    Route::get('/courses/upload/sample', [App\Http\Controllers\Admin\CourseController::class, 'downloadSampleCsv'])->name('courses.upload.sample');
     Route::resource('courses', App\Http\Controllers\Admin\CourseController::class);
     
     // User Management

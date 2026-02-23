@@ -7,9 +7,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4>Courses Management</h4>
-                    <a href="{{ route('admin.courses.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Course
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.courses.upload') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-file-csv"></i> Upload CSV
+                        </a>
+                        <a href="{{ route('admin.courses.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Course
+                        </a>
+                    </div>
                 </div>
 
                 <div class="card-body">
