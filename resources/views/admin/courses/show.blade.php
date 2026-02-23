@@ -28,6 +28,14 @@
                             <td>{{ $course->program->name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
+                            <td><strong>Academic Year:</strong></td>
+                            <td>{{ $course->academic_year ?: '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Semester:</strong></td>
+                            <td>{{ $course->semester ?: '—' }}</td>
+                        </tr>
+                        <tr>
                             <td><strong>Credit Units:</strong></td>
                             <td>{{ $course->credit_units }}{{ $course->total_credit_units ? ' (Total: ' . $course->total_credit_units . ')' : '' }}</td>
                         </tr>

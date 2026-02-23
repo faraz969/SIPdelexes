@@ -47,6 +47,29 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label for="academic_year" class="form-label">Academic Year</label>
+                                    <input type="text" class="form-control @error('academic_year') is-invalid @enderror"
+                                           id="academic_year" name="academic_year" value="{{ old('academic_year', $course->academic_year) }}" placeholder="e.g. 2025-2026">
+                                    @error('academic_year')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="semester" class="form-label">Semester</label>
+                                    <input type="text" class="form-control @error('semester') is-invalid @enderror"
+                                           id="semester" name="semester" value="{{ old('semester', $course->semester) }}" placeholder="e.g. First Semester">
+                                    @error('semester')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="credit_units" class="form-label">Credit Units <span class="text-danger">*</span></label>
                                     <input type="number" step="0.5" min="0" class="form-control @error('credit_units') is-invalid @enderror"
                                            id="credit_units" name="credit_units" value="{{ old('credit_units', $course->credit_units) }}" required>

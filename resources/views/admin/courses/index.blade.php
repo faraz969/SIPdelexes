@@ -51,6 +51,8 @@
                                         <th>Course Code</th>
                                         <th>Course Title</th>
                                         <th>Program</th>
+                                        <th>Academic Year</th>
+                                        <th>Semester</th>
                                         <th>Credits</th>
                                         <th>Assessment Split</th>
                                         <th>Type</th>
@@ -64,6 +66,8 @@
                                             <td>{{ $course->course_code }}</td>
                                             <td>{{ $course->course_title }}</td>
                                             <td>{{ $course->program->name ?? 'N/A' }}</td>
+                                            <td>{{ $course->academic_year ?: '—' }}</td>
+                                            <td>{{ $course->semester ?: '—' }}</td>
                                             <td>{{ $course->credit_units }}{{ $course->total_credit_units ? ' / ' . $course->total_credit_units : '' }}</td>
                                             <td>{{ $course->assessment_split ?: '—' }}</td>
                                             <td>

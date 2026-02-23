@@ -13,6 +13,8 @@ class Course extends Model
         'course_code',
         'course_title',
         'program_id',
+        'academic_year',
+        'semester',
         'credit_units',
         'total_credit_units',
         'assessment_split',
