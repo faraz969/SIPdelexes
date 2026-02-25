@@ -17,6 +17,7 @@ class Student extends Model
         'erp_student_name',
         'program_id',
         'department_id',
+        'preferred_session_id',
         'academic_year',
         'academic_status',
         'admission_date',
@@ -54,6 +55,11 @@ class Student extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function preferredSession()
+    {
+        return $this->belongsTo(Session::class, 'preferred_session_id');
     }
 
     public function academicRecords()

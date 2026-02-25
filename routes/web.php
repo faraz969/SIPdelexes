@@ -68,6 +68,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Registration Rules Management
     Route::resource('registration-rules', App\Http\Controllers\Admin\RegistrationRuleController::class);
     
+    // Lecturers Management
+    Route::resource('lecturers', App\Http\Controllers\Admin\LecturerController::class);
+
     // Sessions, Campuses, and Intakes Management
     Route::resource('sessions', App\Http\Controllers\Admin\SessionController::class);
     Route::resource('campuses', App\Http\Controllers\Admin\CampusController::class);
@@ -102,6 +105,12 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
     Route::post('/deferments/{deferment}/approve', [App\Http\Controllers\RegistrarController::class, 'approveDeferment'])->name('deferments.approve');
     Route::post('/deferments/{deferment}/reject', [App\Http\Controllers\RegistrarController::class, 'rejectDeferment'])->name('deferments.reject');
     Route::post('/deferments/{deferment}/reactivate', [App\Http\Controllers\RegistrarController::class, 'reactivateStudent'])->name('deferments.reactivate');
+});
+
+// Lecturer Routes
+Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\LecturerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/students/{lecturer}', [App\Http\Controllers\LecturerController::class, 'students'])->name('students');
 });
 
 // Bank Routes

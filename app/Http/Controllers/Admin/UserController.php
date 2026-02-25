@@ -58,6 +58,7 @@ class UserController extends Controller
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         $roles = [
             'user' => 'Student',
+            'lecturer' => 'Lecturer',
             'hod' => 'Head of Department',
             'registrar' => 'Registrar',
             'president' => 'President',
@@ -79,7 +80,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'role' => 'required|in:user,hod,registrar,president,admin,bank',
+            'role' => 'required|in:user,lecturer,hod,registrar,president,admin,bank',
             'department_id' => 'nullable|exists:departments,id',
             'nationality' => 'nullable|string|max:255',
             'form_type_id' => 'nullable|exists:form_types,id',
@@ -167,6 +168,7 @@ class UserController extends Controller
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         $roles = [
             'user' => 'Student',
+            'lecturer' => 'Lecturer',
             'hod' => 'Head of Department',
             'registrar' => 'Registrar',
             'president' => 'President',
@@ -189,7 +191,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'required|string|max:20',
-            'role' => 'required|in:user,hod,registrar,president,admin,bank',
+            'role' => 'required|in:user,lecturer,hod,registrar,president,admin,bank',
             'department_id' => 'nullable|exists:departments,id',
             'bank_name' => 'required_if:role,bank|nullable|string|max:255',
             'branch' => 'required_if:role,bank|nullable|string|max:255',

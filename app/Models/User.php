@@ -84,6 +84,11 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'created_by');
     }
 
+    public function lecturerAssignments()
+    {
+        return $this->hasMany(Lecturer::class);
+    }
+
     public function isAdmin()
     {
         return $this->role === 'admin';
@@ -109,6 +114,11 @@ class User extends Authenticatable
         return $this->role === 'bank';
     }
 
+    public function isLecturer()
+    {
+        return $this->role === 'lecturer';
+    }
+
     public function isStaff()
     {
         return in_array($this->role, ['admin', 'hod', 'registrar', 'president']);
@@ -129,6 +139,8 @@ class User extends Authenticatable
                 return 'Student';
             case 'bank':
                 return 'Bank';
+            case 'lecturer':
+                return 'Lecturer';
             default:
                 return ucfirst($this->role);
         }

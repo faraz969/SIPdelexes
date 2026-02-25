@@ -50,6 +50,9 @@
                             @if(Auth::user()->isBank())
                                 {{-- Bank users see minimal navbar --}}
                                 <li class="nav-item"><a class="nav-link text-white" href="{{ route('bank.dashboard') }}">Bank Dashboard</a></li>
+                            @elseif(Auth::user()->isLecturer())
+                                {{-- Lecturer panel --}}
+                                <li class="nav-item"><a class="nav-link text-white" href="{{ route('lecturer.dashboard') }}">Lecturer Dashboard</a></li>
                             @elseif(Auth::user()->isStaff())
                                 @if(Auth::user()->isHOD())
                                     <li class="nav-item"><a class="nav-link text-white" href="{{ route('hod.dashboard') }}">HOD Dashboard</a></li>
@@ -73,6 +76,9 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.courses.index') }}">
                                             <i class="fas fa-book"></i> Courses
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.lecturers.index') }}">
+                                            <i class="fas fa-chalkboard-teacher"></i> Lecturers
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">
                                             <i class="fas fa-users"></i> Users

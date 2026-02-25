@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\Application;
 use App\Models\User;
 use App\Models\Program;
+use App\Models\Session;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\DB;
@@ -143,6 +144,14 @@ class SIPAutomationService
         // Get program from application
         $program = $this->getProgramFromApplication($application);
 
+        // Resolve preferred session from admission form (stored as session name)
+        $preferredSessionId = null;
+        $preferredSessionName = $admissionForm->preferred_session ?? $application->data['preferred_session'] ?? null;
+        if ($preferredSessionName) {
+            $session = Session::where('name', $preferredSessionName)->first();
+            $preferredSessionId = $session?->id;
+        }
+
         // Prepare biodata
         $biodata = [
             'full_name' => $admissionForm->full_name ?? $user->name ?? 'N/A',
@@ -160,6 +169,7 @@ class SIPAutomationService
             'student_id' => $studentId,
             'program_id' => $program->id ?? null,
             'department_id' => $application->department_id,
+            'preferred_session_id' => $preferredSessionId,
             'academic_year' => $application->academic_year,
             'academic_status' => 'active',
             'admission_date' => now(),

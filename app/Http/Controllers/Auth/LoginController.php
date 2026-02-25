@@ -140,6 +140,8 @@ class LoginController extends Controller
             return redirect()->route('registrar.dashboard');
         } elseif ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
+        } elseif ($user->isLecturer()) {
+            return redirect()->route('lecturer.dashboard');
         } elseif ($user->isBank()) {
             return redirect()->route('bank.dashboard');
         }
