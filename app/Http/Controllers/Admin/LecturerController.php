@@ -28,7 +28,7 @@ class LecturerController extends Controller
 
     public function create()
     {
-        $users = User::orderBy('name')->get();
+        $users = User::where('role', 'lecturer')->orderBy('name')->get();
         $courses = Course::with('program')->where('is_active', true)->orderBy('course_code')->get();
         $sessions = Session::active()->ordered()->get();
         return view('admin.lecturers.create', compact('users', 'courses', 'sessions'));
@@ -37,9 +37,11 @@ class LecturerController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => ['required', 'exists:users,id', 'in:' . User::where('role', 'lecturer')->pluck('id')->implode(',')],
             'course_id' => 'required|exists:courses,id',
             'session_id' => 'required|exists:sessions,id',
+        ], [
+            'user_id.in' => 'The selected user must have the Lecturer role.',
         ]);
 
         if (Lecturer::where('user_id', $validated['user_id'])
@@ -47,11 +49,6 @@ class LecturerController extends Controller
             ->where('session_id', $validated['session_id'])
             ->exists()) {
             return back()->withInput()->with('error', 'This lecturer is already assigned to this course and session.');
-        }
-
-        $user = User::findOrFail($validated['user_id']);
-        if ($user->role !== 'lecturer') {
-            $user->update(['role' => 'lecturer']);
         }
 
         Lecturer::create($validated);
@@ -67,7 +64,10 @@ class LecturerController extends Controller
 
     public function edit(Lecturer $lecturer)
     {
-        $users = User::orderBy('name')->get();
+        $users = User::where('role', 'lecturer')
+            ->orWhere('id', $lecturer->user_id)
+            ->orderBy('name')
+            ->get();
         $courses = Course::with('program')->where('is_active', true)->orderBy('course_code')->get();
         $sessions = Session::active()->ordered()->get();
         return view('admin.lecturers.edit', compact('lecturer', 'users', 'courses', 'sessions'));
@@ -75,10 +75,13 @@ class LecturerController extends Controller
 
     public function update(Request $request, Lecturer $lecturer)
     {
+        $allowedUserIds = User::where('role', 'lecturer')->orWhere('id', $lecturer->user_id)->pluck('id')->unique()->implode(',');
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => ['required', 'exists:users,id', "in:{$allowedUserIds}"],
             'course_id' => 'required|exists:courses,id',
             'session_id' => 'required|exists:sessions,id',
+        ], [
+            'user_id.in' => 'The selected user must have the Lecturer role.',
         ]);
 
         $exists = Lecturer::where('user_id', $validated['user_id'])
@@ -88,11 +91,6 @@ class LecturerController extends Controller
             ->exists();
         if ($exists) {
             return back()->withInput()->with('error', 'This lecturer is already assigned to this course and session.');
-        }
-
-        $user = User::findOrFail($validated['user_id']);
-        if ($user->role !== 'lecturer') {
-            $user->update(['role' => 'lecturer']);
         }
 
         $lecturer->update($validated);
