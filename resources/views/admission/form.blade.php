@@ -316,15 +316,15 @@
 
       <div class="row two">
         <div>
-          <label for="emergency_contact">Emergency Contact (Name / Phone) <span style="color:red">*</span></label>
+          <label for="emergency_contact">Emergency Contact - Name <span style="color:red">*</span></label>
           <input id="emergency_contact" name="emergency_contact" type="text" value="{{ $prefill['emergency_contact'] ?? '' }}" required />
         </div>
         <div>
-          <label for="telephone">Telephone <span style="color:red">*</span></label>
+          <label for="telephone">Emergency Contact - Telephone <span style="color:red">*</span></label>
           <input id="telephone" name="telephone" type="tel" value="{{ $prefill['telephone'] ?? '' }}" required />
         </div>
         <div>
-          <label for="email">E-mail <span style="color:red">*</span></label>
+          <label for="email">Emergency Contact - E-mail <span style="color:red">*</span></label>
           <input id="email" name="email" type="email" value="{{ $prefill['email'] ?? '' }}" required />
         </div>
         <div>
@@ -436,14 +436,49 @@
       <legend>Enrollment Options</legend>
       <div class="row two">
         <div>
-          <label>Applicant Type (tick all that apply) <span style="color:red">*</span></label>
+          <label>Applicant Type (select one) <span style="color:red">*</span></label>
           <div class="inline-options" id="applicantTypeGroup">
-            <label><input type="checkbox" name="entry_wassce" class="applicant-type-checkbox" {{ !empty($prefill['entry_wassce']) ? 'checked' : '' }} /> WASSCE</label>
-            <label><input type="checkbox" name="entry_sssce" class="applicant-type-checkbox" {{ !empty($prefill['entry_sssce']) ? 'checked' : '' }} /> SSSCE</label>        
-            <label><input type="checkbox" name="entry_ib" class="applicant-type-checkbox" {{ !empty($prefill['entry_ib']) ? 'checked' : '' }} /> International Baccalaureate</label>
-            <label><input type="checkbox" name="entry_transfer" class="applicant-type-checkbox" {{ !empty($prefill['entry_transfer']) ? 'checked' : '' }} /> Transfer</label>
-            <label><input type="checkbox" name="entry_other" class="applicant-type-checkbox" {{ !empty($prefill['entry_other']) ? 'checked' : '' }} /> Other</label>
+            @php
+              $selectedEntryType = null;
+              if (!empty($prefill['entry_wassce'])) {
+                  $selectedEntryType = 'entry_wassce';
+              } elseif (!empty($prefill['entry_sssce'])) {
+                  $selectedEntryType = 'entry_sssce';
+              } elseif (!empty($prefill['entry_ib'])) {
+                  $selectedEntryType = 'entry_ib';
+              } elseif (!empty($prefill['entry_transfer'])) {
+                  $selectedEntryType = 'entry_transfer';
+              } elseif (!empty($prefill['entry_other'])) {
+                  $selectedEntryType = 'entry_other';
+              }
+            @endphp
+            <label>
+              <input type="radio" name="entry_type" value="entry_wassce" class="applicant-type-radio"
+                     {{ $selectedEntryType === 'entry_wassce' ? 'checked' : '' }} /> WASSCE
+            </label>
+            <label>
+              <input type="radio" name="entry_type" value="entry_sssce" class="applicant-type-radio"
+                     {{ $selectedEntryType === 'entry_sssce' ? 'checked' : '' }} /> SSSCE
+            </label>
+            <label>
+              <input type="radio" name="entry_type" value="entry_ib" class="applicant-type-radio"
+                     {{ $selectedEntryType === 'entry_ib' ? 'checked' : '' }} /> International Baccalaureate
+            </label>
+            <label>
+              <input type="radio" name="entry_type" value="entry_transfer" class="applicant-type-radio"
+                     {{ $selectedEntryType === 'entry_transfer' ? 'checked' : '' }} /> Transfer
+            </label>
+            <label>
+              <input type="radio" name="entry_type" value="entry_other" class="applicant-type-radio"
+                     {{ $selectedEntryType === 'entry_other' ? 'checked' : '' }} /> Other
+            </label>
           </div>
+          <input type="hidden" name="entry_wassce" id="entry_wassce_hidden" value="{{ !empty($prefill['entry_wassce']) ? 1 : 0 }}">
+          <input type="hidden" name="entry_sssce" id="entry_sssce_hidden" value="{{ !empty($prefill['entry_sssce']) ? 1 : 0 }}">
+          <input type="hidden" name="entry_ib" id="entry_ib_hidden" value="{{ !empty($prefill['entry_ib']) ? 1 : 0 }}">
+          <input type="hidden" name="entry_transfer" id="entry_transfer_hidden" value="{{ !empty($prefill['entry_transfer']) ? 1 : 0 }}">
+          <input type="hidden" name="entry_other" id="entry_other_hidden" value="{{ !empty($prefill['entry_other']) ? 1 : 0 }}">
+          <div id="entry_type_error" style="color:red; font-size:0.9rem; display:none; margin-top:4px;"></div>
         </div>
         <div>
           <label for="other_entry_detail" class="hint">If "Other", please specify</label>
@@ -453,7 +488,7 @@
 
       
         
-        <!-- Dynamic Exam Sections (shown when any applicant type is checked) -->
+        <!-- Dynamic Exam Sections (shown when any applicant type is selected) -->
         <div id="examSectionsWrapper" style="display:none; margin-top:16px;">
           <div class="row">
             <div class="inline-options" style="justify-content:space-between; width:100%;">
@@ -642,54 +677,7 @@
       
 
       <hr style="margin:16px 0;">
-      <legend style="font-size:1rem;">Order of Preference (Repeat Selected Programmes)</legend>
-      <div class="row three">
-        @php 
-          // Use dynamic programs if available, otherwise fallback to hardcoded list
-          $prefOptions = isset($allPrograms) && count($allPrograms) > 0 ? $allPrograms : [
-            'BSc Nursing',
-            'BSc Midwifery',
-            'BSc Marketing',
-            'BSc Information Communication Technology',
-            'BSc Human Resource Management',
-            'BSc Risk Management and Insurance',
-            'BSc Cybersecurity and Digital Forensics',
-            'BSc Banking and Finance',
-            'BSc Computer Science',
-            'BSc Accounting',
-          ];
-          $p1 = trim($prefill['pref1'] ?? '');
-          $p2 = trim($prefill['pref2'] ?? '');
-          $p3 = trim($prefill['pref3'] ?? '');
-        @endphp
-        <div>
-          <label for="pref1">1st Preference</label>
-          <select id="pref1" name="pref1" onchange="autosaveDraft()">
-            <option value="">-- Select --</option>
-            @foreach($prefOptions as $opt)
-              <option value="{{ $opt }}" {{ $p1 === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-            @endforeach
-          </select>
-        </div>
-        <div>
-          <label for="pref2">2nd Preference</label>
-          <select id="pref2" name="pref2" onchange="autosaveDraft()">
-            <option value="">-- Select --</option>
-            @foreach($prefOptions as $opt)
-              <option value="{{ $opt }}" {{ $p2 === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-            @endforeach
-          </select>
-        </div>
-        <div>
-          <label for="pref3">3rd Preference</label>
-          <select id="pref3" name="pref3" onchange="autosaveDraft()">
-            <option value="">-- Select --</option>
-            @foreach($prefOptions as $opt)
-              <option value="{{ $opt }}" {{ $p3 === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-            @endforeach
-          </select>
-        </div>
-      </div>
+      
     </fieldset>
       </div>
 
@@ -928,6 +916,75 @@
         @endif
       </div>
       <div id="preview_passport" class="preview-box" aria-live="polite"></div>
+
+      <hr style="margin:16px 0;">
+      <legend style="font-size:1rem;">Additional Supporting Documents (Optional)</legend>
+
+      <div class="file-row three" style="margin-top:8px;">
+        <div>
+          <label for="gazette_document">Gazette (for change of name or date of birth)</label>
+          @if(!empty($submitted) && !empty($uploadedFiles['gazette_document']))
+            <div class="mb-2">
+              <a href="{{ asset('storage/'.$uploadedFiles['gazette_document']) }}" target="_blank">View uploaded file</a>
+            </div>
+          @endif
+          @if(empty($submitted))
+            <input id="gazette_document" name="gazette_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+            <small class="hint">Max file size: 1MB</small>
+          @endif
+        </div>
+        <div>
+          <label for="marriage_certificate">Marriage Certificate</label>
+          @if(!empty($submitted) && !empty($uploadedFiles['marriage_certificate']))
+            <div class="mb-2">
+              <a href="{{ asset('storage/'.$uploadedFiles['marriage_certificate']) }}" target="_blank">View uploaded file</a>
+            </div>
+          @endif
+          @if(empty($submitted))
+            <input id="marriage_certificate" name="marriage_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+            <small class="hint">Max file size: 1MB</small>
+          @endif
+        </div>
+        <div>
+          <label for="recommendation_letter">Recommendation Letter</label>
+          @if(!empty($submitted) && !empty($uploadedFiles['recommendation_letter']))
+            <div class="mb-2">
+              <a href="{{ asset('storage/'.$uploadedFiles['recommendation_letter']) }}" target="_blank">View uploaded file</a>
+            </div>
+          @endif
+          @if(empty($submitted))
+            <input id="recommendation_letter" name="recommendation_letter" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+            <small class="hint">Max file size: 1MB</small>
+          @endif
+        </div>
+      </div>
+
+      <div class="file-row two" style="margin-top:12px;">
+        <div>
+          <label for="birth_certificate">Birth Certificate</label>
+          @if(!empty($submitted) && !empty($uploadedFiles['birth_certificate']))
+            <div class="mb-2">
+              <a href="{{ asset('storage/'.$uploadedFiles['birth_certificate']) }}" target="_blank">View uploaded file</a>
+            </div>
+          @endif
+          @if(empty($submitted))
+            <input id="birth_certificate" name="birth_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+            <small class="hint">Max file size: 1MB</small>
+          @endif
+        </div>
+        <div>
+          <label for="exam_results_document">Examination Results (e.g., WASSCE, Diploma or equivalent)</label>
+          @if(!empty($submitted) && !empty($uploadedFiles['exam_results_document']))
+            <div class="mb-2">
+              <a href="{{ asset('storage/'.$uploadedFiles['exam_results_document']) }}" target="_blank">View uploaded file</a>
+            </div>
+          @endif
+          @if(empty($submitted))
+            <input id="exam_results_document" name="exam_results_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+            <small class="hint">Max file size: 1MB</small>
+          @endif
+        </div>
+      </div>
 
       <div class="file-row two" style="margin-top:12px;">
         <div>
@@ -1686,23 +1743,41 @@ function autosaveDraft() {
   const wrapper = document.getElementById('examSectionsWrapper');
   const container = document.getElementById('examSectionsContainer');
   const addExamBtn = document.getElementById('addExamSectionBtn');
-  const applicantTypeChecks = [
-    document.querySelector('input[name="entry_wassce"]'),
-    document.querySelector('input[name="entry_sssce"]'),
-    document.querySelector('input[name="entry_ib"]'),
-    document.querySelector('input[name="entry_transfer"]'),
-    document.querySelector('input[name="entry_other"]'),
-  ].filter(Boolean);
+  const applicantTypeRadios = Array.from(document.querySelectorAll('.applicant-type-radio'));
+
+  function getSelectedEntryType(){
+    const checked = applicantTypeRadios.find(r => r.checked);
+    return checked ? checked.value : null;
+  }
+
+  function syncEntryTypeHiddenFields(){
+    const selected = getSelectedEntryType();
+    const map = ['entry_wassce', 'entry_sssce', 'entry_ib', 'entry_transfer', 'entry_other'];
+    map.forEach(name => {
+      const hidden = document.getElementById(name + '_hidden');
+      if (hidden) {
+        hidden.value = (selected === name) ? 1 : 0;
+      }
+    });
+  }
 
   function anyApplicantTypeSelected(){
-    return applicantTypeChecks.some(chk => chk && chk.checked);
+    return !!getSelectedEntryType();
   }
 
   function toggleWrapper(){
     wrapper.style.display = anyApplicantTypeSelected() ? 'block' : 'none';
   }
 
-  applicantTypeChecks.forEach(chk => chk.addEventListener('change', toggleWrapper));
+  applicantTypeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      syncEntryTypeHiddenFields();
+      toggleWrapper();
+    });
+  });
+
+  // Initial sync on load (for prefilled data)
+  syncEntryTypeHiddenFields();
   toggleWrapper();
 
   function addSubjectRow(sectionEl){
@@ -2164,12 +2239,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const tabContent = document.getElementById(['personal', 'education', 'programs', 'employment', 'documents'][i]);
       if (!tabContent) continue;
       
-      // Special validation for Education tab - Applicant Type must have at least one checkbox selected
+      // Special validation for Education tab - Applicant Type must be selected
       if (i === 1) { // Education tab
-        const applicantTypeCheckboxes = document.querySelectorAll('.applicant-type-checkbox');
-        const atLeastOneChecked = Array.from(applicantTypeCheckboxes).some(cb => cb.checked);
+        const applicantTypeRadios = document.querySelectorAll('.applicant-type-radio');
+        const selectedRadio = Array.from(applicantTypeRadios).find(r => r.checked);
         
-        if (!atLeastOneChecked) {
+        if (!selectedRadio) {
           e.preventDefault();
           e.stopPropagation();
           currentTab = 1; // Education tab
@@ -2181,11 +2256,39 @@ document.addEventListener('DOMContentLoaded', function() {
             applicantTypeGroup.style.padding = '4px';
           }
           setTimeout(() => {
-            const firstCheckbox = applicantTypeCheckboxes[0];
-            if (firstCheckbox) firstCheckbox.focus();
+            const firstRadio = applicantTypeRadios[0];
+            if (firstRadio) firstRadio.focus();
           }, 100);
-          alert('Please select at least one Applicant Type (WASSCE, SSSCE, International Baccalaureate, Transfer, or Other). This field is required.');
+          const errorEl = document.getElementById('entry_type_error');
+          if (errorEl) {
+            errorEl.textContent = 'Please select your Applicant Type (WASSCE, SSSCE, International Baccalaureate, Transfer, or Other).';
+            errorEl.style.display = 'block';
+          } else {
+            alert('Please select your Applicant Type (WASSCE, SSSCE, International Baccalaureate, Transfer, or Other). This field is required.');
+          }
           return false;
+        }
+
+        // Additional rule: If WASSCE or SSSCE is selected, at least one exam section with Index Number must be provided
+        const entryValue = selectedRadio.value;
+        if (entryValue === 'entry_wassce' || entryValue === 'entry_sssce') {
+          const examSectionsWrapper = document.getElementById('examSectionsWrapper');
+          const examSections = examSectionsWrapper ? examSectionsWrapper.querySelectorAll('.exam-section') : [];
+          let hasIndex = false;
+          examSections.forEach(section => {
+            const indexInput = section.querySelector('.index_number');
+            if (indexInput && indexInput.value.trim() !== '') {
+              hasIndex = true;
+            }
+          });
+          if (!hasIndex) {
+            e.preventDefault();
+            e.stopPropagation();
+            currentTab = 1;
+            showTab(currentTab);
+            alert('Since you selected WASSCE or SSSCE, please add at least one Examination Details section and enter your Index Number.');
+            return false;
+          }
         }
       }
       
