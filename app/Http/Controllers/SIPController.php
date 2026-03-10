@@ -192,7 +192,12 @@ class SIPController extends Controller
             ->get()
             ->groupBy('document_type');
 
-        return view('sip.downloads', compact('student', 'downloads'));
+        // Static medical examination form (same for all students)
+        $medicalFormPath = public_path('STUDENTS-MEDICAL-EXAMINATION-FORM.pdf');
+        $medicalFormAvailable = file_exists($medicalFormPath);
+        $medicalFormUrl = $medicalFormAvailable ? asset('STUDENTS-MEDICAL-EXAMINATION-FORM.pdf') : null;
+
+        return view('sip.downloads', compact('student', 'downloads', 'medicalFormAvailable', 'medicalFormUrl'));
     }
 
     /**

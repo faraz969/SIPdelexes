@@ -11,9 +11,28 @@
         </div>
     </div>
 
+    @if(!empty($medicalFormAvailable) && $medicalFormAvailable && !empty($medicalFormUrl))
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-medical"></i> Medical Examination Form
+                </h5>
+            </div>
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">Student Medical Examination Form</h6>
+                    <small class="text-muted">Download and print this form for your medical examination.</small>
+                </div>
+                <a href="{{ $medicalFormUrl }}" class="btn btn-primary" target="_blank" download>
+                    <i class="fas fa-download"></i> Download Form
+                </a>
+            </div>
+        </div>
+    @endif
+
     @if($downloads->isEmpty())
         <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> No documents available for download yet.
+            <i class="fas fa-info-circle"></i> No other documents are available for download yet.
         </div>
     @else
         @foreach($downloads as $documentType => $documents)
