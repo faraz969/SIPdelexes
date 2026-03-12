@@ -32,6 +32,11 @@ class AdmissionFormService
             $genderDisplay = strtoupper(substr($admissionForm->gender, 0, 1)) === 'M' ? 'M' : 'F';
         }
 
+        // Determine total fees from program (price) or fall back to admission form data
+        $programPrice = $student->program && $student->program->price !== null
+            ? $student->program->price
+            : $formData->total_fees;
+
         return [
             // Header Information
             'university_name' => 'DELEXES UNIVERSITY COLLEGE, GHANA',
@@ -58,7 +63,7 @@ class AdmissionFormService
             'date' => now()->format('d/m/Y'), // For the offer date
             
             // Admission Form Data
-            'total_fees' => $formData->total_fees ? number_format($formData->total_fees, 2) : '',
+            'total_fees' => $programPrice ? number_format($programPrice, 2) : '',
             'minimum_fee_percentage' => $formData->minimum_fee_percentage ? number_format($formData->minimum_fee_percentage, 2) . '%' : '60%',
             'minimum_fee_amount' => $formData->total_fees && $formData->minimum_fee_percentage 
                 ? number_format(($formData->total_fees * $formData->minimum_fee_percentage / 100), 2) 

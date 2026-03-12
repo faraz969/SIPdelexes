@@ -115,6 +115,9 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.registration-rules.index') }}">
                                             <i class="fas fa-rules"></i> Registration Rules
                                         </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.admission-form-settings.edit') }}">
+                                            <i class="fas fa-file-alt"></i> Admission Form Defaults
+                                        </a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.sessions.index') }}">
                                             <i class="fas fa-clock"></i> Sessions

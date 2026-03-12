@@ -91,15 +91,6 @@ class RegistrarController extends Controller
 
         $request->validate([
             'comments' => 'nullable|string|max:1000',
-            // Admission form data validation
-            'total_fees' => 'nullable|numeric|min:0',
-            'minimum_fee_percentage' => 'nullable|numeric|min:0|max:100',
-            'balance_percentage' => 'nullable|numeric|min:0|max:100',
-            'paid_fees_by_date' => 'nullable|date',
-            'registration_begins' => 'nullable|date',
-            'orientation_new_students' => 'nullable|date',
-            'faculty_orientation' => 'nullable|date',
-            'lectures_begin' => 'nullable|date',
         ]);
 
         $application->update([
@@ -115,20 +106,29 @@ class RegistrarController extends Controller
         try {
             $student = $this->sipAutomationService->processAdmissionApproval($application);
             
-            // Save admission form data if provided
-            if ($request->has('total_fees') || $request->has('registration_begins')) {
-                $formData = AdmissionFormData::updateOrCreate(
+            // Apply admission form defaults (set by admin) for this student, by academic year
+            $academicYear = $application->academic_year;
+            $defaults = \App\Models\AdmissionFormDefault::where('academic_year', $academicYear)->first();
+            if (!$defaults) {
+                // Fallback to any default if specific academic year not found
+                $defaults = \App\Models\AdmissionFormDefault::first();
+            }
+            if ($defaults) {
+                $program = $student->program;
+                $totalFees = $program && $program->price !== null ? $program->price : null;
+
+                AdmissionFormData::updateOrCreate(
                     ['student_id' => $student->id],
                     [
                         'application_id' => $application->id,
-                        'total_fees' => $request->total_fees,
-                        'minimum_fee_percentage' => $request->minimum_fee_percentage,
-                        'balance_percentage' => $request->balance_percentage,
-                        'paid_fees_by_date' => $request->paid_fees_by_date,
-                        'registration_begins' => $request->registration_begins,
-                        'orientation_new_students' => $request->orientation_new_students,
-                        'faculty_orientation' => $request->faculty_orientation,
-                        'lectures_begin' => $request->lectures_begin,
+                        'total_fees' => $totalFees,
+                        'minimum_fee_percentage' => $defaults->minimum_fee_percentage,
+                        'balance_percentage' => $defaults->balance_percentage,
+                        'paid_fees_by_date' => $defaults->paid_fees_by_date,
+                        'registration_begins' => $defaults->registration_begins,
+                        'orientation_new_students' => $defaults->orientation_new_students,
+                        'faculty_orientation' => $defaults->faculty_orientation,
+                        'lectures_begin' => $defaults->lectures_begin,
                     ]
                 );
 
