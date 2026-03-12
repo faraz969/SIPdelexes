@@ -94,7 +94,7 @@
             font-weight: bold;
         }
         .student-details-table {
-            width: 100%;
+           
             margin: 20px 0;
             font-size: 11pt;
             border-collapse: collapse;
@@ -109,7 +109,7 @@
             padding-right: 8px;
         }
         .student-details-table .detail-value {
-            border-bottom: 1px dotted #000;
+            
             min-width: 150px;
             padding: 0 5px;
         }
