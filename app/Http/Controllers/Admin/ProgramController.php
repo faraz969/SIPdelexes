@@ -45,6 +45,7 @@ class ProgramController extends Controller
             'description' => 'nullable|string',
             'duration' => 'nullable|string|max:255',
             'mode' => 'nullable|string|max:255',
+            'price' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
             'cut_off_grade' => 'nullable|integer|min:1|max:36'
@@ -95,6 +96,7 @@ class ProgramController extends Controller
             'description' => 'nullable|string',
             'duration' => 'nullable|string|max:255',
             'mode' => 'nullable|string|max:255',
+            'price' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
             'cut_off_grade' => 'nullable|integer|min:1|max:36'

@@ -21,8 +21,15 @@ class BackfillStudentPreferredSession extends Command
 
         $updated = 0;
         foreach ($students as $student) {
-            $sessionName = $student->application?->admissionForm?->preferred_session
-                ?? $student->application?->data['preferred_session'] ?? null;
+            $sessionName = null;
+
+            if ($student->application && $student->application->admissionForm) {
+                $sessionName = $student->application->admissionForm->preferred_session;
+            }
+
+            if (!$sessionName && $student->application && is_array($student->application->data)) {
+                $sessionName = $student->application->data['preferred_session'] ?? null;
+            }
 
             if (!$sessionName) {
                 continue;
@@ -36,6 +43,6 @@ class BackfillStudentPreferredSession extends Command
         }
 
         $this->info("Backfilled preferred_session_id for {$updated} student(s).");
-        return self::SUCCESS;
+        return 0;
     }
 }

@@ -97,6 +97,21 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="price" class="form-label">Program Price</label>
+                                    <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror"
+                                           id="price" name="price" value="{{ old('price') }}"
+                                           placeholder="e.g., 3500.00">
+                                    <small class="text-muted">Internal use only (not shown to students yet).</small>
+                                    @error('price')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" 
                                    {{ old('is_active', true) ? 'checked' : '' }}>

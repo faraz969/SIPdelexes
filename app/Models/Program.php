@@ -15,6 +15,7 @@ class Program extends Model
         'description',
         'duration',
         'mode',
+        'price',
         'is_active',
         'sort_order',
         'cut_off_grade'

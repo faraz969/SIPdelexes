@@ -30,6 +30,7 @@
                                         <th>Duration</th>
                                         <th>Mode</th>
                                         <th>Cut Off Grade</th>
+                                        <th>Price</th>
                                         <th>Status</th>
                                         <th>Sort Order</th>
                                         <th>Actions</th>
@@ -43,6 +44,7 @@
                                             <td>{{ $program->duration ?: 'N/A' }}</td>
                                             <td>{{ $program->mode ?: 'N/A' }}</td>
                                             <td>{{ $program->cut_off_grade ?: 'N/A' }}</td>
+                                            <td>{{ $program->price !== null ? number_format($program->price, 2) : 'N/A' }}</td>
                                             <td>
                                                 @if($program->is_active)
                                                     <span class="badge bg-success">Active</span>

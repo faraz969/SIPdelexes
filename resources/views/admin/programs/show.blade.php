@@ -43,6 +43,10 @@
                                     <td>{{ $program->mode ?: 'Not specified' }}</td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Price:</strong></td>
+                                    <td>{{ $program->price !== null ? number_format($program->price, 2) : 'Not specified' }}</td>
+                                </tr>
+                                <tr>
                                     <td><strong>Status:</strong></td>
                                     <td>
                                         @if($program->is_active)
