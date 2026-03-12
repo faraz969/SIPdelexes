@@ -297,27 +297,31 @@
         </p>
     </div>
 
-    <!-- Student Details Table -->
+    <!-- Student Details (each field on its own line) -->
     <table class="student-details-table">
         <tr>
             <td class="detail-label">Student ID:</td>
-            <td class="detail-value">{{ $data['student_id'] }}</td>
-            <td class="detail-spacer"></td>
+            <td class="detail-value" colspan="7">{{ $data['student_id'] }}</td>
+        </tr>
+        <tr>
             <td class="detail-label">Nationality:</td>
-            <td class="detail-value">{{ $data['nationality'] }}</td>
-            <td class="detail-spacer"></td>
+            <td class="detail-value" colspan="7">{{ $data['nationality'] }}</td>
+        </tr>
+        <tr>
             <td class="detail-label">Gender:</td>
-            <td class="detail-value">{{ $data['gender'] }}</td>
+            <td class="detail-value" colspan="7">{{ $data['gender'] }}</td>
         </tr>
         <tr>
             <td class="detail-label">Date of Birth:</td>
-            <td class="detail-value">{{ $data['date_of_birth'] }}</td>
-            <td class="detail-spacer"></td>
+            <td class="detail-value" colspan="7">{{ $data['date_of_birth'] }}</td>
+        </tr>
+        <tr>
             <td class="detail-label">Campus:</td>
-            <td class="detail-value">{{ $data['preferred_campus'] }}</td>
-            <td class="detail-spacer"></td>
+            <td class="detail-value" colspan="7">{{ $data['preferred_campus'] }}</td>
+        </tr>
+        <tr>
             <td class="detail-label">Session:</td>
-            <td class="detail-value">{{ $data['preferred_session'] }}</td>
+            <td class="detail-value" colspan="7">{{ $data['preferred_session'] }}</td>
         </tr>
         <tr>
             <td class="detail-label">Student Email Address:</td>
