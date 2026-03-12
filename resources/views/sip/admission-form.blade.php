@@ -71,7 +71,7 @@
         }
         .student-name {
             font-size: 12pt;
-            font-weight: normal;
+            font-weight: bold;
         }
         .document-date {
             font-size: 11pt;
@@ -279,13 +279,15 @@
 
     <!-- Student Name and Date -->
     <div class="student-name-date">
-        <div class="student-name">{{ $data['student_name'] }}</div>
+        <div class="student-name">
+            <span class="highlight-yellow"><strong>{{ $data['student_name'] }}</strong></span>
+        </div>
         <div class="document-date">{{ $data['date'] }}</div>
     </div>
 
     <!-- Offer Title -->
     <div class="offer-title">
-        OFFER OF ADMISSION FOR {{ strtoupper($data['course_title']) }}
+        OFFER OF ADMISSION FOR <span class="highlight-yellow">{{ strtoupper($data['course_title']) }} DEGREE</span>
     </div>
 
     <!-- Body Text -->
