@@ -100,7 +100,7 @@
             border-collapse: collapse;
         }
         .student-details-table td {
-            padding: 8px 5px;
+            
             vertical-align: top;
         }
         .student-details-table .detail-label {
