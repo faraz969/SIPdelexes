@@ -45,8 +45,9 @@ class SIPAutomationService
             $user = $application->user;
             $user->email = $studentEmail;
             
-            // 4. Generate temporary password
-            $tempPassword = Str::random(12);
+            // 4. Generate temporary password (4-character PIN)
+            // Note: Deliberately short for ease of first login; user is forced to change on first login.
+            $tempPassword = Str::upper(Str::random(4));
             
             // Update both password and PIN to the same value
             // Set password_changed_at to null to force password change on first login
