@@ -488,7 +488,7 @@
 
       
         
-        <!-- Dynamic Exam Sections (shown when any applicant type is selected) -->
+        <!-- Examination details: WASSCE / SSSCE only. IB, Transfer, Other use optional upload below. -->
         <div id="examSectionsWrapper" style="display:none; margin-top:16px;">
           <div class="row">
             <div class="inline-options" style="justify-content:space-between; width:100%;">
@@ -507,7 +507,7 @@
             <div class="exam-section" style="border:1px solid #cfd8dc; border-radius:8px; padding:14px;">
               <div class="row four">
         <div>
-                  <label>Exam Type</label>
+                  <label>Exam Type <span style="color:red">*</span></label>
                   <select class="exam_type">
                     <option value="">-- Select --</option>
                     <option value="1">WASSCE School</option>
@@ -523,15 +523,15 @@
                   </select>
         </div>
         <div>
-                  <label>Sitting Exam</label>
+                  <label>Sitting Exam <span style="color:red">*</span></label>
                   <input type="text" class="sitting_exam" placeholder="e.g. May/June (School)" />
         </div>
         <div>
-                  <label>Year</label>
+                  <label>Year <span style="color:red">*</span></label>
                   <input type="number" class="exam_year" min="1900" max="2100" placeholder="2021" />
         </div>
                 <div>
-                  <label>Index Number</label>
+                  <label>Index Number <span style="color:red">*</span></label>
                   <div class="inline-options" style="gap:8px; align-items:end;">
                     <input type="text" class="index_number" placeholder="0010408006" style="flex:1;" />
                     <button type="button" class="btn-link fetch_waec_btn" title="Fetch WAEC Results">Fetch</button>
@@ -544,14 +544,14 @@
                   <h5 style="margin:0;">Subjects & Grades</h5>
                   <button type="button" class="btn-link addSubjectBtn">+ Add More Fields</button>
         </div>
-                <div class="hint">Tick up to 6 subjects as your Best 6.</div>
+                <div class="hint">Tick exactly 6 subjects as your Best 6 (required).</div>
                 <table class="inst-table" style="margin-top:8px;">
                   <thead>
                     <tr>
-                      <th style="width:55%">Subject</th>
-                      <th style="width:20%">Grade (Letter)</th>
-                      <th style="width:15%">Grade (Number)</th>
-                      <th style="width:10%">Best 6</th>
+                      <th style="width:55%">Subject <span style="color:red">*</span></th>
+                      <th style="width:20%">Grade (Letter) <span style="color:red">*</span></th>
+                      <th style="width:15%">Grade (Number) <span style="color:red">*</span></th>
+                      <th style="width:10%">Best 6 <span style="color:red">*</span></th>
                     </tr>
                   </thead>
                   <tbody class="subjectsBody"></tbody>
@@ -583,6 +583,23 @@
             </tr>
           </template>
       </div>
+
+        <div id="alternativeEntryDocsWrapper" style="display:none; margin-top:16px;">
+          <fieldset style="border:1px solid #cfd8dc; border-radius:8px; padding:14px;">
+            <legend>Supporting qualification document</legend>
+            <p class="hint">Upload a copy of your transcript, IB diploma, transfer letter, or other qualification (PDF or image). This is optional.</p>
+            @if(!empty($submitted) && !empty($uploadedFiles['alternative_entry_document']))
+              <div class="mb-2">
+                <a href="{{ asset('storage/'.$uploadedFiles['alternative_entry_document']) }}" target="_blank">View uploaded file</a>
+              </div>
+            @endif
+            @if(empty($submitted))
+              <label for="alternative_entry_document">Upload document</label>
+              <input type="file" id="alternative_entry_document" name="alternative_entry_document" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+              <small class="hint" style="display:block;margin-top:4px;">Max file size: 1MB</small>
+            @endif
+          </fieldset>
+        </div>
     </fieldset>
       </div>
 
@@ -734,90 +751,6 @@
 
       <div style="margin-top:10px;">
         <button type="button" class="btn-secondary" onclick="addEmploymentRow()">Add another</button>
-      </div>
-        
-        <!-- Dynamic Exam Sections (shown when any applicant type is checked) -->
-        <div id="examSectionsWrapper" style="display:none; margin-top:16px;">
-          <div class="row">
-            <div class="inline-options" style="justify-content:space-between; width:100%;">
-              <h4 style="margin:0;">Examination Details</h4>
-              <button type="button" class="btn-secondary" id="addExamSectionBtn">+ Add New Section</button>
-            </div>
-          </div>
-
-          <div id="examSectionsContainer" style="margin-top:12px; display:grid; gap:16px;"></div>
-
-          <template id="examSectionTemplate">
-            <div class="exam-section" style="border:1px solid #cfd8dc; border-radius:8px; padding:14px;">
-              <div class="row four">
-                <div>
-                  <label>Exam Type</label>
-                  <select class="exam_type">
-                    <option value="">-- Select --</option>
-                    <option value="1">WASSCE School</option>
-                    <option value="2">WASSCE Private</option>
-                    <option value="3">BECE School</option>
-                    <option value="4">BECE Private</option>
-                    <option value="5">SSCE School</option>
-                    <option value="6">SSCE Private</option>
-                    <option value="7">School ABCE</option>
-                    <option value="8">School GBCE</option>
-                    <option value="9">Private ABCE</option>
-                    <option value="10">Private GBCE</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Sitting Exam</label>
-                  <input type="text" class="sitting_exam" placeholder="e.g. May/June (School)" />
-                </div>
-                <div>
-                  <label>Year</label>
-                  <input type="number" class="exam_year" min="1900" max="2100" placeholder="2021" />
-                </div>
-                <div>
-                  <label>Index Number</label>
-                  <div class="inline-options" style="gap:8px; align-items:end;">
-                    <input type="text" class="index_number" placeholder="0010408006" style="flex:1;" />
-                    <button type="button" class="btn-link fetch_waec_btn" title="Fetch WAEC Results">Fetch</button>
-                  </div>
-                </div>
-              </div>
-
-              <div style="margin-top:12px;">
-                <div class="inline-options" style="justify-content:space-between; width:100%;">
-                  <h5 style="margin:0;">Subjects & Grades</h5>
-                  <button type="button" class="btn-link addSubjectBtn">+ Add More Fields</button>
-                </div>
-                <div class="hint">Tick up to 6 subjects as your Best 6.</div>
-                <table class="inst-table" style="margin-top:8px;">
-                  <thead>
-                    <tr>
-                      <th style="width:55%">Subject</th>
-                      <th style="width:20%">Grade (Letter)</th>
-                      <th style="width:15%">Grade (Number)</th>
-                      <th style="width:10%">Best 6</th>
-                    </tr>
-                  </thead>
-                  <tbody class="subjectsBody"></tbody>
-                </table>
-              </div>
-
-              <div class="inline-options" style="justify-content:flex-end; margin-top:10px;">
-                <button type="button" class="btn-link removeExamSectionBtn">Remove Section</button>
-              </div>
-            </div>
-          </template>
-
-          <template id="subjectRowTemplate">
-            <tr>
-              <td><input type="text" class="subject_input" placeholder="e.g., Core Mathematics" /></td>
-              <td><input type="text" class="grade_letter_input" placeholder="e.g., A1, B2" /></td>
-              <td><input type="number" class="grade_number_input" min="1" max="9" placeholder="1" /></td>
-              <td style="text-align:center;">
-                <input type="checkbox" class="best_six_chk" />
-              </td>
-            </tr>
-          </template>
       </div>
     </fieldset>
       </div>
@@ -1516,23 +1449,22 @@ function validateCurrentTab() {
   const currentTabContent = document.querySelector('.tab-content.active');
   const requiredFields = currentTabContent.querySelectorAll('input[required], select[required], textarea[required]');
   
-  // Special validation for Education tab - Applicant Type must have at least one checkbox selected
+  // Special validation for Education tab - Applicant Type (radio) must be selected
   if (currentTab === 1) { // Education tab
-    const applicantTypeCheckboxes = document.querySelectorAll('.applicant-type-checkbox');
-    const atLeastOneChecked = Array.from(applicantTypeCheckboxes).some(cb => cb.checked);
+    const selectedRadio = document.querySelector('input[name="entry_type"]:checked');
     
-    if (!atLeastOneChecked) {
+    if (!selectedRadio) {
       const applicantTypeGroup = document.getElementById('applicantTypeGroup');
       if (applicantTypeGroup) {
         applicantTypeGroup.style.outline = '2px solid #e53935';
         applicantTypeGroup.style.borderRadius = '4px';
         applicantTypeGroup.style.padding = '4px';
         setTimeout(() => {
-          const firstCheckbox = applicantTypeCheckboxes[0];
-          if (firstCheckbox) firstCheckbox.focus();
+          const firstRadio = document.querySelector('.applicant-type-radio');
+          if (firstRadio) firstRadio.focus();
         }, 100);
       }
-      alert('Please select at least one Applicant Type (WASSCE, SSSCE, International Baccalaureate, Transfer, or Other). This field is required.');
+      alert('Please select your Applicant Type (WASSCE, SSSCE, International Baccalaureate, Transfer, or Other). This field is required.');
       return false;
     } else {
       // Remove error styling if validation passes
@@ -1586,19 +1518,20 @@ function updateTabCompletionStatus() {
         const selects = tabContent.querySelectorAll('select');
         completed = Array.from(selects).some(s => String(s.value || '').trim().length > 0);
       } else if (tabId === 'education') {
-        // Education tab: Must have at least one applicant type checkbox selected
-        const applicantTypeCheckboxes = document.querySelectorAll('.applicant-type-checkbox');
-        const atLeastOneChecked = Array.from(applicantTypeCheckboxes).some(cb => cb.checked);
+        // Education tab: Must have applicant type (radio) selected
+        const selectedRadio = tabContent.querySelector('input[name="entry_type"]:checked');
+        const hasApplicantType = !!selectedRadio;
         
         // Also check if there are any other fields filled
         const anyFields = tabContent.querySelectorAll('input, select, textarea');
         const hasOtherFields = Array.from(anyFields).some(f => {
-          if (f.classList && f.classList.contains('applicant-type-checkbox')) return false; // Skip applicant type checkboxes
+          if (f.name === 'entry_type' && f.type === 'radio') return false;
+          if (f.classList && f.classList.contains('applicant-type-radio')) return false;
           if (f.type === 'checkbox' || f.type === 'radio') return f.checked;
           return String(f.value || '').trim().length > 0;
         });
         
-        completed = atLeastOneChecked && hasOtherFields;
+        completed = hasApplicantType && hasOtherFields;
       } else {
         const anyFields = tabContent.querySelectorAll('input, select, textarea');
         completed = Array.from(anyFields).some(f => {
@@ -1608,11 +1541,10 @@ function updateTabCompletionStatus() {
       }
     }
     
-    // Special check: Education tab must have at least one applicant type selected
+    // Special check: Education tab must have applicant type selected
     if (button.dataset.tab === 'education') {
-      const applicantTypeCheckboxes = document.querySelectorAll('.applicant-type-checkbox');
-      const atLeastOneChecked = Array.from(applicantTypeCheckboxes).some(cb => cb.checked);
-      if (!atLeastOneChecked) {
+      const selectedRadio = tabContent.querySelector('input[name="entry_type"]:checked');
+      if (!selectedRadio) {
         completed = false;
       }
     }
@@ -1650,19 +1582,18 @@ document.getElementById('sideNavList').addEventListener('click', function(e){
 document.addEventListener('input', updateTabCompletionStatus);
 document.addEventListener('change', updateTabCompletionStatus);
 
-// Clear error styling when applicant type checkbox is selected
+// Clear error styling when applicant type (radio) is selected
 document.addEventListener('DOMContentLoaded', function() {
-  const applicantTypeCheckboxes = document.querySelectorAll('.applicant-type-checkbox');
-  applicantTypeCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
+  const applicantTypeRadios = document.querySelectorAll('.applicant-type-radio');
+  applicantTypeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
       const applicantTypeGroup = document.getElementById('applicantTypeGroup');
-      if (applicantTypeGroup && Array.from(applicantTypeCheckboxes).some(cb => cb.checked)) {
-        // Clear error styling if at least one checkbox is selected
+      if (applicantTypeGroup && document.querySelector('input[name="entry_type"]:checked')) {
         applicantTypeGroup.style.outline = '';
         applicantTypeGroup.style.borderRadius = '';
         applicantTypeGroup.style.padding = '';
       }
-      autosaveDraft(); // Auto-save when checkbox changes
+      autosaveDraft();
     });
   });
 });
@@ -1743,11 +1674,22 @@ function autosaveDraft() {
   const wrapper = document.getElementById('examSectionsWrapper');
   const container = document.getElementById('examSectionsContainer');
   const addExamBtn = document.getElementById('addExamSectionBtn');
+  const altWrapper = document.getElementById('alternativeEntryDocsWrapper');
   const applicantTypeRadios = Array.from(document.querySelectorAll('.applicant-type-radio'));
 
   function getSelectedEntryType(){
     const checked = applicantTypeRadios.find(r => r.checked);
     return checked ? checked.value : null;
+  }
+
+  function isWassceOrSssce(){
+    const v = getSelectedEntryType();
+    return v === 'entry_wassce' || v === 'entry_sssce';
+  }
+
+  function isAlternativeEntry(){
+    const v = getSelectedEntryType();
+    return v === 'entry_ib' || v === 'entry_transfer' || v === 'entry_other';
   }
 
   function syncEntryTypeHiddenFields(){
@@ -1761,24 +1703,31 @@ function autosaveDraft() {
     });
   }
 
-  function anyApplicantTypeSelected(){
-    return !!getSelectedEntryType();
-  }
-
-  function toggleWrapper(){
-    wrapper.style.display = anyApplicantTypeSelected() ? 'block' : 'none';
+  function updateEntryTypePanels(){
+    const showExam = isWassceOrSssce();
+    const oldMode = wrapper ? wrapper.dataset.lastMode : '';
+    if (wrapper) {
+      if (!showExam && container && oldMode === 'wassce') {
+        container.innerHTML = '';
+      }
+      wrapper.style.display = showExam ? 'block' : 'none';
+      wrapper.dataset.lastMode = showExam ? 'wassce' : 'other';
+      if (showExam && addExamBtn) addExamBtn.style.display = '';
+    }
+    if (altWrapper) {
+      altWrapper.style.display = isAlternativeEntry() ? 'block' : 'none';
+    }
   }
 
   applicantTypeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       syncEntryTypeHiddenFields();
-      toggleWrapper();
+      updateEntryTypePanels();
     });
   });
 
-  // Initial sync on load (for prefilled data)
   syncEntryTypeHiddenFields();
-  toggleWrapper();
+  updateEntryTypePanels();
 
   function addSubjectRow(sectionEl){
     const tmpl = document.getElementById('subjectRowTemplate');
@@ -1813,7 +1762,7 @@ function autosaveDraft() {
         const selected = Array.from(checks).filter(c => c.checked);
         if (selected.length > 6) {
           chk.checked = false;
-          alert('You can select only up to 6 subjects as Best 6.');
+          alert('You can select at most 6 subjects as Best 6.');
         }
         computeBest6Total(sectionEl);
       });
@@ -1844,7 +1793,9 @@ function autosaveDraft() {
     if (yearInput) { yearInput.name = `exam_sections[${sectionIdx}][year]`; yearInput.addEventListener('change', () => autosaveDraft()); }
     if (indexInput) { indexInput.name = `exam_sections[${sectionIdx}][index_number]`; indexInput.addEventListener('change', () => autosaveDraft()); }
 
-    setTimeout(() => addSubjectRow(sectionEl));
+    for (let i = 0; i < 6; i++) {
+      addSubjectRow(sectionEl);
+    }
 
     // Recompute total if number value changes
     sectionEl.addEventListener('input', (e) => {
@@ -1950,8 +1901,50 @@ function autosaveDraft() {
   }
 
   if (addExamBtn) addExamBtn.addEventListener('click', addExamSection);
-  // If we have prefilled exam sections in draft, render them
-  if (Array.isArray(window.prefillExamSections) && window.prefillExamSections.length && !window.isSubmittedView) {
+
+  window.validateWassceExamSections = function() {
+    const cont = document.getElementById('examSectionsContainer');
+    if (!cont) return false;
+    const sections = cont.querySelectorAll('.exam-section');
+    if (sections.length === 0) {
+      alert('Please add at least one Examination Details section using "+ Add New Section".');
+      return false;
+    }
+    for (let s = 0; s < sections.length; s++) {
+      const sectionEl = sections[s];
+      const typeInput = sectionEl.querySelector('.exam_type');
+      const sittingInput = sectionEl.querySelector('.sitting_exam');
+      const yearInput = sectionEl.querySelector('.exam_year');
+      const indexInput = sectionEl.querySelector('.index_number');
+      if (!typeInput?.value?.trim() || !sittingInput?.value?.trim() || !String(yearInput?.value ?? '').trim() || !indexInput?.value?.trim()) {
+        alert('Please complete Exam Type, Sitting Exam, Year, and Index Number for every examination section.');
+        return false;
+      }
+      const rows = sectionEl.querySelectorAll('.subjectsBody tr');
+      let bestSixCount = 0;
+      for (const tr of rows) {
+        const subj = tr.querySelector('.subject_input');
+        const letter = tr.querySelector('.grade_letter_input');
+        const num = tr.querySelector('.grade_number_input');
+        const chk = tr.querySelector('.best_six_chk');
+        const rowUsed = !!(subj?.value?.trim()) || !!(letter?.value?.trim()) || (num?.value !== '' && num?.value != null) || !!(chk?.checked);
+        if (rowUsed) {
+          if (!subj?.value?.trim() || !letter?.value?.trim() || num?.value === '' || num?.value == null) {
+            alert('Please complete Subject, Grade (Letter), and Grade (Number) for every subject row you have entered.');
+            return false;
+          }
+        }
+        if (chk?.checked) bestSixCount++;
+      }
+      if (bestSixCount !== 6) {
+        alert('In each examination section, you must tick exactly 6 subjects as your Best 6.');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (isWassceOrSssce() && Array.isArray(window.prefillExamSections) && window.prefillExamSections.length && !window.isSubmittedView) {
     window.prefillExamSections.forEach((sec, idx) => {
       addExamSection();
       const sectionEl = container.querySelectorAll('.exam-section')[idx];
@@ -1961,19 +1954,25 @@ function autosaveDraft() {
       sectionEl.querySelector('.exam_year').value = sec.year || '';
       sectionEl.querySelector('.index_number').value = sec.index_number || '';
       const subjects = Array.isArray(sec.subjects) ? sec.subjects : [];
-      subjects.forEach((row, r) => {
-        addSubjectRow(sectionEl);
-        const lastRow = sectionEl.querySelectorAll('.subjectsBody tr')[r];
-        if (!lastRow) return;
-        const subjectInput = lastRow.querySelector('.subject_input');
-        const letterInput = lastRow.querySelector('.grade_letter_input');
-        const numberInput = lastRow.querySelector('.grade_number_input');
-        const bestChk = lastRow.querySelector('.best_six_chk');
-        if (subjectInput) subjectInput.value = row.subject || '';
-        if (letterInput) letterInput.value = row.grade_letter || '';
-        if (numberInput) numberInput.value = row.grade_number || '';
-        if (bestChk) bestChk.checked = !!row.is_best_six;
-      });
+      const tbody = sectionEl.querySelector('.subjectsBody');
+      if (tbody) tbody.innerHTML = '';
+      if (subjects.length) {
+        subjects.forEach((row) => {
+          addSubjectRow(sectionEl);
+          const lastRow = sectionEl.querySelector('.subjectsBody tr:last-child');
+          if (!lastRow) return;
+          const subjectInput = lastRow.querySelector('.subject_input');
+          const letterInput = lastRow.querySelector('.grade_letter_input');
+          const numberInput = lastRow.querySelector('.grade_number_input');
+          const bestChk = lastRow.querySelector('.best_six_chk');
+          if (subjectInput) subjectInput.value = row.subject || '';
+          if (letterInput) letterInput.value = row.grade_letter || '';
+          if (numberInput) numberInput.value = row.grade_number || '';
+          if (bestChk) bestChk.checked = !!row.is_best_six;
+        });
+      } else {
+        for (let i = 0; i < 6; i++) addSubjectRow(sectionEl);
+      }
       computeBest6Total(sectionEl);
     });
   }
@@ -2269,24 +2268,13 @@ document.addEventListener('DOMContentLoaded', function() {
           return false;
         }
 
-        // Additional rule: If WASSCE or SSSCE is selected, at least one exam section with Index Number must be provided
         const entryValue = selectedRadio.value;
         if (entryValue === 'entry_wassce' || entryValue === 'entry_sssce') {
-          const examSectionsWrapper = document.getElementById('examSectionsWrapper');
-          const examSections = examSectionsWrapper ? examSectionsWrapper.querySelectorAll('.exam-section') : [];
-          let hasIndex = false;
-          examSections.forEach(section => {
-            const indexInput = section.querySelector('.index_number');
-            if (indexInput && indexInput.value.trim() !== '') {
-              hasIndex = true;
-            }
-          });
-          if (!hasIndex) {
+          if (typeof window.validateWassceExamSections === 'function' && !window.validateWassceExamSections()) {
             e.preventDefault();
             e.stopPropagation();
             currentTab = 1;
             showTab(currentTab);
-            alert('Since you selected WASSCE or SSSCE, please add at least one Examination Details section and enter your Index Number.');
             return false;
           }
         }
