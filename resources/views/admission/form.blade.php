@@ -491,10 +491,7 @@
         <!-- Examination details: WASSCE / SSSCE only. IB, Transfer, Other use optional upload below. -->
         <div id="examSectionsWrapper" style="display:none; margin-top:16px;">
           <div class="row">
-            <div class="inline-options" style="justify-content:space-between; width:100%;">
-              <h4 style="margin:0;">Examination Details</h4>
-              <button type="button" class="btn-secondary" id="addExamSectionBtn">+ Add New Section</button>
-            </div>
+            <h4 style="margin:0;">Examination Details</h4>
           </div>
 
           <div class="alert" style="margin-top:10px; background:#0f4c5c; color:#fff; border-radius:8px; padding:12px;">
@@ -502,6 +499,10 @@
           </div>
 
           <div id="examSectionsContainer" style="margin-top:12px; display:grid; gap:16px;"></div>
+
+          <div style="margin-top:12px;">
+            <button type="button" class="btn-secondary" id="addExamSectionBtn">+ Add New Section</button>
+          </div>
 
           <template id="examSectionTemplate">
             <div class="exam-section" style="border:1px solid #cfd8dc; border-radius:8px; padding:14px;">
@@ -1719,10 +1720,19 @@ function autosaveDraft() {
     }
   }
 
+  function ensureDefaultExamSection(){
+    if (window.isSubmittedView) return;
+    if (!isWassceOrSssce() || !container) return;
+    if (container.querySelectorAll('.exam-section').length === 0) {
+      addExamSection();
+    }
+  }
+
   applicantTypeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       syncEntryTypeHiddenFields();
       updateEntryTypePanels();
+      ensureDefaultExamSection();
     });
   });
 
@@ -1876,6 +1886,9 @@ function autosaveDraft() {
     sectionEl.querySelector('.removeExamSectionBtn').addEventListener('click', () => {
       if (confirm('Remove this exam section?')) {
         sectionEl.remove();
+        if (isWassceOrSssce() && container.querySelectorAll('.exam-section').length === 0) {
+          addExamSection();
+        }
       }
     });
 
@@ -1907,7 +1920,7 @@ function autosaveDraft() {
     if (!cont) return false;
     const sections = cont.querySelectorAll('.exam-section');
     if (sections.length === 0) {
-      alert('Please add at least one Examination Details section using "+ Add New Section".');
+      alert('Please complete at least one Examination Details section.');
       return false;
     }
     for (let s = 0; s < sections.length; s++) {
@@ -1976,6 +1989,8 @@ function autosaveDraft() {
       computeBest6Total(sectionEl);
     });
   }
+
+  ensureDefaultExamSection();
 })();
 
 // Existing functions
