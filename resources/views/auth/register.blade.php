@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('hide_navbar', '1')
+
 @section('title', 'Register - DELEXES UNIVERSITY COLLEGE')
 
 @section('content')
@@ -96,13 +98,16 @@
 <style>
 .auth-container {
     display: flex;
-    min-height: calc(100vh - 76px);
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 .auth-background {
-    flex: 0 0 70%;
+    flex: 0 0 65%;
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
     background-image: url('{{ asset("images/background.jpg") }}');
     background-size: cover;
@@ -166,7 +171,7 @@
 }
 
 .auth-form-section {
-    flex: 0 0 30%;
+    flex: 0 0 35%;
     background: white;
     display: flex;
     align-items: center;

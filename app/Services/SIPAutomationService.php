@@ -150,7 +150,7 @@ class SIPAutomationService
         $preferredSessionName = $admissionForm->preferred_session ?? $application->data['preferred_session'] ?? null;
         if ($preferredSessionName) {
             $session = Session::where('name', $preferredSessionName)->first();
-            $preferredSessionId = $session?->id;
+            $preferredSessionId = $session ? $session->id : null;
         }
 
         // Prepare biodata

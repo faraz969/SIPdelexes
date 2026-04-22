@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('hide_navbar', '1')
+
 @section('title', 'Login - DELEXES UNIVERSITY COLLEGE')
 
 @section('content')
@@ -23,17 +25,22 @@
                 @csrf
 
                 <div class="form-group">
-                    <label for="login" class="form-label">{{ __('Email, Serial Number, or Student ID') }}</label>
+                    <label for="login" class="form-label label-with-help">
+                        {{ __('Email, Serial Number, or Student ID') }}
+                        <button type="button" class="help-trigger" aria-label="Identification format help">
+                            ?
+                            <span class="help-tooltip">
+                                <strong>Students:</strong> Use your Student Email (e.g., 11000001@delexesuniversity.edu.gh) or Student ID (e.g., 11000001)<br>
+                                <strong>Others:</strong> Use your email, serial number (e.g., DUC927121), or Student ID
+                            </span>
+                        </button>
+                    </label>
                     <input id="login" type="text" class="form-control @error('login') is-invalid @enderror" name="login" value="{{ old('login') }}" required autocomplete="username" autofocus placeholder="Enter your email, serial number, or student ID">
                     @error('login')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
-                    <small class="form-text text-muted">
-                        <strong>Students:</strong> Use your Student Email (e.g., 11000001@delexesuniversity.edu.gh) or Student ID (e.g., 11000001)<br>
-                        <strong>Others:</strong> Use your email, serial number (e.g., DUC927121), or Student ID
-                    </small>
                 </div>
 
                 <div class="form-group">
@@ -83,13 +90,16 @@
 <style>
 .auth-container {
     display: flex;
-    min-height: calc(100vh - 76px);
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 .auth-background {
-    flex: 0 0 70%;
+    flex: 0 0 65%;
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
     background-image: url('{{ asset("images/background.jpg") }}');
     background-size: cover;
@@ -153,7 +163,7 @@
 }
 
 .auth-form-section {
-    flex: 0 0 30%;
+    flex: 0 0 35%;
     background: white;
     display: flex;
     align-items: center;
@@ -196,6 +206,60 @@
     margin-bottom: 0.5rem;
     font-weight: 500;
     color: #374151;
+}
+
+.label-with-help {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-trigger {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #9ca3af;
+    color: #6b7280;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-trigger:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.help-tooltip {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: 320px;
+    background: #111827;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 20;
+}
+
+.help-trigger:hover .help-tooltip,
+.help-trigger:focus .help-tooltip {
+    opacity: 1;
 }
 
 .form-control {

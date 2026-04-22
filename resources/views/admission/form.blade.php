@@ -31,7 +31,7 @@
     .preview-box.active { display: block; }
     .preview-box img { max-width: 100%; height: auto; border-radius: 6px; }
     .file-row { display: grid; gap: 10px; }
-    @media (min-width: 720px) { .file-row.two { grid-template-columns: 1fr auto; align-items: end; } .file-row.three { grid-template-columns: 1fr 1fr auto; align-items: end; } }
+    @media (min-width: 720px) { .file-row.two { grid-template-columns: 1fr auto; align-items: end; } .file-row.three {  align-items: end; } }
     .file-names { font-size: 13px; color: #444; margin-top: 6px; }
     .inst-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     .inst-table th, .inst-table td { border: 1px solid #e5e5e5; padding: 8px; vertical-align: top; }
@@ -42,7 +42,7 @@
     .tab-container { margin-bottom: 20px; }
     /* Sidebar layout */
     .app-form-layout { display: flex; gap: 16px; }
-    .side-nav { width: 400px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; height: fit-content; }
+    .side-nav { width: 27%; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; height: fit-content; }
     .side-nav-header { padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
     .side-nav-list { list-style: none; margin: 0; padding: 8px; }
     .side-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
