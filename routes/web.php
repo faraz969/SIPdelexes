@@ -76,6 +76,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Admission Form Default Settings
     Route::get('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'edit'])->name('admission-form-settings.edit');
     Route::put('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'update'])->name('admission-form-settings.update');
+    Route::get('admission-payments', [App\Http\Controllers\Admin\AdmissionPaymentController::class, 'index'])->name('admission-payments.index');
     
     // Lecturers Management
     Route::resource('lecturers', App\Http\Controllers\Admin\LecturerController::class);

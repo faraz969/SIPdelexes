@@ -116,6 +116,7 @@
 
                                 <div class="sidebar-group-label">SYSTEM</div>
                                 <a class="{{ request()->routeIs('admin.erp.*') && !request()->routeIs('admin.erp.student-emails') ? 'active' : '' }}" href="{{ route('admin.erp.dashboard') }}"><i class="fas fa-cogs"></i> ERP Management</a>
+                                <a class="{{ $navActive('admin.admission-payments.*') }}" href="{{ route('admin.admission-payments.index') }}"><i class="fas fa-receipt"></i> Admission Payments</a>
                                 <a class="{{ $navActive('admin.erp.student-emails') }}" href="{{ route('admin.erp.student-emails') }}"><i class="fas fa-envelope"></i> Student Emails & Passwords</a>
                                 <a class="{{ $navActive('admin.registration-rules.*') }}" href="{{ route('admin.registration-rules.index') }}"><i class="fas fa-ruler-combined"></i> Registration Rules</a>
                                 <a class="{{ $navActive('admin.admission-form-settings.*') }}" href="{{ route('admin.admission-form-settings.edit') }}"><i class="fas fa-sliders"></i> Admission Form Defaults</a>
