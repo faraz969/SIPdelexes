@@ -20,7 +20,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Auth::routes();
+Auth::routes(['register' => false]);
+
+// Disable direct self-signup and route users to PIN purchase flow
+Route::get('/register', function () {
+    return redirect()->route('registration.create');
+})->name('register');
 
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
