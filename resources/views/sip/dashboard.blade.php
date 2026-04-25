@@ -110,7 +110,7 @@
 <style>
 .sip-dashboard{padding:8px}
 .sip-hero{
-    margin-bottom:16px;padding:5px 11px;
+    margin-bottom:16px;padding:8px 24px;
     background: linear-gradient(120deg, #1e3a8a, #3758e0);
     box-shadow: 0 10px 24px rgba(30, 58, 138, .25);
     border-radius:14px;
