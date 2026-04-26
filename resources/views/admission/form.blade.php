@@ -677,10 +677,11 @@
                 <table class="inst-table" style="margin-top:8px;">
                   <thead>
                     <tr>
-                      <th style="width:55%">Subject <span style="color:red">*</span></th>
-                      <th style="width:20%">Grade (Letter) <span style="color:red">*</span></th>
-                      <th style="width:15%">Grade (Number) <span style="color:red">*</span></th>
+                      <th style="width:50%">Subject <span style="color:red">*</span></th>
+                      <th style="width:18%">Grade (Letter) <span style="color:red">*</span></th>
+                      <th style="width:12%">Grade (Number) <span style="color:red">*</span></th>
                       <th style="width:10%">Best 6 <span style="color:red">*</span></th>
+                      <th style="width:10%; text-align:center;">Remove</th>
                     </tr>
                   </thead>
                   <tbody class="subjectsBody"></tbody>
@@ -690,6 +691,7 @@
                       <td style="text-align:center; font-weight:700;">
                         <span class="best6TotalValue">0</span>
                       </td>
+                      <td></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -708,6 +710,9 @@
               <td><input type="number" class="grade_number_input" min="1" max="9" placeholder="1" /></td>
               <td style="text-align:center;">
                 <input type="checkbox" class="best_six_chk" />
+              </td>
+              <td style="text-align:center; vertical-align:middle;">
+                <button type="button" class="btn-link removeSubjectRowBtn" title="Remove this row">Remove</button>
               </td>
             </tr>
           </template>
@@ -1603,6 +1608,12 @@ function validateCurrentTab() {
         applicantTypeGroup.style.borderRadius = '';
         applicantTypeGroup.style.padding = '';
       }
+      const entryValue = selectedRadio.value;
+      if ((entryValue === 'entry_wassce' || entryValue === 'entry_sssce') && typeof window.validateWassceExamSections === 'function') {
+        if (!window.validateWassceExamSections()) {
+          return false;
+        }
+      }
     }
   }
   
@@ -1870,20 +1881,19 @@ function autosaveDraft() {
     const clone = tmpl.content.cloneNode(true);
     tbody.appendChild(clone);
 
-    // Assign names for newly added row
-    const sectionIdx = parseInt(sectionEl.dataset.sectionIndex, 10);
-    const rowIdx = tbody.querySelectorAll('tr').length - 1;
-    const lastRow = tbody.querySelectorAll('tr')[rowIdx];
+    reindexSubjectRows(sectionEl);
+
+    const lastRow = tbody.querySelector('tr:last-child');
     if (lastRow) {
       const subjectInput = lastRow.querySelector('.subject_input');
       const letterInput = lastRow.querySelector('.grade_letter_input');
       const numberInput = lastRow.querySelector('.grade_number_input');
       const bestChk = lastRow.querySelector('.best_six_chk');
 
-      if (subjectInput) { subjectInput.name = `exam_sections[${sectionIdx}][subjects][${rowIdx}][subject]`; subjectInput.addEventListener('change', () => autosaveDraft()); }
-      if (letterInput) { letterInput.name = `exam_sections[${sectionIdx}][subjects][${rowIdx}][grade_letter]`; letterInput.addEventListener('change', () => autosaveDraft()); }
-      if (numberInput) { numberInput.name = `exam_sections[${sectionIdx}][subjects][${rowIdx}][grade_number]`; numberInput.addEventListener('input', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
-      if (bestChk) { bestChk.name = `exam_sections[${sectionIdx}][subjects][${rowIdx}][is_best_six]`; bestChk.addEventListener('change', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
+      if (subjectInput) { subjectInput.addEventListener('change', () => autosaveDraft()); }
+      if (letterInput) { letterInput.addEventListener('change', () => autosaveDraft()); }
+      if (numberInput) { numberInput.addEventListener('input', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
+      if (bestChk) { bestChk.addEventListener('change', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
     }
 
     enforceBestSix(sectionEl);
@@ -1942,6 +1952,22 @@ function autosaveDraft() {
     // Bind add subject button
     sectionEl.querySelector('.addSubjectBtn').addEventListener('click', () => addSubjectRow(sectionEl));
 
+    sectionEl.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('.removeSubjectRowBtn');
+      if (!btn) return;
+      ev.preventDefault();
+      const tbody = sectionEl.querySelector('.subjectsBody');
+      const tr = btn.closest('tr');
+      if (!tbody || !tr || !tbody.contains(tr)) return;
+      if (tbody.querySelectorAll('tr').length <= 1) {
+        alert('You must keep at least one subject row. To clear it, edit the fields or remove the whole exam section instead.');
+        return;
+      }
+      tr.remove();
+      reindexSubjectRows(sectionEl);
+      autosaveDraft();
+    });
+
     // Bind WAEC fetch button
     const fetchBtn = sectionEl.querySelector('.fetch_waec_btn');
     if (fetchBtn) {
@@ -1995,6 +2021,7 @@ function autosaveDraft() {
             if (letterInput) letterInput.value = row.grade || '';
             if (numberInput) numberInput.value = mapWaecLetterToNumber(row.grade);
           });
+          reindexSubjectRows(sectionEl);
           computeBest6Total(sectionEl);
           autosaveDraft();
           alert('WAEC results fetched successfully. Please review and complete any missing fields.');
@@ -2038,6 +2065,24 @@ function autosaveDraft() {
     if (out) out.textContent = total;
   }
 
+  function reindexSubjectRows(sectionEl){
+    const sectionIdx = parseInt(sectionEl.dataset.sectionIndex, 10);
+    if (isNaN(sectionIdx)) return;
+    const tbody = sectionEl.querySelector('.subjectsBody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr').forEach((tr, rowIdx) => {
+      const subjectInput = tr.querySelector('.subject_input');
+      const letterInput = tr.querySelector('.grade_letter_input');
+      const numberInput = tr.querySelector('.grade_number_input');
+      const bestChk = tr.querySelector('.best_six_chk');
+      if (subjectInput) subjectInput.name = 'exam_sections[' + sectionIdx + '][subjects][' + rowIdx + '][subject]';
+      if (letterInput) letterInput.name = 'exam_sections[' + sectionIdx + '][subjects][' + rowIdx + '][grade_letter]';
+      if (numberInput) numberInput.name = 'exam_sections[' + sectionIdx + '][subjects][' + rowIdx + '][grade_number]';
+      if (bestChk) bestChk.name = 'exam_sections[' + sectionIdx + '][subjects][' + rowIdx + '][is_best_six]';
+    });
+    computeBest6Total(sectionEl);
+  }
+
   if (addExamBtn) addExamBtn.addEventListener('click', addExamSection);
 
   window.validateWassceExamSections = function() {
@@ -2065,14 +2110,20 @@ function autosaveDraft() {
         const letter = tr.querySelector('.grade_letter_input');
         const num = tr.querySelector('.grade_number_input');
         const chk = tr.querySelector('.best_six_chk');
-        const rowUsed = !!(subj?.value?.trim()) || !!(letter?.value?.trim()) || (num?.value !== '' && num?.value != null) || !!(chk?.checked);
+        if (!subj || !letter || !num || !chk) continue;
+        const isEmpty = !subj.value.trim() && !letter.value.trim() && (num.value === '' || num.value == null) && !chk.checked;
+        if (isEmpty) {
+          alert('You have one or more empty subject rows. Please fill Subject, Grade (Letter), and Grade (Number) for each row you keep, or remove empty rows using Remove.');
+          return false;
+        }
+        const rowUsed = !!(subj.value.trim()) || !!(letter.value.trim()) || (num.value !== '' && num.value != null) || !!chk.checked;
         if (rowUsed) {
-          if (!subj?.value?.trim() || !letter?.value?.trim() || num?.value === '' || num?.value == null) {
+          if (!subj.value.trim() || !letter.value.trim() || num.value === '' || num.value == null) {
             alert('Please complete Subject, Grade (Letter), and Grade (Number) for every subject row you have entered.');
             return false;
           }
         }
-        if (chk?.checked) bestSixCount++;
+        if (chk.checked) bestSixCount++;
       }
       if (bestSixCount !== 6) {
         alert('In each examination section, you must tick exactly 6 subjects as your Best 6.');
@@ -2111,6 +2162,7 @@ function autosaveDraft() {
       } else {
         for (let i = 0; i < 6; i++) addSubjectRow(sectionEl);
       }
+      reindexSubjectRows(sectionEl);
       computeBest6Total(sectionEl);
     });
   }
