@@ -879,7 +879,7 @@
       </table>
 
       <div style="margin-top:10px;">
-        <button type="button" class="btn-secondary" onclick="addEmploymentRow()">Add another</button>
+        <button type="button" class="btn btn-secondary" onclick="addEmploymentRow()">Add another</button>
       </div>
     </fieldset>
       </div>
