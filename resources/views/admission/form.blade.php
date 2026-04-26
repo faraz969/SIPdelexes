@@ -629,7 +629,7 @@
           <div id="examSectionsContainer" style="margin-top:12px; display:grid; gap:16px;"></div>
 
           <div style="margin-top:12px;">
-            <button type="button" class="btn-secondary" id="addExamSectionBtn">+ Add New Section</button>
+            <button type="button" class="btn btn-primary" id="addExamSectionBtn">+ Add New Section</button>
           </div>
 
           <template id="examSectionTemplate">
