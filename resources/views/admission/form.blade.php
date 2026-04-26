@@ -673,7 +673,7 @@
                   <h5 style="margin:0;">Subjects & Grades</h5>
                   <button type="button" class="btn-link addSubjectBtn">+ Add More Fields</button>
         </div>
-                <div class="hint">Tick exactly 6 subjects as your Best 6 (required).</div>
+                <div class="hint">Tick exactly 6 subjects as your Best 6 in total across all examinations (required).</div>
                 <table class="inst-table" style="margin-top:8px;">
                   <thead>
                     <tr>
@@ -1888,35 +1888,22 @@ function autosaveDraft() {
       const subjectInput = lastRow.querySelector('.subject_input');
       const letterInput = lastRow.querySelector('.grade_letter_input');
       const numberInput = lastRow.querySelector('.grade_number_input');
-      const bestChk = lastRow.querySelector('.best_six_chk');
 
       if (subjectInput) { subjectInput.addEventListener('change', () => autosaveDraft()); }
       if (letterInput) { letterInput.addEventListener('change', () => autosaveDraft()); }
       if (numberInput) { numberInput.addEventListener('input', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
-      if (bestChk) { bestChk.addEventListener('change', () => { computeBest6Total(sectionEl); autosaveDraft(); }); }
     }
 
-    enforceBestSix(sectionEl);
+    computeBest6Total(sectionEl);
   }
 
-  function enforceBestSix(sectionEl){
-    const checks = sectionEl.querySelectorAll('.best_six_chk');
-    const checked = Array.from(checks).filter(c => c.checked);
-    checks.forEach(chk => {
-      chk.addEventListener('change', () => {
-        const selected = Array.from(checks).filter(c => c.checked);
-        if (selected.length > 6) {
-          chk.checked = false;
-          alert('You can select at most 6 subjects as Best 6.');
-        }
-        computeBest6Total(sectionEl);
-      });
-    });
+  function clampGlobalBestSixToMax(){
+    if (!container) return;
+    const checked = Array.from(container.querySelectorAll('.best_six_chk')).filter(c => c.checked);
     if (checked.length > 6) {
-      // Uncheck extras if prepopulated somehow
-      checked.slice(6).forEach(c => c.checked = false);
+      checked.slice(6).forEach(c => { c.checked = false; });
     }
-    computeBest6Total(sectionEl);
+    container.querySelectorAll('.exam-section').forEach(computeBest6Total);
   }
 
   function addExamSection(){
@@ -2104,7 +2091,6 @@ function autosaveDraft() {
         return false;
       }
       const rows = sectionEl.querySelectorAll('.subjectsBody tr');
-      let bestSixCount = 0;
       for (const tr of rows) {
         const subj = tr.querySelector('.subject_input');
         const letter = tr.querySelector('.grade_letter_input');
@@ -2123,12 +2109,23 @@ function autosaveDraft() {
             return false;
           }
         }
-        if (chk.checked) bestSixCount++;
       }
-      if (bestSixCount !== 6) {
-        alert('In each examination section, you must tick exactly 6 subjects as your Best 6.');
-        return false;
+    }
+    let totalBestSix = 0;
+    for (let s = 0; s < sections.length; s++) {
+      const sectionEl = sections[s];
+      sectionEl.querySelectorAll('.subjectsBody tr').forEach(tr => {
+        const chk = tr.querySelector('.best_six_chk');
+        if (chk && chk.checked) totalBestSix++;
+      });
+    }
+    if (totalBestSix !== 6) {
+      if (totalBestSix > 6) {
+        alert('You have selected more than 6 subjects as your Best 6 across all examinations. Please uncheck until exactly 6 remain in total.');
+      } else {
+        alert('Please tick exactly 6 subjects as your Best 6 in total across all your examinations.');
       }
+      return false;
     }
     return true;
   };
@@ -2164,6 +2161,21 @@ function autosaveDraft() {
       }
       reindexSubjectRows(sectionEl);
       computeBest6Total(sectionEl);
+    });
+    clampGlobalBestSixToMax();
+  }
+
+  if (container) {
+    container.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t || !t.classList || !t.classList.contains('best_six_chk')) return;
+      const allChecked = Array.from(container.querySelectorAll('.best_six_chk')).filter(c => c.checked);
+      if (allChecked.length > 6) {
+        t.checked = false;
+        alert('You can select at most 6 subjects as your Best 6 in total across all examinations.');
+      }
+      container.querySelectorAll('.exam-section').forEach(computeBest6Total);
+      autosaveDraft();
     });
   }
 

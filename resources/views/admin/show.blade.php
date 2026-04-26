@@ -118,11 +118,11 @@
             <div class="col-md-4">
               <strong>Index Number:</strong> {{ $rec->index_number }}
               @php
-                $best6Subjects = $rec->subjects->where('is_best_six', true)->take(6);
-                $best6Total = $best6Subjects->sum('grade_number');
+                $best6InSitting = $rec->subjects->where('is_best_six', true);
+                $best6Subtotal = $best6InSitting->sum('grade_number');
               @endphp
-              @if($best6Total > 0)
-                <span class="badge bg-success ms-2">Best 6: {{ $best6Total }}</span>
+              @if($best6Subtotal > 0)
+                <span class="badge bg-secondary ms-2">This sitting — Best 6 grades: {{ $best6Subtotal }} ({{ $best6InSitting->count() }} subject(s))</span>
               @endif
             </div>
           </div>
@@ -150,6 +150,7 @@
           </div>
         </div>
       @endforeach
+      <p class="mb-0 mt-2"><strong>Aggregate Best 6 (all sittings):</strong> {{ $application->getTotalBest6() }}</p>
     </div>
   </div>
   @endif

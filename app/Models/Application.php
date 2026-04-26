@@ -230,13 +230,14 @@ class Application extends Model
     public function getTotalBest6()
     {
         $examRecords = $this->examRecords()->with('subjects')->get();
-        $totalBest6 = 0;
 
+        $best6Subjects = collect();
         foreach ($examRecords as $examRecord) {
-            // Get all subjects marked as best 6 for this exam record
-            $best6Subjects = $examRecord->subjects->where('is_best_six', true)->take(6);
-            $totalBest6 += $best6Subjects->sum('grade_number');
+            $best6Subjects = $best6Subjects->concat(
+                $examRecord->subjects->where('is_best_six', true)
+            );
         }
+        $totalBest6 = $best6Subjects->sum('grade_number');
 
         return $totalBest6;
     }
