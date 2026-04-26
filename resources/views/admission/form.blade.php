@@ -552,7 +552,7 @@
       </table>
 
       <div style="margin-top:10px;">
-        <button type="button" class="btn btn-secondary" onclick="addInstitutionRow()">Add another</button>
+        <button type="button" class="btn btn-primary" onclick="addInstitutionRow()">Add another</button>
       </div>
 
       <div id="instHelp" class="hint">
@@ -879,7 +879,7 @@
       </table>
 
       <div style="margin-top:10px;">
-        <button type="button" class="btn btn-secondary" onclick="addEmploymentRow()">Add another</button>
+        <button type="button" class="btn btn-primary" onclick="addEmploymentRow()">Add another</button>
       </div>
     </fieldset>
       </div>
