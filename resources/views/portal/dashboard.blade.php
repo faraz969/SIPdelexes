@@ -176,7 +176,7 @@
 .info-item{padding:2px 14px;border-left:1px solid #edf1f6}
 .info-item:first-child{border-left:0;padding-left:0}
 .info-item.full-width{grid-column:1/-1;border-left:0;padding-left:0;padding-top:8px}
-.info-item span{display:block;color:#6b7280;font-size:14px;margin-bottom:4px}
+.info-item span{display:block;color:white;font-size:14px;margin-bottom:4px}
 .info-item strong{font-size:18px;color:#111827;font-weight:700}
 
 @media (max-width:1100px){

@@ -2,11 +2,28 @@
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   window.prefillExamSections = @json($prefill['exam_sections'] ?? []);
   window.prefillData = @json($prefill ?? []);
   window.isSubmittedView = @json(!empty($submitted));
   // Note: in submitted view we don't render the editable form
+  (function setupSweetAlerts() {
+    if (!window.Swal) return;
+    const nativeAlert = window.alert.bind(window);
+    window.alert = function (message) {
+      if (!window.Swal) {
+        nativeAlert(message);
+        return;
+      }
+      window.Swal.fire({
+        icon: 'warning',
+        title: 'Notice',
+        text: String(message ?? ''),
+        confirmButtonText: 'OK'
+      });
+    };
+  })();
 </script>
 <style>
     :root { --gap: 14px; }
