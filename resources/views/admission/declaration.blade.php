@@ -331,10 +331,18 @@
                         <div class="info-value">
                             @php
                                 $programs = [];
+                                foreach (($prefill ?? []) as $key => $value) {
+                                    $isProgramField = str_starts_with((string) $key, 'prog_') && !str_ends_with((string) $key, '_mode');
+                                    if ($isProgramField && is_string($value) && trim($value) !== '') {
+                                        $programs[] = trim($value);
+                                    }
+                                }
+                                // Backward compatibility for older data shape.
                                 if (!empty($prefill['prog_eng'])) $programs[] = $prefill['prog_eng'];
                                 if (!empty($prefill['prog_focis'])) $programs[] = $prefill['prog_focis'];
                                 if (!empty($prefill['prog_business'])) $programs[] = $prefill['prog_business'];
                                 if (!empty($prefill['pref1'])) $programs[] = $prefill['pref1'];
+                                $programs = array_values(array_unique($programs));
                                 echo !empty($programs) ? strtoupper(implode(' / ', $programs)) : 'NOT SPECIFIED';
                             @endphp
                         </div>
