@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
+use App\Models\SiteSetting;
 
 class ERPController extends Controller
 {
@@ -114,7 +115,9 @@ class ERPController extends Controller
             ->orderBy('student_id')
             ->get();
 
-        return view('admin.erp.generate-invoice', compact('students'));
+        $defaultAcademicYear = SiteSetting::currentAcademicYear();
+
+        return view('admin.erp.generate-invoice', compact('students', 'defaultAcademicYear'));
     }
 
     /**

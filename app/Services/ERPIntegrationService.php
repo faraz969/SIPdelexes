@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\ActivityLogService;
 use App\Models\Program;
+use App\Models\SiteSetting;
 use Carbon\Carbon;
 
 class ERPIntegrationService
@@ -88,7 +89,10 @@ class ERPIntegrationService
         $nameParts = $this->splitFullName($fullName);
 
         $programName = $this->getErpProgramName($programId);
-        $academicTerm = $data['academic_term'] ?? config('services.erp.default_academic_term', '2025/2026 (Semester1)');
+        $academicTerm = $data['academic_term'] ?? config('services.erp.default_academic_term');
+        if (empty($academicTerm)) {
+            $academicTerm = SiteSetting::currentAcademicYear() . ' (Semester1)';
+        }
 
         try {
             // 1. Create Student Applicant (Approved - ready for enrollment)

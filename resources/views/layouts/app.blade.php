@@ -122,6 +122,7 @@
                                 <a class="{{ $navActive('admin.admission-form-settings.*') }}" href="{{ route('admin.admission-form-settings.edit') }}"><i class="fas fa-sliders"></i> Admission Form Defaults</a>
 
                                 <div class="sidebar-group-label">ACADEMIC SETUP</div>
+                                <a class="{{ $navActive('admin.academic-year-settings.*') }}" href="{{ route('admin.academic-year-settings.edit') }}"><i class="fas fa-calendar-check"></i> Academic Year</a>
                                 <a class="{{ $navActive('admin.sessions.*') }}" href="{{ route('admin.sessions.index') }}"><i class="fas fa-clock"></i> Sessions</a>
                                 <a class="{{ $navActive('admin.campuses.*') }}" href="{{ route('admin.campuses.index') }}"><i class="fas fa-school"></i> Campuses</a>
                                 <a class="{{ $navActive('admin.intakes.*') }}" href="{{ route('admin.intakes.index') }}"><i class="fas fa-calendar"></i> Intakes</a>

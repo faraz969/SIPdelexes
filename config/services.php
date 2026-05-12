@@ -37,7 +37,8 @@ return [
         'api_secret' => env('ERP_API_SECRET', ''),
         'auth_type' => env('ERP_AUTH_TYPE', 'token'), // 'token' for ERPNext standard API
         'default_program' => env('ERP_DEFAULT_PROGRAM', 'General'),
-        'default_academic_term' => env('ERP_DEFAULT_ACADEMIC_TERM', '2025/2026 (Semester1)'),
+        // When null, ERPIntegrationService falls back to current academic year from Admin → Academic Year.
+        'default_academic_term' => env('ERP_DEFAULT_ACADEMIC_TERM'),
         'program_mapping' => [], // [sip_program_id => erp_program_name] if names differ
         // If your ERPNext host routes all API calls to one URL and expects "cmd" in body, set to true
         'use_cmd_endpoint' => env('ERP_USE_CMD_ENDPOINT', false),

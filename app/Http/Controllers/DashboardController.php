@@ -13,6 +13,7 @@ use App\Models\Program;
 use Illuminate\Http\UploadedFile;
 use App\Models\ExamRecord;
 use App\Models\ExamSubjectGrade;
+use App\Models\SiteSetting;
 
 class DashboardController extends Controller
 {
@@ -88,7 +89,7 @@ class DashboardController extends Controller
             $application = new Application();
             $application->user_id = $user->id;
             $application->application_number = (string) random_int(1000000000, 1999999999);
-            $application->academic_year = '2025/2026';
+            $application->academic_year = SiteSetting::currentAcademicYear();
             $application->form_type = $request->input('form_type', 'undergraduate');
         }
         // Merge incoming draft data with any existing saved data to avoid losing previously filled fields
@@ -144,7 +145,7 @@ class DashboardController extends Controller
             $application = new Application();
             $application->user_id = $user->id;
             $application->application_number = (string) random_int(1000000000, 1999999999);
-            $application->academic_year = '2025/2026';
+            $application->academic_year = SiteSetting::currentAcademicYear();
             $application->form_type = 'undergraduate';
         }
 

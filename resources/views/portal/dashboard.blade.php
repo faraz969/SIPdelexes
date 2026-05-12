@@ -118,7 +118,7 @@
             <div class="info-panel-body">
                 <div class="info-grid two-col">
                     <div class="info-item"><span>Application Number</span><strong>{{ $application->application_number ?? 'N/A' }}</strong></div>
-                    <div class="info-item"><span>Academic Year</span><strong>{{ $application->academic_year ?? '2025/2026' }}</strong></div>
+                    <div class="info-item"><span>Academic Year</span><strong>{{ $application->academic_year ?? \App\Models\SiteSetting::currentAcademicYear() }}</strong></div>
                 </div>
                 <div class="mt-3 d-flex gap-2 flex-wrap">
                     <a href="{{ route('portal.application') }}" class="btn btn-primary">My Application</a>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Program;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -104,7 +105,9 @@ class CourseController extends Controller
     public function uploadForm()
     {
         $programs = Program::where('is_active', true)->orderBy('name')->get();
-        return view('admin.courses.upload', compact('programs'));
+        $sampleAcademicYear = str_replace('/', '-', SiteSetting::currentAcademicYear());
+
+        return view('admin.courses.upload', compact('programs', 'sampleAcademicYear'));
     }
 
     /**
@@ -249,28 +252,29 @@ class CourseController extends Controller
     {
         $program = Program::where('is_active', true)->first();
         $programId = $program ? $program->id : 1;
+        $yearDash = str_replace('/', '-', SiteSetting::currentAcademicYear());
 
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="courses_sample.csv"',
         ];
 
-        return new StreamedResponse(function () use ($programId) {
+        return new StreamedResponse(function () use ($programId, $yearDash) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, [
                 'course_code', 'course_title', 'program_id', 'academic_year', 'semester',
                 'credit_units', 'total_credit_units', 'assessment_split', 'is_elective', 'is_active', 'sort_order',
             ]);
             fputcsv($handle, [
-                'CS101', 'Introduction to Computer Science', $programId, '2025-2026', 'First Semester',
+                'CS101', 'Introduction to Computer Science', $programId, $yearDash, 'First Semester',
                 3, null, 'Class 30%, Exam 70%', 0, 1, 0,
             ]);
             fputcsv($handle, [
-                'CS102', 'Programming Fundamentals', $programId, '2025-2026', 'First Semester',
+                'CS102', 'Programming Fundamentals', $programId, $yearDash, 'First Semester',
                 3, null, 'Class 30%, Exam 70%', 0, 1, 1,
             ]);
             fputcsv($handle, [
-                'MATH201', 'Mathematics for Computing', $programId, '2025-2026', 'First Semester',
+                'MATH201', 'Mathematics for Computing', $programId, $yearDash, 'First Semester',
                 4, null, 'Class 25%, Exam 75%', 0, 1, 2,
             ]);
             fclose($handle);

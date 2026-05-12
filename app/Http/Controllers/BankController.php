@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\FormType;
 use App\Helpers\CountryCodes;
+use App\Models\SiteSetting;
 
 class BankController extends Controller
 {
@@ -100,7 +101,7 @@ class BankController extends Controller
             'amount' => $amount,
             'form_type' => $formType->name,
             'transaction_date' => now()->format('Y-m-d H:i:s'),
-            'academic_year' => '2025/2026',
+            'academic_year' => SiteSetting::currentAcademicYear(),
             'voucher_for' => $validated['voucher_for'] ?? null,
         ]);
         $user->save();
@@ -128,7 +129,7 @@ class BankController extends Controller
         $isLocalForAmount = strtolower(trim($user->nationality ?? '')) === 'ghana';
         $amount = $paymentData['amount'] ?? ($isLocalForAmount ? $formType->local_price : $formType->international_price);
         $transactionDate = $paymentData['transaction_date'] ?? $user->created_at->format('Y-m-d H:i:s');
-        $academicYear = $paymentData['academic_year'] ?? '2025/2026';
+        $academicYear = $paymentData['academic_year'] ?? SiteSetting::currentAcademicYear();
         $voucherFor = $paymentData['voucher_for'] ?? null;
 
         // Determine amount based on nationality if not stored

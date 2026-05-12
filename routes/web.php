@@ -73,6 +73,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Registration Rules Management
     Route::resource('registration-rules', App\Http\Controllers\Admin\RegistrationRuleController::class);
 
+    // Current academic year (applications, receipts, ERP fallbacks)
+    Route::get('academic-year-settings', [App\Http\Controllers\Admin\AcademicYearSettingsController::class, 'edit'])->name('academic-year-settings.edit');
+    Route::put('academic-year-settings', [App\Http\Controllers\Admin\AcademicYearSettingsController::class, 'update'])->name('academic-year-settings.update');
+
     // Admission Form Default Settings
     Route::get('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'edit'])->name('admission-form-settings.edit');
     Route::put('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'update'])->name('admission-form-settings.update');

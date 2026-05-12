@@ -90,7 +90,7 @@
                             <tr><td>course_code</td><td>Yes</td><td>CS101</td></tr>
                             <tr><td>course_title</td><td>Yes</td><td>Introduction to Computer Science</td></tr>
                             <tr><td>program_id</td><td>Yes*</td><td>1 (or use program name in column "program")</td></tr>
-                            <tr><td>academic_year</td><td>No</td><td>2025-2026</td></tr>
+                            <tr><td>academic_year</td><td>No</td><td>{{ $sampleAcademicYear ?? '2025-2026' }}</td></tr>
                             <tr><td>semester</td><td>No</td><td>First Semester</td></tr>
                             <tr><td>credit_units</td><td>Yes</td><td>3</td></tr>
                             <tr><td>total_credit_units</td><td>No</td><td>—</td></tr>
