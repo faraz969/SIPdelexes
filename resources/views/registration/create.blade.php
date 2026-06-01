@@ -156,16 +156,16 @@
                 <div id="payment-mode-section" class="form-group" style="display: none;">
                     <label class="form-label">Select Payment Method <span class="text-danger">*</span></label>
                     <div class="row g-2">
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-6" style="display: none;">
                             <input type="checkbox" id="payment_ecobank" class="payment-radio" />
                             <label for="payment_ecobank" class="payment-label w-100">
                                 <i class="fas fa-university"></i> Eco Bank
                             </label>
                         </div>
-                        <div class="col-12 col-md-6" ">
+                        <div class="col-12 col-md-12" ">
                             <input type="checkbox" id="payment_gcb" class="payment-radio" />
                             <label for="payment_gcb" class="payment-label w-100">
-                                <i class="fas fa-university"></i> GCB Bank
+                                <i class="fas fa-money-bill"></i> Online Payment
                             </label>
                         </div>
                     </div>
