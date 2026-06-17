@@ -130,13 +130,15 @@ class ERPIntegrationService
                 ->post($applicantUrl, $body);
 
             if (!$response->successful()) {
+                $friendlyMessage = self::parseErrorMessage($response->body(), $response->status());
                 Log::error('ERP Student Applicant Creation Failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                     'url' => $applicantUrl,
                     'student_id' => $studentId,
+                    'friendly_message' => $friendlyMessage,
                 ]);
-                throw new \Exception('ERP Student Applicant creation failed: ' . $response->body());
+                throw new \RuntimeException($friendlyMessage);
             }
 
             $applicantResponse = $response->json();
@@ -164,12 +166,14 @@ class ERPIntegrationService
                 ->post($enrollUrl, $enrollBody);
 
             if (!$enrollResponse->successful()) {
+                $friendlyMessage = self::parseErrorMessage($enrollResponse->body(), $enrollResponse->status());
                 Log::error('ERP Enroll Student Failed', [
                     'status' => $enrollResponse->status(),
                     'body' => $enrollResponse->body(),
                     'applicant_name' => $applicantName,
+                    'friendly_message' => $friendlyMessage,
                 ]);
-                throw new \Exception('ERP enroll student failed: ' . $enrollResponse->body());
+                throw new \RuntimeException($friendlyMessage);
             }
 
             $enrollData = $enrollResponse->json();
@@ -304,6 +308,57 @@ class ERPIntegrationService
         }
 
         return null;
+    }
+
+    /**
+     * Extract a human-readable message from an ERPNext / Frappe error response.
+     */
+    public static function parseErrorMessage($body, $status = null): string
+    {
+        $body = is_string($body) ? $body : json_encode($body);
+        $body = trim($body);
+
+        if ($body === '') {
+            return $status ? "ERPNext request failed (HTTP {$status})." : 'ERPNext request failed.';
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            return strlen($body) > 300 ? substr($body, 0, 300) . '…' : $body;
+        }
+
+        if (!empty($decoded['_server_messages'])) {
+            $serverMessages = json_decode($decoded['_server_messages'], true);
+            if (is_array($serverMessages)) {
+                foreach ($serverMessages as $msg) {
+                    $inner = is_string($msg) ? json_decode($msg, true) : $msg;
+                    if (is_array($inner) && !empty($inner['message'])) {
+                        return trim(strip_tags(html_entity_decode($inner['message'])));
+                    }
+                }
+            }
+        }
+
+        if (!empty($decoded['exception']) && is_string($decoded['exception'])) {
+            $exception = $decoded['exception'];
+            $colonPos = strrpos($exception, ': ');
+            if ($colonPos !== false) {
+                return trim(substr($exception, $colonPos + 2));
+            }
+            return trim($exception);
+        }
+
+        if (!empty($decoded['message']) && is_string($decoded['message'])) {
+            return trim($decoded['message']);
+        }
+
+        if (!empty($decoded['exc']) && is_string($decoded['exc'])) {
+            if (preg_match('/LinkValidationError: ([^"\\\\]+)/', $decoded['exc'], $matches)) {
+                return trim($matches[1]);
+            }
+        }
+
+        return $status ? "ERPNext request failed (HTTP {$status})." : 'ERPNext request failed.';
     }
 
     /**

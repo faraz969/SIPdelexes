@@ -28,10 +28,16 @@ class SIPAutomationService
     }
 
     /**
-     * Process admission approval and trigger SIP automation
+     * Process admission approval: create ERP applicant, SIP account, then mark approved.
+     *
+     * @throws \Exception If ERP or SIP setup fails (application remains unapproved)
      */
-    public function processAdmissionApproval(Application $application)
+    public function processAdmissionApproval(Application $application, $registrarComments = null)
     {
+        if (Student::where('application_id', $application->id)->exists()) {
+            throw new \RuntimeException('A SIP student account already exists for this application.');
+        }
+
         DB::beginTransaction();
         try {
             // 1. Generate Unique Student ID / Index Number FIRST (required field)
@@ -46,17 +52,13 @@ class SIPAutomationService
             $user->email = $studentEmail;
             
             // 4. Generate temporary password (4-character PIN)
-            // Note: Deliberately short for ease of first login; user is forced to change on first login.
             $tempPassword = Str::upper(Str::random(4));
             
-            // Update both password and PIN to the same value
-            // Set password_changed_at to null to force password change on first login
             $user->password = Hash::make($tempPassword);
-            $user->pin = $tempPassword; // Store PIN in plain text for SMS/display
-            $user->password_changed_at = null; // Force password change on first login
+            $user->pin = $tempPassword;
+            $user->password_changed_at = null;
             $user->save();
 
-            // 5. Log the password generation
             \Log::info("SIP Account Created - Login Credentials", [
                 'student_id' => $studentId,
                 'user_id' => $user->id,
@@ -70,7 +72,32 @@ class SIPAutomationService
                 'created_at' => now()->toDateTimeString(),
             ]);
 
-            // 6. Log activity
+            // 5. Create student applicant in ERPNext (must succeed before approval is finalized)
+            $result = $this->erpService->createStudentRecord([
+                'student_id' => $studentId,
+                'biodata' => $student->biodata,
+                'program_id' => $student->program_id,
+                'program_name' => $application->getPrimaryProgramName(),
+                'academic_year' => $student->academic_year,
+            ]);
+
+            if (!empty($result['erp_student_name'])) {
+                $student->erp_student_name = $result['erp_student_name'];
+                $student->save();
+            }
+
+            // 6. Mark application approved by registrar
+            if ($application->registrar_status !== 'approved') {
+                $applicationData = is_array($application->data) ? $application->data : [];
+                unset($applicationData['_erp_last_error'], $applicationData['_erp_last_error_at']);
+                $application->data = $applicationData;
+
+                $application->registrar_status = 'approved';
+                $application->registrar_comments = $registrarComments;
+                $application->registrar_reviewed_at = now();
+                $application->updateMainStatus();
+            }
+
             $this->activityLogService->log([
                 'user_id' => auth()->id(),
                 'role' => auth()->user()->role ?? 'system',
@@ -82,37 +109,16 @@ class SIPAutomationService
                 'metadata' => [
                     'student_id' => $studentId,
                     'password_generated' => true,
+                    'erp_student_name' => $result['erp_student_name'] ?? null,
                 ],
             ]);
 
-            // Commit transaction FIRST before any external API calls or email sending
             DB::commit();
 
-            // 7. Send API request to ERP (AFTER transaction commit - non-blocking)
-            try {
-                $result = $this->erpService->createStudentRecord([
-                    'student_id' => $studentId,
-                    'biodata' => $student->biodata,
-                    'program_id' => $student->program_id,
-                    'program_name' => $application->getPrimaryProgramName(),
-                    'academic_year' => $student->academic_year,
-                ]);
-                if (!empty($result['erp_student_name'])) {
-                    $student->update(['erp_student_name' => $result['erp_student_name']]);
-                }
-            } catch (\Exception $e) {
-                // Log but don't fail - ERP integration is optional
-                \Log::warning('ERP API call failed (non-critical)', [
-                    'student_id' => $studentId,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            // 8. Send SMS & Email with credentials (AFTER transaction commit - non-blocking)
+            // 7. Send SMS & Email with credentials (after commit - non-blocking)
             try {
                 $this->sendAdmissionCredentials($user, $student, $tempPassword);
             } catch (\Exception $e) {
-                // Log but don't fail - email/SMS sending is optional
                 \Log::warning('Failed to send admission credentials (non-critical)', [
                     'student_id' => $studentId,
                     'error' => $e->getMessage(),

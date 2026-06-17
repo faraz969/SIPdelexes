@@ -11,6 +11,25 @@
     <div class="alert alert-danger">{{ session('error') }}</div>
   @endif
 
+  @if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+  @endif
+
+  @php
+    $erpLastError = is_array($application->data) ? ($application->data['_erp_last_error'] ?? null) : null;
+    $erpLastErrorAt = is_array($application->data) ? ($application->data['_erp_last_error_at'] ?? null) : null;
+  @endphp
+  @if($erpLastError)
+    <div class="alert alert-warning">
+      <strong>Last ERPNext sync error</strong>
+      @if($erpLastErrorAt)
+        <span class="text-muted">({{ $erpLastErrorAt }})</span>
+      @endif
+      <div class="mt-1">{{ $erpLastError }}</div>
+      <small class="text-muted">Update the academic year or program names below, then ask the registrar to approve again.</small>
+    </div>
+  @endif
+
   <div class="card mb-3">
     <div class="card-body">
       <p><strong>Applicant:</strong> {{ $application->user->name }} ({{ $application->user->email }})</p>

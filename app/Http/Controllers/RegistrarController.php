@@ -93,18 +93,11 @@ class RegistrarController extends Controller
             'comments' => 'nullable|string|max:1000',
         ]);
 
-        $application->update([
-            'registrar_status' => 'approved',
-            'registrar_comments' => $request->comments,
-            'registrar_reviewed_at' => now(),
-        ]);
-
-        // Update main status based on workflow
-        $application->updateMainStatus();
-
-        // Trigger SIP automation after approval
         try {
-            $student = $this->sipAutomationService->processAdmissionApproval($application);
+            $student = $this->sipAutomationService->processAdmissionApproval(
+                $application,
+                $request->comments
+            );
             
             // Apply admission form defaults (set by admin) for this student, by academic year
             $academicYear = $application->academic_year;
@@ -149,16 +142,21 @@ class RegistrarController extends Controller
             }
             
             return redirect()->route('registrar.dashboard')
-                ->with('success', 'Application approved successfully. SIP account created.');
+                ->with('success', 'Application approved successfully. SIP account and ERPNext applicant created.');
         } catch (\Exception $e) {
-            \Log::error('SIP Automation Error', [
+            \Log::error('Registrar Approval Failed', [
                 'application_id' => $application->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
+
+            $data = is_array($application->data) ? $application->data : [];
+            $data['_erp_last_error'] = $e->getMessage();
+            $data['_erp_last_error_at'] = now()->toDateTimeString();
+            $application->data = $data;
+            $application->save();
             
-            return redirect()->route('registrar.dashboard')
-                ->with('error', 'Application approved but SIP automation failed: ' . $e->getMessage() . '. Please check logs and try again.');
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', $e->getMessage());
         }
     }
 

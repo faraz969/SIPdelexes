@@ -112,6 +112,8 @@ class AdminController extends Controller
             }
         }
 
+        unset($data['_erp_last_error'], $data['_erp_last_error_at']);
+
         $application->academic_year = $validated['academic_year'];
         $application->data = $data;
         $application->syncDepartmentsFromProgramData();
