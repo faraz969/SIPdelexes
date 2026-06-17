@@ -3,13 +3,106 @@
 @section('content')
 <div class="container">
   <h3>Application Details</h3>
+
+  @if(session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+  @endif
+  @if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+  @endif
+
   <div class="card mb-3">
     <div class="card-body">
       <p><strong>Applicant:</strong> {{ $application->user->name }} ({{ $application->user->email }})</p>
       <p><strong>Application #:</strong> {{ $application->application_number }}</p>
       <p><strong>Status:</strong> {{ ucfirst(str_replace('_',' ',$application->status)) }}</p>
-      <p><strong>Academic Year:</strong> {{ $application->academic_year }}</p>
       <p><strong>Form Type:</strong> {{ ucfirst($application->form_type) }}</p>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Academic Year &amp; Programs</span>
+      @if(!$canEditAcademicProgram)
+        <span class="badge bg-secondary">Locked after registrar approval</span>
+      @endif
+    </div>
+    <div class="card-body">
+      @if($canEditAcademicProgram)
+        <form method="post" action="{{ route('admin.applications.updateAcademicProgram', $application->id) }}">
+          @csrf
+          @method('PUT')
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="academic_year" class="form-label">Academic Year</label>
+              <input type="text" class="form-control @error('academic_year') is-invalid @enderror"
+                     id="academic_year" name="academic_year" list="academic-year-options"
+                     value="{{ old('academic_year', $application->academic_year) }}"
+                     placeholder="e.g. 2025/2026" required>
+              <datalist id="academic-year-options">
+                @foreach($availableAcademicYears as $year)
+                  <option value="{{ $year }}"></option>
+                @endforeach
+              </datalist>
+              @error('academic_year')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+          </div>
+
+          <p class="text-muted mb-3">Edit the program names stored in this application. These are synced to ERPNext when the registrar approves.</p>
+
+          @foreach($programFields as $field)
+            <div class="row align-items-end mb-3">
+              <div class="col-md-5">
+                <label for="program_{{ $field['key'] }}" class="form-label">{{ $field['department_name'] }}</label>
+                <input type="text"
+                       class="form-control @error('programs.' . $field['key']) is-invalid @enderror"
+                       id="program_{{ $field['key'] }}"
+                       name="programs[{{ $field['key'] }}]"
+                       value="{{ old('programs.' . $field['key'], $field['name']) }}"
+                       placeholder="Program name">
+                @error('programs.' . $field['key'])
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              </div>
+              <div class="col-md-4">
+                <label for="mode_{{ $field['key'] }}" class="form-label">Mode</label>
+                <input type="text"
+                       class="form-control @error('program_modes.' . $field['key']) is-invalid @enderror"
+                       id="mode_{{ $field['key'] }}"
+                       name="program_modes[{{ $field['key'] }}]"
+                       value="{{ old('program_modes.' . $field['key'], $field['mode']) }}"
+                       placeholder="e.g. Regular (4yrs)">
+                @error('program_modes.' . $field['key'])
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              </div>
+            </div>
+          @endforeach
+
+          <button type="submit" class="btn btn-primary">Save Academic Year &amp; Programs</button>
+          <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">Back</a>
+        </form>
+      @else
+        <p><strong>Academic Year:</strong> {{ $application->academic_year }}</p>
+        @php $primaryProgramName = $application->getPrimaryProgramName(); @endphp
+        @if($primaryProgramName)
+          <p class="mb-1"><strong>Program:</strong> {{ $primaryProgramName }}</p>
+        @endif
+        @foreach($programFields as $field)
+          @if(!empty($field['name']))
+            <p class="mb-1">
+              <strong>{{ $field['department_name'] }}:</strong> {{ $field['name'] }}
+              @if(!empty($field['mode']))
+                <span class="text-muted">({{ $field['mode'] }})</span>
+              @endif
+            </p>
+          @endif
+        @endforeach
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary mt-3">Back</a>
+      @endif
     </div>
   </div>
 

@@ -94,6 +94,7 @@ class SIPAutomationService
                     'student_id' => $studentId,
                     'biodata' => $student->biodata,
                     'program_id' => $student->program_id,
+                    'program_name' => $application->getPrimaryProgramName(),
                     'academic_year' => $student->academic_year,
                 ]);
                 if (!empty($result['erp_student_name'])) {
@@ -240,7 +241,6 @@ class SIPAutomationService
             return $qualifiedPrograms->first();
         }
 
-        // Fallback: get first selected program
         $selectedPrograms = $application->getSelectedPrograms();
         if ($selectedPrograms->isNotEmpty()) {
             return $selectedPrograms->first();

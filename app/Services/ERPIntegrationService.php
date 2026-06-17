@@ -88,7 +88,9 @@ class ERPIntegrationService
         $fullName = $biodata['full_name'] ?? $biodata['name'] ?? "Student {$studentId}";
         $nameParts = $this->splitFullName($fullName);
 
-        $programName = $this->getErpProgramName($programId);
+        $programName = !empty($data['program_name'])
+            ? $data['program_name']
+            : $this->getErpProgramName($programId);
         $academicTerm = $data['academic_term'] ?? config('services.erp.default_academic_term');
         if (empty($academicTerm)) {
             $academicTerm = SiteSetting::currentAcademicYear() . ' (Semester1)';

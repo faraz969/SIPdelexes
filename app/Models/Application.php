@@ -243,6 +243,81 @@ class Application extends Model
     }
 
     /**
+     * First program name stored in application data (used for ERP sync).
+     */
+    public function getPrimaryProgramName()
+    {
+        $data = $this->data ?? [];
+
+        foreach ($data as $key => $value) {
+            if (strpos($key, 'prog_') === 0 && !empty($value) && strpos($key, '_mode') === false) {
+                return trim($value);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Program fields from application data keyed by department.
+     */
+    public function getProgramFieldsFromData()
+    {
+        $data = $this->data ?? [];
+        $fields = [];
+
+        $departments = Department::orderBy('sort_order')->orderBy('name')->get();
+        foreach ($departments as $department) {
+            $key = 'prog_' . $department->id;
+            $fields[] = [
+                'key' => $key,
+                'mode_key' => $key . '_mode',
+                'department_name' => $department->name,
+                'name' => $data[$key] ?? '',
+                'mode' => $data[$key . '_mode'] ?? '',
+            ];
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Update department_id / department_ids from prog_* values in data.
+     */
+    public function syncDepartmentsFromProgramData()
+    {
+        $data = $this->data ?? [];
+        $departmentIds = [];
+
+        $departments = Department::with('programs')->get();
+        foreach ($departments as $department) {
+            foreach ($department->programs as $program) {
+                foreach ($data as $key => $value) {
+                    if (strpos($key, 'prog_') === 0 && strpos($key, '_mode') === false && $value === $program->name) {
+                        $departmentIds[] = $department->id;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if (empty($departmentIds)) {
+            foreach ($data as $key => $value) {
+                if (preg_match('/^prog_(\d+)$/', $key, $matches) && !empty($value)) {
+                    $departmentIds[] = (int) $matches[1];
+                }
+            }
+        }
+
+        $departmentIds = array_values(array_unique($departmentIds));
+
+        if (!empty($departmentIds)) {
+            $this->department_id = $departmentIds[0];
+            $this->department_ids = $departmentIds;
+        }
+    }
+
+    /**
      * Get all selected programs from application data
      */
     public function getSelectedPrograms()
