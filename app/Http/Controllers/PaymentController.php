@@ -38,7 +38,7 @@ class PaymentController extends Controller
                 'phone' => 'required|string|max:20',
                 'nationality' => 'required|string|max:255',
                 'form_type' => 'required|exists:form_types,id',
-                
+                'payment_mode' => 'required|in:gcb,paystack,ecobank',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Payment Validation Error', [
@@ -133,8 +133,12 @@ class PaymentController extends Controller
             
         ]);
 
-        // Branch: GCB vs Ecobank based on selected payment method
+        // Branch: Paystack, GCB, or Ecobank based on selected payment method
         $selectedPaymentMode = strtolower($request->input('payment_mode', 'ecobank'));
+
+        if ($selectedPaymentMode === 'paystack') {
+            return $this->initiatePaystackPayment($validated, $formType, $price, $invoiceId, $isLocal);
+        }
 
         if ($selectedPaymentMode === 'gcb') {
             try {
@@ -323,6 +327,150 @@ class PaymentController extends Controller
     }
 
     /**
+     * Initialize Paystack checkout for admission form purchase.
+     */
+    private function initiatePaystackPayment(array $validated, FormType $formType, $price, $invoiceId, $isLocal)
+    {
+        $secretKey = config('services.paystack.secret_key');
+
+        if (empty($secretKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Paystack is not configured. Please contact support.',
+            ], 500);
+        }
+
+        try {
+            $amountInPesewas = (int) round((float) $price * 100);
+
+            if ($amountInPesewas < 100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment amount is too low for Paystack.',
+                ], 400);
+            }
+
+            $payload = [
+                'email' => $validated['email'],
+                'amount' => $amountInPesewas,
+                'currency' => 'GHS',
+                'reference' => $invoiceId,
+                'callback_url' => route('payment.success'),
+                'metadata' => [
+                    'invoice_id' => $invoiceId,
+                    'full_name' => $validated['full_name'],
+                    'form_type' => $formType->name,
+                    'student_type' => $isLocal ? 'local' : 'international',
+                ],
+            ];
+
+            Log::info('Initiating Paystack Checkout', [
+                'reference' => $invoiceId,
+                'amount_pesewas' => $amountInPesewas,
+                'email' => $validated['email'],
+            ]);
+
+            $response = Http::timeout(30)
+                ->withToken($secretKey)
+                ->acceptJson()
+                ->post('https://api.paystack.co/transaction/initialize', $payload);
+
+            Log::info('Paystack Initialize Response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->parsePaystackErrorMessage($response->json(), $response->body()),
+                ], 500);
+            }
+
+            $data = $response->json();
+            if (!($data['status'] ?? false) || empty($data['data']['authorization_url'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $data['message'] ?? 'Paystack could not start the payment.',
+                ], 500);
+            }
+
+            session(['paystack_reference' => $data['data']['reference'] ?? $invoiceId]);
+
+            return response()->json([
+                'success' => true,
+                'payment_url' => $data['data']['authorization_url'],
+                'invoice_id' => $invoiceId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Paystack Initiation Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while initiating Paystack payment.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify a Paystack transaction by reference.
+     */
+    private function verifyPaystackPayment($reference)
+    {
+        $secretKey = config('services.paystack.secret_key');
+
+        if (empty($secretKey) || empty($reference)) {
+            return false;
+        }
+
+        try {
+            $response = Http::timeout(30)
+                ->withToken($secretKey)
+                ->acceptJson()
+                ->get('https://api.paystack.co/transaction/verify/' . rawurlencode($reference));
+
+            Log::info('Paystack Verify Response', [
+                'reference' => $reference,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            if (!$response->successful()) {
+                return false;
+            }
+
+            $data = $response->json();
+
+            return ($data['status'] ?? false) === true
+                && ($data['data']['status'] ?? '') === 'success';
+        } catch (\Exception $e) {
+            Log::error('Paystack Verification Error', [
+                'reference' => $reference,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Extract a readable message from a Paystack API error response.
+     */
+    private function parsePaystackErrorMessage($json, $rawBody)
+    {
+        if (is_array($json) && !empty($json['message']) && is_string($json['message'])) {
+            return $json['message'];
+        }
+
+        $rawBody = trim((string) $rawBody);
+
+        return $rawBody !== '' ? $rawBody : 'Paystack payment could not be started.';
+    }
+
+    /**
      * Handle payment success
      */
     public function paymentSuccess(Request $request)
@@ -341,9 +489,31 @@ class PaymentController extends Controller
                 ->with('error', 'Invalid payment response.');
         }
 
-        // GCB payments are verified only against GCB — the invoice is never created on Ecobank/PayWithOnline,
-        // so Ecobank status check would always fail and block registration.
+        // GCB and Paystack payments are verified against their own gateways — not Ecobank.
         $paymentMode = strtolower((string) session('pending_registration.payment_mode', 'ecobank'));
+        if ($paymentMode === 'paystack') {
+            $reference = $request->get('reference') ?? $request->get('trxref') ?? $invoiceId;
+
+            Log::info('Paystack Payment Return', [
+                'invoice_id' => $invoiceId,
+                'reference' => $reference,
+            ]);
+
+            if (!$this->verifyPaystackPayment($reference)) {
+                return redirect()->route('payment.cancelled')
+                    ->with('error', 'Payment was not completed or could not be verified with Paystack.');
+            }
+
+            $paystackVerifiedPayload = [
+                $invoiceId => [
+                    'status' => 'paid',
+                    'status_reason' => 'Verified via Paystack',
+                ],
+            ];
+
+            return $this->completeRegistration($invoiceId, $paystackVerifiedPayload);
+        }
+
         if ($paymentMode === 'gcb') {
             $checkOutId = session('checkoutid');
             $statusParam = $request->get('statusCode') ?? $request->get('paymentStatus');
@@ -612,7 +782,7 @@ class PaymentController extends Controller
             $pendingPaymentMode = strtolower((string) ($pendingData['payment_mode'] ?? 'ecobank'));
             $successStatuses = ['paid', 'success', 'completed', 'successful', '00'];
 
-            if ($pendingPaymentMode === 'gcb') {
+            if (in_array($pendingPaymentMode, ['gcb', 'paystack'], true)) {
                 $verifyActualStatus = null;
                 if (isset($paymentStatus[$invoiceId]['status'])) {
                     $verifyActualStatus = $paymentStatus[$invoiceId]['status'];
@@ -620,18 +790,20 @@ class PaymentController extends Controller
                     $verifyActualStatus = $paymentStatus['status'];
                 }
                 if ($verifyActualStatus && in_array(strtolower((string) $verifyActualStatus), $successStatuses, true)) {
-                    Log::info('Existing user GCB payment verified (payload from callback)', [
+                    Log::info('Existing user gateway payment verified (payload from callback)', [
                         'invoice_id' => $invoiceId,
                         'user_id' => $existingUser->id,
+                        'payment_mode' => $pendingPaymentMode,
                     ]);
                     $user = $existingUser;
                     $pin = $user->pin;
                     $serialNumber = $user->serial_number;
                     $pinExpiry = $user->pin_expires_at;
                 } else {
-                    Log::error('Existing user GCB payment verification failed', [
+                    Log::error('Existing user gateway payment verification failed', [
                         'invoice_id' => $invoiceId,
                         'user_id' => $existingUser->id,
+                        'payment_mode' => $pendingPaymentMode,
                         'status' => $verifyActualStatus,
                     ]);
                     return redirect()->route('payment.cancelled')

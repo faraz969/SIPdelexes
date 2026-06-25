@@ -162,10 +162,16 @@
                                 <i class="fas fa-university"></i> Eco Bank
                             </label>
                         </div>
-                        <div class="col-12 col-md-12" ">
+                        <div class="col-12 col-md-6">
                             <input type="checkbox" id="payment_gcb" class="payment-radio" />
                             <label for="payment_gcb" class="payment-label w-100">
-                                <i class="fas fa-money-bill"></i> Online Payment
+                                <i class="fas fa-university"></i> GCB Online Payment
+                            </label>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="checkbox" id="payment_paystack" class="payment-radio" />
+                            <label for="payment_paystack" class="payment-label w-100">
+                                <i class="fas fa-credit-card"></i> Paystack
                             </label>
                         </div>
                     </div>
@@ -610,36 +616,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Payment method selection logic (single-select behavior using checkboxes)
     const paymentEcobank = document.getElementById('payment_ecobank');
     const paymentGcb = document.getElementById('payment_gcb');
+    const paymentPaystack = document.getElementById('payment_paystack');
     const paymentModeInput = document.getElementById('payment_mode');
+    const paymentOptions = [paymentEcobank, paymentGcb, paymentPaystack].filter(Boolean);
 
     function updatePaymentMode() {
-        if (paymentEcobank && paymentGcb) {
-            if (paymentEcobank.checked && paymentGcb.checked) {
-                // If both are checked, uncheck the one not just changed last; default to the last clicked
-                // This handler will be bound to both, so keep only the current target checked
-            }
+        const selected = paymentOptions.find(function (option) {
+            return option.checked;
+        });
 
-            if (paymentEcobank.checked && !paymentGcb.checked) {
-                paymentModeInput.value = 'ecobank';
-            } else if (!paymentEcobank.checked && paymentGcb.checked) {
-                paymentModeInput.value = 'gcb';
-            } else {
-                paymentModeInput.value = '';
-            }
+        if (selected === paymentEcobank) {
+            paymentModeInput.value = 'ecobank';
+        } else if (selected === paymentGcb) {
+            paymentModeInput.value = 'gcb';
+        } else if (selected === paymentPaystack) {
+            paymentModeInput.value = 'paystack';
+        } else {
+            paymentModeInput.value = '';
         }
     }
 
     function onPaymentClick(e) {
-        if (e.target === paymentEcobank) {
-            if (paymentEcobank.checked) paymentGcb.checked = false;
-        } else if (e.target === paymentGcb) {
-            if (paymentGcb.checked) paymentEcobank.checked = false;
-        }
+        paymentOptions.forEach(function (option) {
+            if (option !== e.target) {
+                option.checked = false;
+            }
+        });
         updatePaymentMode();
     }
 
-    if (paymentEcobank) paymentEcobank.addEventListener('change', onPaymentClick);
-    if (paymentGcb) paymentGcb.addEventListener('change', onPaymentClick);
+    paymentOptions.forEach(function (option) {
+        option.addEventListener('change', onPaymentClick);
+    });
 
     // Handle form submission with payment
     const form = document.querySelector('form');
@@ -661,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Require payment mode selection
         if (!formData.get('payment_mode')) {
-            alert('Please select a payment method (Eco Bank or GCB Bank).');
+            alert('Please select a payment method (GCB or Paystack).');
             return;
         }
 
