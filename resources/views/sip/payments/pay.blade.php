@@ -11,6 +11,13 @@
         </div>
     </div>
 
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info">{{ session('info') }}</div>
+    @endif
+
     <div class="row">
         <div class="col-md-8">
             <div class="card">
@@ -56,43 +63,56 @@
                     <h5 class="mb-0">Payment Form</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('sip.payments.process', $invoice->id) }}">
-                        @csrf
-                        
-                        <div class="mb-3">
-                            <label for="amount" class="form-label">Payment Amount</label>
-                            <input type="number" 
-                                   class="form-control" 
-                                   id="amount" 
-                                   name="amount" 
-                                   step="0.01" 
-                                   min="0.01" 
-                                   max="{{ $invoice->balance }}" 
-                                   value="{{ $invoice->balance }}"
-                                   required>
-                            <small class="form-text text-muted">Maximum: GHS {{ number_format($invoice->balance, 2) }}</small>
+                    @if(!$paystackConfigured)
+                        <div class="alert alert-warning mb-0">
+                            Paystack is not configured. Please contact the finance office to make a payment.
                         </div>
+                    @else
+                        <form method="POST" action="{{ route('sip.payments.process', $invoice->id) }}">
+                            @csrf
 
-                        <div class="mb-3">
-                            <label for="payment_method" class="form-label">Payment Method</label>
-                            <select class="form-select" id="payment_method" name="payment_method" required>
-                                <option value="">Select Payment Method</option>
-                                <option value="card">Credit/Debit Card</option>
-                                <option value="momo">Mobile Money (MoMo)</option>
-                                <option value="bank">Bank Transfer</option>
-                            </select>
-                        </div>
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Payment Amount</label>
+                                <input type="number"
+                                       class="form-control @error('amount') is-invalid @enderror"
+                                       id="amount"
+                                       name="amount"
+                                       step="0.01"
+                                       min="0.01"
+                                       max="{{ $invoice->balance }}"
+                                       value="{{ old('amount', $invoice->balance) }}"
+                                       required>
+                                @error('amount')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Maximum: GHS {{ number_format($invoice->balance, 2) }}</small>
+                            </div>
 
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Note:</strong> Payment will be processed through the payment gateway. 
-                            You will be redirected to complete the payment.
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Payment Method</label>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="payment_paystack" value="paystack" checked required>
+                                        <label class="form-check-label fw-semibold" for="payment_paystack">
+                                            <i class="fas fa-credit-card me-1"></i> Paystack
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        Pay securely with card, mobile money, or bank via Paystack.
+                                    </small>
+                                </div>
+                            </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-credit-card"></i> Proceed to Payment
-                        </button>
-                    </form>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note:</strong> You will be redirected to Paystack to complete your payment.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-lock"></i> Pay with Paystack
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -108,7 +128,7 @@
                     <hr>
                     <p class="text-muted">
                         <small>
-                            You can make partial or full payments. 
+                            You can make partial or full payments.
                             Course registration will be enabled once you reach the minimum payment percentage.
                         </small>
                     </p>
@@ -118,4 +138,3 @@
     </div>
 </div>
 @endsection
-

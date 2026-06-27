@@ -202,6 +202,7 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::get('/history', [App\Http\Controllers\SIPPaymentController::class, 'paymentHistory'])->name('history');
         Route::get('/pay/{invoice}', [App\Http\Controllers\SIPPaymentController::class, 'showPaymentForm'])->name('pay');
         Route::post('/pay/{invoice}', [App\Http\Controllers\SIPPaymentController::class, 'processPayment'])->name('process');
+        Route::get('/paystack/callback', [App\Http\Controllers\SIPPaymentController::class, 'paystackCallback'])->name('paystack.callback');
     });
     
     // Course Registration
