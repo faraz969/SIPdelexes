@@ -42,6 +42,7 @@
         }
         .header-content {
             flex: 1;
+            margin-left:58px;
         }
         .university-name {
             font-size: 18pt;
@@ -58,6 +59,7 @@
         .contact-line {
             font-size: 10pt;
             color: #333;
+            text-align:center;
         }
         .divider {
             border-bottom: 1px solid #000;
@@ -83,6 +85,7 @@
             font-weight: bold;
             margin: 25px 0;
             text-transform: uppercase;
+            text-decoration: underline;
         }
         .body-text {
             text-align: justify;
@@ -112,6 +115,7 @@
             
             min-width: 150px;
             padding: 0 5px;
+            font-weight:bold;
         }
         .student-details-table .detail-spacer {
             width: 30px;
@@ -173,7 +177,7 @@
         }
         .dates-list .date-value {
             display: inline-block;
-            border-bottom: 1px dotted #000;
+            
             min-width: 150px;
             padding: 0 5px;
         }
@@ -260,7 +264,7 @@
     <!-- Header with Logo -->
     <div class="header-container">
         <div class="logo-container">
-            @if(file_exists(public_path('images/logo.png')))
+            @if(file_exists(public_path('images/logo_blue.png')))
                 <img src="{{ asset('images/logo.png') }}" alt="DUC Logo" style="max-width: 80px;">
             @else
                 <div style="width: 80px; height: 80px; border: 2px solid #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e3a8a;">
@@ -282,7 +286,7 @@
         <div class="student-name">
             <span class="highlight-yellow"><strong>{{ $data['student_name'] }}</strong></span>
         </div>
-        <div class="document-date">{{ $data['date'] }}</div>
+        <div class="document-date highlight-yellow">{{ $data['date'] }}</div>
     </div>
 
     <!-- Offer Title -->
@@ -293,7 +297,7 @@
     <!-- Body Text -->
     <div class="body-text">
         <p>
-            The Admissions Committee has considered your application and is delighted to offer you admission to level {{ $data['level'] }} of the <strong>BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
+            The Admissions Committee has considered your application and is delighted to offer you admission to level {{ $data['level'] }} of the <strong class="highlight-yellow">BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
         </p>
     </div>
 
