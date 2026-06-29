@@ -265,7 +265,7 @@
     <div class="header-container">
         <div class="logo-container">
             @if(file_exists(public_path('images/logo_blue.png')))
-                <img src="{{ asset('images/logo.png') }}" alt="DUC Logo" style="max-width: 80px;">
+                <img src="{{ asset('images/logo_blue.png') }}" alt="DUC Logo" style="max-width: 80px;">
             @else
                 <div style="width: 80px; height: 80px; border: 2px solid #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e3a8a;">
                     DUC
