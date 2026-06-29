@@ -15,6 +15,17 @@
             body {
                 margin: 0;
                 padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .highlight-yellow {
+                background-color: #ffff00 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                box-decoration-break: clone;
+                -webkit-box-decoration-break: clone;
             }
         }
         body {
@@ -136,6 +147,11 @@
         .highlight-yellow {
             background-color: #ffff00;
             padding: 2px 4px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            color-adjust: exact;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
         }
         .fees-item strong {
             font-weight: bold;
