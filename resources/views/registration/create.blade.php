@@ -168,7 +168,7 @@
                                 <i class="fas fa-credit-card"></i> Paystack
                             </label>
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-6" style="display: none;">
                             <input type="checkbox" id="payment_gcb" class="payment-radio" />
                             <label for="payment_gcb" class="payment-label w-100">
                                 <i class="fas fa-university"></i> GCB  Payment
