@@ -197,6 +197,97 @@ class Application extends Model
     }
 
     /**
+     * Student-facing application timeline steps.
+     * Registrar approval also means the student is admitted.
+     */
+    public function getApplicationTimeline()
+    {
+        $isDraft = $this->status === 'draft';
+        $isSubmitted = !$isDraft;
+
+        $hodApproved = $this->hod_status === 'approved';
+        $hodRejected = $this->hod_status === 'rejected';
+        $hodPending = $isSubmitted && $this->hod_status === 'pending';
+
+        $registrarApproved = $this->registrar_status === 'approved';
+        $registrarRejected = $this->registrar_status === 'rejected';
+        $registrarPending = $hodApproved && $this->registrar_status === 'pending';
+        $admitted = $registrarApproved;
+
+        if ($isDraft) {
+            $currentIndex = 0;
+        } elseif ($hodPending || $hodRejected) {
+            $currentIndex = 2;
+        } elseif ($registrarPending || $registrarRejected) {
+            $currentIndex = 3;
+        } elseif ($admitted) {
+            $currentIndex = 4;
+        } else {
+            $currentIndex = 1;
+        }
+
+        $hodLabel = 'HOD Review Pending';
+        if ($hodApproved) {
+            $hodLabel = 'HOD Review Accepted';
+        } elseif ($hodRejected) {
+            $hodLabel = 'HOD Review Rejected';
+        }
+
+        $registrarLabel = 'Registrar Review Pending';
+        if ($registrarApproved) {
+            $registrarLabel = 'Registrar Review Accepted';
+        } elseif ($registrarRejected) {
+            $registrarLabel = 'Registrar Review Rejected';
+        }
+
+        return [
+            [
+                'key' => 'pending_submission',
+                'label' => 'Pending Submission',
+                'icon' => 'fas fa-edit',
+                'state' => $isDraft ? 'current' : 'completed',
+            ],
+            [
+                'key' => 'submitted',
+                'label' => 'Submitted',
+                'icon' => 'fas fa-paper-plane',
+                'state' => $this->timelineState(1, $currentIndex, $isSubmitted),
+            ],
+            [
+                'key' => 'hod',
+                'label' => $hodLabel,
+                'icon' => $hodRejected ? 'fas fa-times' : ($hodApproved ? 'fas fa-check' : 'fas fa-hourglass-half'),
+                'state' => $hodRejected ? 'rejected' : $this->timelineState(2, $currentIndex, $hodApproved),
+            ],
+            [
+                'key' => 'registrar',
+                'label' => $registrarLabel,
+                'icon' => $registrarRejected ? 'fas fa-times' : ($registrarApproved ? 'fas fa-check' : 'fas fa-user-tie'),
+                'state' => $registrarRejected ? 'rejected' : $this->timelineState(3, $currentIndex, $registrarApproved),
+            ],
+            [
+                'key' => 'admitted',
+                'label' => 'Admitted',
+                'icon' => 'fas fa-graduation-cap',
+                'state' => $this->timelineState(4, $currentIndex, $admitted),
+            ],
+        ];
+    }
+
+    private function timelineState($index, $currentIndex, $isCompleted)
+    {
+        if ($isCompleted) {
+            return 'completed';
+        }
+
+        if ($index === $currentIndex) {
+            return 'current';
+        }
+
+        return 'pending';
+    }
+
+    /**
      * Update the main status based on workflow stages
      */
     public function updateMainStatus()

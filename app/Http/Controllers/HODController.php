@@ -4,11 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\Application;
 use App\Models\Department;
+use App\Services\SmsService;
 
 class HODController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function dashboard()
     {
         $user = Auth::user();
@@ -92,6 +101,8 @@ class HODController extends Controller
         // Update main status based on workflow
         $application->updateMainStatus();
 
+        $this->notifyStudentOfHodReview($application, 'approved');
+
         return redirect()->route('hod.dashboard')
             ->with('success', 'Application approved successfully.');
     }
@@ -123,7 +134,49 @@ class HODController extends Controller
         // Update main status based on workflow
         $application->updateMainStatus();
 
+        $this->notifyStudentOfHodReview($application, 'rejected');
+
         return redirect()->route('hod.dashboard')
             ->with('success', 'Application rejected.');
+    }
+
+    /**
+     * SMS the applicant after HOD accept/reject. Failures must not block the review.
+     */
+    private function notifyStudentOfHodReview(Application $application, $decision)
+    {
+        $application->loadMissing(['user', 'admissionForm']);
+
+        $user = $application->user;
+        $phone = optional($application->admissionForm)->telephone
+            ?: (is_array($application->data) ? ($application->data['telephone'] ?? null) : null)
+            ?: optional($user)->phone;
+
+        if (!$phone) {
+            Log::warning('HOD review SMS skipped: no phone number', [
+                'application_id' => $application->id,
+            ]);
+            return;
+        }
+
+        $name = optional($application->admissionForm)->full_name
+            ?: optional($user)->name
+            ?: 'Applicant';
+        $applicationNumber = $application->application_number;
+
+        if ($decision === 'approved') {
+            $message = "Dear {$name}, your application {$applicationNumber} has been accepted by the Head of Department and is now awaiting Registrar review. - Delexes University College";
+        } else {
+            $message = "Dear {$name}, your application {$applicationNumber} was not successful at HOD review. Please contact the admissions office for more information. - Delexes University College";
+        }
+
+        try {
+            $this->smsService->send($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('HOD review SMS failed', [
+                'application_id' => $application->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
