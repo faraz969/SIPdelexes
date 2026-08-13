@@ -17,6 +17,13 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, string $role)
     {
         if (! $request->user() || $request->user()->role !== $role) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden. Bank role required.',
+                ], 403);
+            }
+
             abort(403);
         }
 

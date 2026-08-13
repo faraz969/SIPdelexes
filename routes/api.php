@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BankApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,28 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+/*
+|--------------------------------------------------------------------------
+| Bank Integration API
+|--------------------------------------------------------------------------
+| Authenticate with a bank account, then use the Bearer token for voucher
+| / applicant creation endpoints (same flow as the bank dashboard).
+*/
+Route::prefix('bank')->name('api.bank.')->group(function () {
+    Route::post('/login', [BankApiController::class, 'login'])->name('login');
+
+    Route::middleware(['auth:sanctum', 'role:bank'])->group(function () {
+        Route::post('/logout', [BankApiController::class, 'logout'])->name('logout');
+        Route::get('/me', [BankApiController::class, 'me'])->name('me');
+        Route::get('/form-types', [BankApiController::class, 'formTypes'])->name('form-types');
+        Route::get('/countries', [BankApiController::class, 'countries'])->name('countries');
+        Route::get('/users', [BankApiController::class, 'listUsers'])->name('users.index');
+        Route::post('/users', [BankApiController::class, 'createUser'])->name('users.store');
+        Route::get('/users/{id}', [BankApiController::class, 'getUser'])->name('users.show');
+        Route::get('/users/{id}/receipt', [BankApiController::class, 'getReceipt'])->name('users.receipt');
+    });
+});
 
 // ERP Integration API Endpoints
 Route::prefix('erp')->name('erp.')->group(function () {
