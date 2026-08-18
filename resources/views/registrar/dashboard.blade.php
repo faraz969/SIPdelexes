@@ -15,26 +15,26 @@
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card bg-warning text-dark">
                 <div class="card-body">
-                    <h5 class="card-title">Pending Review</h5>
-                    <h3>{{ $stats['total_pending'] }}</h3>
+                    <h5 class="card-title">Pending</h5>
+                    <h3>{{ $stats['pending'] }}</h3>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Approved Today</h5>
-                    <h3>{{ $stats['approved_today'] }}</h3>
+                    <h5 class="card-title">Approved</h5>
+                    <h3>{{ $stats['approved'] }}</h3>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Rejected Today</h5>
-                    <h3>{{ $stats['rejected_today'] }}</h3>
+                    <h5 class="card-title">Rejected</h5>
+                    <h3>{{ $stats['rejected'] }}</h3>
                 </div>
             </div>
         </div>
@@ -47,6 +47,38 @@
             </div>
         </div>
     </div>
+
+    <form method="GET" action="{{ route('registrar.dashboard') }}" class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
+                    <label for="department_id" class="form-label">Department</label>
+                    <select name="department_id" id="department_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All departments</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}" {{ (string) $departmentId === (string) $department->id ? 'selected' : '' }}>
+                                {{ $department->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="academic_year" class="form-label">Academic Year</label>
+                    <select name="academic_year" id="academic_year" class="form-select" onchange="this.form.submit()">
+                        <option value="">All academic years</option>
+                        @foreach($academicYears as $year)
+                            <option value="{{ $year }}" {{ $academicYear === $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @if($academicYear || $departmentId)
+                    <div class="col-md-2">
+                        <a href="{{ route('registrar.dashboard') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </form>
 
     <!-- Pending Applications Section -->
     <div class="card mb-4">

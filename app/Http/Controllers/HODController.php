@@ -18,7 +18,7 @@ class HODController extends Controller
         $this->smsService = $smsService;
     }
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
         $department = $user->department;
@@ -27,29 +27,54 @@ class HODController extends Controller
             return redirect()->route('admin.dashboard')->with('error', 'No department assigned to your account.');
         }
 
-        // Get applications for this department that are pending HOD review (exclude drafts)
-        $pendingApplications = Application::with(['user', 'department', 'examRecords.subjects'])
-            ->where(function($query) use ($department) {
-                $query->where('department_id', $department->id)
-                      ->orWhereJsonContains('department_ids', $department->id);
-            })
-            ->where('hod_status', 'pending')
+        $academicYear = trim((string) $request->get('academic_year', ''));
+
+        $baseQuery = Application::query()
             ->where('status', '!=', 'draft')
+            ->where(function ($query) use ($department) {
+                $query->where('department_id', $department->id)
+                    ->orWhereJsonContains('department_ids', $department->id)
+                    ->orWhereJsonContains('department_ids', (string) $department->id);
+            });
+
+        $academicYears = (clone $baseQuery)
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $filteredQuery = clone $baseQuery;
+        if ($academicYear !== '') {
+            $filteredQuery->where('academic_year', $academicYear);
+        }
+
+        $pendingApplications = (clone $filteredQuery)
+            ->with(['user', 'department', 'examRecords.subjects'])
+            ->where('hod_status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get applications that have been reviewed by HOD (exclude drafts)
-        $reviewedApplications = Application::with(['user', 'department', 'examRecords.subjects'])
-            ->where(function($query) use ($department) {
-                $query->where('department_id', $department->id)
-                      ->orWhereJsonContains('department_ids', $department->id);
-            })
+        $reviewedApplications = (clone $filteredQuery)
+            ->with(['user', 'department', 'examRecords.subjects'])
             ->whereIn('hod_status', ['approved', 'rejected'])
-            ->where('status', '!=', 'draft')
             ->orderBy('hod_reviewed_at', 'desc')
             ->get();
 
-        return view('hod.dashboard', compact('department', 'pendingApplications', 'reviewedApplications'));
+        $stats = [
+            'pending' => (clone $filteredQuery)->where('hod_status', 'pending')->count(),
+            'approved' => (clone $filteredQuery)->where('hod_status', 'approved')->count(),
+            'rejected' => (clone $filteredQuery)->where('hod_status', 'rejected')->count(),
+        ];
+
+        return view('hod.dashboard', compact(
+            'department',
+            'pendingApplications',
+            'reviewedApplications',
+            'academicYears',
+            'academicYear',
+            'stats'
+        ));
     }
 
     public function showApplication(Application $application)

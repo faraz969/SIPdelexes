@@ -20,45 +20,72 @@ class RegistrarController extends Controller
         $this->sipAutomationService = $sipAutomationService;
         $this->admissionFormService = $admissionFormService;
     }
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        // Get all applications that can be reviewed by registrar (hod_status = approved, exclude drafts)
-        $pendingApplications = Application::with(['user', 'department', 'examRecords.subjects'])
+        $academicYear = trim((string) $request->get('academic_year', ''));
+        $departmentId = $request->get('department_id');
+
+        $departments = Department::orderBy('name')->get();
+
+        $academicYears = Application::where('status', '!=', 'draft')
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $baseQuery = Application::query()->where('status', '!=', 'draft');
+
+        if ($academicYear !== '') {
+            $baseQuery->where('academic_year', $academicYear);
+        }
+
+        if (!empty($departmentId)) {
+            $baseQuery->where(function ($query) use ($departmentId) {
+                $query->where('department_id', $departmentId)
+                    ->orWhereJsonContains('department_ids', (int) $departmentId)
+                    ->orWhereJsonContains('department_ids', (string) $departmentId);
+            });
+        }
+
+        $pendingApplications = (clone $baseQuery)
+            ->with(['user', 'department', 'examRecords.subjects'])
             ->where('hod_status', 'approved')
             ->where('registrar_status', 'pending')
-            ->where('status', '!=', 'draft')
             ->orderBy('hod_reviewed_at', 'desc')
             ->get();
 
-        // Get all applications that have been reviewed by registrar (exclude drafts)
-        $reviewedApplications = Application::with(['user', 'department', 'examRecords.subjects'])
+        $reviewedApplications = (clone $baseQuery)
+            ->with(['user', 'department', 'examRecords.subjects'])
             ->whereIn('registrar_status', ['approved', 'rejected'])
-            ->where('status', '!=', 'draft')
             ->orderBy('registrar_reviewed_at', 'desc')
             ->get();
 
-        // Get all applications for overview (registrar can see all, but exclude drafts)
-        $allApplications = Application::with(['user', 'department', 'examRecords.subjects'])
-            ->where('status', '!=', 'draft')
+        $allApplications = (clone $baseQuery)
+            ->with(['user', 'department', 'examRecords.subjects'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get statistics (exclude drafts)
         $stats = [
-            'total_pending' => $pendingApplications->count(),
-            'total_reviewed' => $reviewedApplications->count(),
-            'total_applications' => $allApplications->count(),
-            'approved_today' => Application::where('registrar_status', 'approved')
-                ->where('status', '!=', 'draft')
-                ->whereDate('registrar_reviewed_at', today())
+            'pending' => (clone $baseQuery)
+                ->where('hod_status', 'approved')
+                ->where('registrar_status', 'pending')
                 ->count(),
-            'rejected_today' => Application::where('registrar_status', 'rejected')
-                ->where('status', '!=', 'draft')
-                ->whereDate('registrar_reviewed_at', today())
-                ->count(),
+            'approved' => (clone $baseQuery)->where('registrar_status', 'approved')->count(),
+            'rejected' => (clone $baseQuery)->where('registrar_status', 'rejected')->count(),
+            'total_applications' => (clone $baseQuery)->count(),
         ];
 
-        return view('registrar.dashboard', compact('pendingApplications', 'reviewedApplications', 'allApplications', 'stats'));
+        return view('registrar.dashboard', compact(
+            'pendingApplications',
+            'reviewedApplications',
+            'allApplications',
+            'stats',
+            'departments',
+            'academicYears',
+            'academicYear',
+            'departmentId'
+        ));
     }
 
     public function showApplication(Application $application)

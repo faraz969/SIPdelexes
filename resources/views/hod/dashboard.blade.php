@@ -12,6 +12,54 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Pending</h6>
+                    <h3 class="mb-0 text-warning">{{ $stats['pending'] }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Approved</h6>
+                    <h3 class="mb-0 text-success">{{ $stats['approved'] }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Rejected</h6>
+                    <h3 class="mb-0 text-danger">{{ $stats['rejected'] }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="GET" action="{{ route('hod.dashboard') }}" class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label for="academic_year" class="form-label">Academic Year</label>
+                    <select name="academic_year" id="academic_year" class="form-select" onchange="this.form.submit()">
+                        <option value="">All academic years</option>
+                        @foreach($academicYears as $year)
+                            <option value="{{ $year }}" {{ $academicYear === $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @if($academicYear)
+                    <div class="col-md-2">
+                        <a href="{{ route('hod.dashboard') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </form>
+
     <!-- Pending Applications Section -->
     <div class="card mb-4">
         <div class="card-header">
