@@ -164,7 +164,7 @@ class SIPAutomationService
         $biodata = [
             'full_name' => $admissionForm->full_name ?? $user->name ?? 'N/A',
             'email' => $admissionForm->email ?? $user->email ?? 'N/A',
-            'phone' => $admissionForm->telephone ?? $user->phone ?? null,
+            'phone' => $user->phone ?? null,
             'dob' => $admissionForm->dob ?? null,
             'gender' => $admissionForm->gender ?? null,
             'nationality' => $admissionForm->nationality ?? $user->nationality ?? null,

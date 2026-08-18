@@ -29,7 +29,7 @@
                             <strong>Email:</strong> {{ $biodata['email'] ?? $student->user->email }}
                         </div>
                         <div class="col-md-6 mb-3">
-                            <strong>Phone:</strong> {{ $biodata['phone'] ?? $student->user->phone ?? 'N/A' }}
+                            <strong>Phone:</strong> {{ $student->user->phone ?? 'N/A' }}
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>Date of Birth:</strong> {{ isset($biodata['dob']) ? \Carbon\Carbon::parse($biodata['dob'])->format('d M Y') : 'N/A' }}
