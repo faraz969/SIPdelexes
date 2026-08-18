@@ -42,12 +42,12 @@
                         <div class="col-md-6">
                             <p><strong>Applicant Name:</strong> {{ $application->user->name ?? '-' }}</p>
                             <p><strong>Email:</strong> {{ $application->user->email ?? '-' }}</p>
+                            <p><strong>Phone:</strong> {{ optional($application->admissionForm)->telephone ?? (is_array($application->data) ? ($application->data['telephone'] ?? null) : null) ?? $application->user->phone ?? '-' }}</p>
                             <p><strong>Application Number:</strong> {{ $application->application_number }}</p>
                             <p><strong>Academic Year:</strong> {{ safeDisplay($application->academic_year) }}</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Form Type:</strong> {{ ucfirst(safeDisplay($application->form_type)) }}</p>
-                            <p><strong>Applicant Type:</strong> {{ ucfirst(safeDisplay($application->applicant_type)) }}</p>
                             <p><strong>Primary Department:</strong> {{ $application->department->name ?? '-' }}</p>
                             @if($application->department_ids && is_array($application->department_ids) && count($application->department_ids) > 1)
                                 <p><strong>All Departments:</strong> 
@@ -71,11 +71,27 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
+                            @php
+                                $hiddenDataKeys = ['applicant_type', 'entry_wassce', 'entry_sssce', 'entry_ib', 'entry_transfer', 'entry_other'];
+                                $entryTypeLabels = [
+                                    'entry_wassce' => 'WASSCE',
+                                    'entry_sssce' => 'SSSCE',
+                                    'entry_ib' => 'International Baccalaureate',
+                                    'entry_transfer' => 'Transfer',
+                                    'entry_other' => 'Other',
+                                ];
+                            @endphp
                             @foreach($application->data as $key => $value)
-                                @if($key !== '_files' && !empty($value))
+                                @if($key !== '_files' && !in_array($key, $hiddenDataKeys, true) && !empty($value))
+                                    @php
+                                        $displayValue = $value;
+                                        if ($key === 'entry_type') {
+                                            $displayValue = $entryTypeLabels[$value] ?? ucfirst(str_replace(['entry_', '_'], ['', ' '], $value));
+                                        }
+                                    @endphp
                                     <div class="col-md-6 mb-3">
                                         <strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong>
-                                        <p class="mb-0">{{ safeDisplay($value) }}</p>
+                                        <p class="mb-0">{{ safeDisplay($displayValue) }}</p>
                                     </div>
                                 @endif
                             @endforeach
