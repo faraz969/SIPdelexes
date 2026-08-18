@@ -42,7 +42,7 @@
                         <div class="col-md-6">
                             <p><strong>Applicant Name:</strong> {{ $application->user->name ?? '-' }}</p>
                             <p><strong>Email:</strong> {{ $application->user->email ?? '-' }}</p>
-                            <p><strong>Phone:</strong> {{ optional($application->admissionForm)->telephone ?? (is_array($application->data) ? ($application->data['telephone'] ?? null) : null) ?? $application->user->phone ?? '-' }}</p>
+                            <p><strong>Phone:</strong> {{ $application->user->phone ?? '-' }}</p>
                             <p><strong>Application Number:</strong> {{ $application->application_number }}</p>
                             <p><strong>Academic Year:</strong> {{ safeDisplay($application->academic_year) }}</p>
                         </div>
