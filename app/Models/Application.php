@@ -130,7 +130,7 @@ class Application extends Model
 
     public function isPendingRegistrar()
     {
-        return $this->registrar_status === 'pending' && $this->isApprovedByPresident();
+        return $this->registrar_status === 'pending' && $this->isApprovedByHOD();
     }
 
     public function isApprovedByRegistrar()
@@ -145,7 +145,7 @@ class Application extends Model
 
     public function isFullyApproved()
     {
-        return $this->isApprovedByHOD() && $this->isApprovedByPresident() && $this->isApprovedByRegistrar();
+        return $this->isApprovedByHOD() && $this->isApprovedByRegistrar();
     }
 
     public function isRejected()
@@ -159,16 +159,12 @@ class Application extends Model
             return 'rejected';
         }
 
-        if ($this->isFullyApproved()) {
+        if ($this->isApprovedByRegistrar()) {
             return 'approved';
         }
 
         if ($this->isPendingHOD()) {
             return 'hod_pending';
-        }
-
-        if ($this->isPendingPresident()) {
-            return 'president_pending';
         }
 
         if ($this->isPendingRegistrar()) {
@@ -183,12 +179,10 @@ class Application extends Model
         switch ($this->current_stage) {
             case 'hod_pending':
                 return 'Pending HOD Review';
-            case 'president_pending':
-                return 'Pending President Review';
             case 'registrar_pending':
                 return 'Pending Registrar Review';
             case 'approved':
-                return 'Approved';
+                return 'Admitted';
             case 'rejected':
                 return 'Rejected';
             default:
