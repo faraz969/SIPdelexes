@@ -145,7 +145,7 @@
             line-height: 1.8;
         }
         .highlight-yellow {
-            background-color: #ffff00;
+            background-color: none;
             padding: 2px 4px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
