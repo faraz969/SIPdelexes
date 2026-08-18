@@ -273,13 +273,26 @@ class ERPIntegrationService
         return null;
     }
 
+    /**
+     * Split a full name into first / middle / last for ERPNext.
+     * Two-part names (e.g. "John Doe") put the second word in last_name, not middle_name.
+     */
     protected function splitFullName(string $fullName): array
     {
-        $parts = preg_split('/\s+/', trim($fullName), 3);
+        $parts = preg_split('/\s+/', trim($fullName), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (empty($parts)) {
+            return ['first' => 'Student', 'middle' => '', 'last' => ''];
+        }
+
+        $first = array_shift($parts);
+        $last = count($parts) > 0 ? array_pop($parts) : '';
+        $middle = implode(' ', $parts);
+
         return [
-            'first' => $parts[0] ?? 'Student',
-            'middle' => $parts[1] ?? '',
-            'last' => $parts[2] ?? '',
+            'first' => $first,
+            'middle' => $middle,
+            'last' => $last,
         ];
     }
 
