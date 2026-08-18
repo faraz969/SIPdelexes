@@ -195,6 +195,20 @@
       background: radial-gradient(circle at center, #c7cedd 3px, #ffffff 4px);
       box-shadow: none;
     }
+    .side-item.completed.active::before,
+    .side-item.completed::before {
+      content: "\f00c";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      font-size: 11px;
+      color: #16a34a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-color: #86efac;
+      background: #ecfdf3;
+      box-shadow: none;
+    }
     .side-item .left { display: flex; align-items: center; gap: 10px; }
     .side-item .left i { color: #7b8794; width: 16px; text-align: center; }
     .side-item.active .left i,
@@ -907,7 +921,17 @@
       </div>
 
       <!-- Tab 5: Documents -->
-      <div class="tab-content" id="documents">
+      @php
+        $admissionUploads = optional(optional($application ?? null)->admissionForm)->uploads;
+        $admissionUploads = is_array($admissionUploads) ? $admissionUploads : [];
+        $hasGhanaFront = !empty($uploadedFiles['ghana_card_front']) || !empty($admissionUploads['ghana_card_front']);
+        $hasGhanaBack = !empty($uploadedFiles['ghana_card_back']) || !empty($admissionUploads['ghana_card_back']);
+        $hasPassportPicture = !empty($uploadedFiles['passport_picture']) || !empty($admissionUploads['passport_picture']);
+      @endphp
+      <div class="tab-content" id="documents"
+           data-uploaded-ghana-card-front="{{ $hasGhanaFront ? '1' : '0' }}"
+           data-uploaded-ghana-card-back="{{ $hasGhanaBack ? '1' : '0' }}"
+           data-uploaded-passport-picture="{{ $hasPassportPicture ? '1' : '0' }}">
     <fieldset>
       <legend>Checklist</legend>
 
@@ -1653,15 +1677,46 @@ function getTabName(tabIndex) {
   return tabNames[tabIndex] || 'Unknown';
 }
 
+function hasUploadedDocument(tabContent, fieldId, dataAttr) {
+  const input = tabContent.querySelector('#' + fieldId);
+  if (input && input.type === 'file' && input.files && input.files.length > 0) {
+    return true;
+  }
+  if (input && input.type === 'file' && String(input.value || '').trim()) {
+    return true;
+  }
+  return !!(dataAttr && tabContent.getAttribute(dataAttr) === '1');
+}
+
+function isDocumentsTabComplete(tabContent) {
+  return hasUploadedDocument(tabContent, 'ghana_card_front', 'data-uploaded-ghana-card-front')
+    && hasUploadedDocument(tabContent, 'ghana_card_back', 'data-uploaded-ghana-card-back')
+    && hasUploadedDocument(tabContent, 'passport_picture', 'data-uploaded-passport-picture');
+}
+
 function updateTabCompletionStatus() {
   const tabButtons = document.querySelectorAll('.side-item');
   tabButtons.forEach((button, index) => {
     const tabContent = document.getElementById(button.dataset.tab);
+    if (!tabContent) return;
+
+    const tabId = button.dataset.tab;
+    let completed = true;
+
+    if (tabId === 'documents') {
+      completed = isDocumentsTabComplete(tabContent);
+    } else {
     const requiredFields = tabContent.querySelectorAll('input[required], select[required], textarea[required]');
 
-    let completed = true;
     if (requiredFields.length > 0) {
       for (let field of requiredFields) {
+        if (field.type === 'file') {
+          if (!hasUploadedDocument(tabContent, field.id, '')) {
+            completed = false;
+            break;
+          }
+          continue;
+        }
         if (!String(field.value || '').trim()) {
           completed = false;
           break;
@@ -1669,7 +1724,6 @@ function updateTabCompletionStatus() {
       }
     } else {
       // If no required fields, treat completion per-tab with custom rules
-      const tabId = button.dataset.tab;
       if (tabId === 'programs') {
         // Programs considered completed only if at least one program dropdown has a non-empty value
         const selects = tabContent.querySelectorAll('select');
@@ -1696,6 +1750,7 @@ function updateTabCompletionStatus() {
           return String(f.value || '').trim().length > 0;
         });
       }
+    }
     }
     
     // Special check: Education tab must have applicant type selected
