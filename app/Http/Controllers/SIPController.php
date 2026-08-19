@@ -300,11 +300,7 @@ class SIPController extends Controller
         // Pass isPdf flag to exclude Font Awesome and icons
         $pdf = Pdf::loadView('sip.admission-form', compact('student', 'data', 'formData', 'download') + ['isPdf' => true])
             ->setPaper('a4', 'portrait')
-            ->setOption('margin-top', 10)
-            ->setOption('margin-bottom', 10)
-            ->setOption('margin-left', 10)
-            ->setOption('margin-right', 10)
-            ->setOption('enable-remote', false); // Disable remote resources
+            ->setOption('enable-remote', false);
 
         $fileName = 'Admission_Form_' . $student->student_id . '.pdf';
 

@@ -8,19 +8,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     @endif
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 8mm;
+        }
         @media print {
-            .no-print {
+            .no-print,
+            .footer {
                 display: none !important;
             }
             body {
                 margin: 0;
                 padding: 0;
+                max-width: none;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
             .highlight-yellow {
-                background-color: none  !important;
+                background-color: none !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -30,92 +36,99 @@
         }
         body {
             font-family: 'Times New Roman', serif;
-            line-height: 1.6;
+            line-height: 1.35;
             color: #000;
             max-width: 210mm;
             margin: 0 auto;
-            padding: 20mm;
+            padding: 10mm 12mm;
             background: #fff;
-            font-size: 11pt;
+            font-size: 10pt;
+        }
+        body.is-pdf {
+            padding: 4mm 6mm;
         }
         .header-container {
             display: flex;
             align-items: flex-start;
-            margin-bottom: 20px;
+            margin-bottom: 6px;
         }
         .logo-container {
-            width: 80px;
-            margin-right: 15px;
+            width: 58px;
+            margin-right: 12px;
         }
         .logo-container img {
             width: 100%;
             height: auto;
+            max-width: 58px;
         }
         .header-content {
             flex: 1;
-            margin-left:58px;
+            margin-left: 12px;
         }
         .university-name {
-            font-size: 18pt;
+            font-size: 15pt;
             font-weight: bold;
             color: #1e3a8a;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             font-family: Arial, sans-serif;
         }
         .address-line {
-            font-size: 10pt;
-            margin-bottom: 3px;
+            font-size: 9pt;
+            margin-bottom: 2px;
             color: #333;
         }
         .contact-line {
-            font-size: 10pt;
+            font-size: 9pt;
             color: #333;
-            text-align:center;
+            text-align: center;
         }
         .divider {
             border-bottom: 1px solid #000;
-            margin: 15px 0 20px 0;
+            margin: 6px 0 8px 0;
         }
         .student-name-date {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin: 20px 0;
+            margin: 6px 0;
         }
         .student-name {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
         }
         .document-date {
-            font-size: 11pt;
+            font-size: 10pt;
             text-align: right;
         }
         .offer-title {
             text-align: center;
-            font-size: 13pt;
+            font-size: 11.5pt;
             font-weight: bold;
-            margin: 25px 0;
+            margin: 8px 0;
             text-transform: uppercase;
             text-decoration: underline;
         }
         .body-text {
             text-align: justify;
-            margin: 15px 0;
-            font-size: 11pt;
-            line-height: 1.8;
+            margin: 6px 0;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+        .body-text p {
+            margin: 0;
         }
         .body-text strong {
             font-weight: bold;
         }
         .student-details-table {
-           
-            margin: 20px 0;
-            font-size: 11pt;
+            margin: 6px 0;
+            font-size: 10pt;
             border-collapse: collapse;
+            line-height: 1.35;
         }
         .student-details-table td {
-            
             vertical-align: top;
+            padding: 1px 0;
         }
         .student-details-table .detail-label {
             font-weight: bold;
@@ -123,30 +136,29 @@
             padding-right: 8px;
         }
         .student-details-table .detail-value {
-            
             min-width: 150px;
             padding: 0 5px;
-            font-weight:bold;
+            font-weight: bold;
         }
         .student-details-table .detail-spacer {
             width: 30px;
         }
         .fees-section {
-            margin: 20px 0;
+            margin: 8px 0;
         }
         .fees-section .title {
             font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 11pt;
+            margin-bottom: 4px;
+            font-size: 10pt;
         }
         .fees-item {
-            margin: 8px 0;
-            font-size: 11pt;
-            line-height: 1.8;
+            margin: 3px 0;
+            font-size: 10pt;
+            line-height: 1.4;
         }
         .highlight-yellow {
             background-color: none;
-            padding: 2px 4px;
+            padding: 0 2px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
             color-adjust: exact;
@@ -157,34 +169,34 @@
             font-weight: bold;
         }
         .anniversary-cloth {
-            margin: 10px 0;
-            font-size: 11pt;
+            margin: 4px 0;
+            font-size: 10pt;
         }
         .anniversary-cloth strong {
             font-weight: bold;
         }
         .hostel-info {
-            margin: 15px 0;
-            font-size: 11pt;
+            margin: 6px 0;
+            font-size: 10pt;
         }
         .hostel-info strong {
             font-weight: bold;
         }
         .dates-section {
-            margin: 20px 0;
+            margin: 8px 0;
         }
         .dates-section .title {
             font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 11pt;
+            margin-bottom: 4px;
+            font-size: 10pt;
         }
         .dates-list {
-            margin: 10px 0;
-            font-size: 11pt;
-            line-height: 2;
+            margin: 4px 0;
+            font-size: 10pt;
+            line-height: 1.45;
         }
         .dates-list .date-item {
-            margin: 5px 0;
+            margin: 1px 0;
         }
         .dates-list .date-label {
             font-weight: bold;
@@ -193,55 +205,58 @@
         }
         .dates-list .date-value {
             display: inline-block;
-            
             min-width: 150px;
             padding: 0 5px;
         }
         .terms-section {
-            margin: 20px 0;
+            margin: 8px 0 4px 0;
         }
         .terms-section p {
-            margin: 12px 0;
+            margin: 5px 0;
             text-align: justify;
-            font-size: 11pt;
-            line-height: 1.8;
+            font-size: 10pt;
+            line-height: 1.4;
         }
         .terms-section strong {
             font-weight: bold;
         }
         .signature-section {
-            margin-top: 50px;
-            margin-bottom: 20px;
+            margin-top: 10px;
+            margin-bottom: 4px;
         }
         .signature-image {
-            max-height: 80px;
-            max-width: 220px;
+            max-height: 42px;
+            max-width: 160px;
+            height: auto;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .signature-line {
             border-top: 1px solid #000;
-            width: 250px;
-            margin: 50px 0 8px 0;
+            width: 220px;
+            margin: 14px 0 4px 0;
         }
         .signature-name {
             font-weight: bold;
-            margin-top: 5px;
-            font-size: 11pt;
+            margin-top: 2px;
+            font-size: 10pt;
         }
         .signature-title {
-            font-size: 11pt;
-            margin-top: 5px;
+            font-size: 10pt;
+            margin-top: 0;
         }
         .pin-info {
-            margin-top: 15px;
-            font-size: 11pt;
+            margin-top: 6px;
+            font-size: 10pt;
         }
         .footer {
-            margin-top: 30px;
-            font-size: 9pt;
+            margin-top: 10px;
+            font-size: 8pt;
             color: #666;
             text-align: center;
+        }
+        body.is-pdf .footer {
+            display: none;
         }
         .action-buttons {
             text-align: center;
@@ -282,14 +297,14 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ !empty($isPdf) ? 'is-pdf' : '' }}">
     <!-- Header with Logo -->
     <div class="header-container">
         <div class="logo-container">
             @if(file_exists(public_path('images/logo_blue.png')))
-                <img src="{{ asset('images/logo_blue.png') }}" alt="DUC Logo" style="max-width: 80px;">
+                <img src="{{ asset('images/logo_blue.png') }}" alt="DUC Logo" style="max-width: 58px;">
             @else
-                <div style="width: 80px; height: 80px; border: 2px solid #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e3a8a;">
+                <div style="width: 58px; height: 58px; border: 2px solid #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e3a8a;">
                     DUC
                 </div>
             @endif
@@ -364,13 +379,11 @@
         <div class="fees-item">
             Balance to be paid before end-of-semester exams: <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong>.
         </div>
-        <div class="anniversary-cloth">
-            A one-off cost of <strong>GHS 150</strong> will be billed for each student for the purchase of the anniversary cloth.
-        </div>
+       
         <div class="hostel-info">
             <strong>Hostel:</strong> The University assists students to locate decent and affordable hostels.
         </div>
-        <div class="body-text" style="margin-top: 15px;">
+        <div class="body-text">
             <p>
                 If you accept this offer of admission, then you are required to pay not less than {{ $data['minimum_fee_percentage'] ? str_replace('%', '', $data['minimum_fee_percentage']) : '60' }}% of the total fees by <strong>{{ $data['paid_fees_by_date'] }}</strong> and the outstanding balance within the semester. Full payment of fees for the semester is expected two weeks before the End-of-Semester Examinations begin.
             </p>
