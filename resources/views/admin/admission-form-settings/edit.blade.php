@@ -34,7 +34,7 @@
                         </div>
                     </form>
 
-                    <form action="{{ route('admin.admission-form-settings.update') }}" method="POST">
+                    <form action="{{ route('admin.admission-form-settings.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -124,6 +124,37 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Registrar Details</h5>
+                        <p class="text-muted small">These appear on the student admission form (offer letter).</p>
+
+                        <div class="mb-3">
+                            <label for="registrar_name" class="form-label">Registrar Name</label>
+                            <input type="text" class="form-control @error('registrar_name') is-invalid @enderror"
+                                   id="registrar_name" name="registrar_name"
+                                   value="{{ old('registrar_name', $settings->registrar_name) }}"
+                                   placeholder="e.g., A TEYE ABERMOR">
+                            @error('registrar_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="registrar_signature" class="form-label">Registrar Signature</label>
+                            @if($settings->registrar_signature)
+                                <div class="mb-2">
+                                    <img src="{{ $settings->registrarSignatureSrc() }}" alt="Current registrar signature" style="max-height: 80px; max-width: 220px;" class="img-thumbnail">
+                                    <br><small class="text-muted">Current signature</small>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control @error('registrar_signature') is-invalid @enderror"
+                                   id="registrar_signature" name="registrar_signature" accept="image/*">
+                            <small class="form-text text-muted">Accepted formats: JPEG, PNG, JPG, GIF, SVG, WEBP. Max size: 2MB. Leave empty to keep the current signature.</small>
+                            @error('registrar_signature')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="d-flex justify-content-between">

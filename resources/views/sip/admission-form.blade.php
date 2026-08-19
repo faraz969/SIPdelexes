@@ -213,6 +213,12 @@
             margin-top: 50px;
             margin-bottom: 20px;
         }
+        .signature-image {
+            max-height: 80px;
+            max-width: 220px;
+            display: block;
+            margin-bottom: 4px;
+        }
         .signature-line {
             border-top: 1px solid #000;
             width: 250px;
@@ -415,7 +421,11 @@
 
     <!-- Signature Section -->
     <div class="signature-section">
-        <div class="signature-line"></div>
+        @if(!empty($data['registrar_signature']))
+            <img src="{{ $data['registrar_signature'] }}" alt="Registrar signature" class="signature-image">
+        @else
+            <div class="signature-line"></div>
+        @endif
         <div class="signature-name">{{ $data['registrar_name'] }}</div>
         <div class="signature-title">{{ $data['registrar_title'] }}</div>
         <div class="pin-info">

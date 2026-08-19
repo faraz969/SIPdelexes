@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Student;
 use App\Models\AdmissionFormData;
+use App\Models\AdmissionFormDefault;
 use Illuminate\Support\Facades\Log;
 
 class AdmissionFormService
@@ -36,6 +37,9 @@ class AdmissionFormService
         $programPrice = $student->program && $student->program->price !== null
             ? $student->program->price
             : $formData->total_fees;
+
+        $defaults = $this->getDefaultsForStudent($student);
+        $registrarName = $defaults ? trim((string) $defaults->registrar_name) : '';
 
         return [
             // Header Information
@@ -80,9 +84,26 @@ class AdmissionFormService
             
             // Additional fields
             'application_pin' => $user->serial_number ?? '',
-            'registrar_name' => 'A TEYE ABERMOR',
+            'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
             'registrar_title' => 'Registrar',
+            'registrar_signature' => $defaults ? $defaults->registrarSignatureSrc() : null,
         ];
+    }
+
+    protected function getDefaultsForStudent(Student $student): ?AdmissionFormDefault
+    {
+        $academicYear = $student->academic_year;
+        $defaults = null;
+
+        if ($academicYear) {
+            $defaults = AdmissionFormDefault::where('academic_year', $academicYear)->first();
+        }
+
+        if (!$defaults) {
+            $defaults = AdmissionFormDefault::first();
+        }
+
+        return $defaults;
     }
 
     /**

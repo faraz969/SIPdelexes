@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionFormDefault;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdmissionFormSettingsController extends Controller
 {
@@ -52,11 +53,22 @@ class AdmissionFormSettingsController extends Controller
             'orientation_new_students' => 'nullable|date',
             'faculty_orientation' => 'nullable|date',
             'lectures_begin' => 'nullable|date',
+            'registrar_name' => 'nullable|string|max:255',
+            'registrar_signature' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         $settings = AdmissionFormDefault::firstOrNew([
             'academic_year' => $validated['academic_year'],
         ]);
+
+        if ($request->hasFile('registrar_signature') && $request->file('registrar_signature')->isValid()) {
+            if ($settings->registrar_signature && Storage::disk('public')->exists($settings->registrar_signature)) {
+                Storage::disk('public')->delete($settings->registrar_signature);
+            }
+            $validated['registrar_signature'] = $request->file('registrar_signature')->store('registrar_signatures', 'public');
+        } else {
+            unset($validated['registrar_signature']);
+        }
 
         $settings->fill($validated);
         $settings->save();

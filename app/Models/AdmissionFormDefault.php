@@ -18,6 +18,8 @@ class AdmissionFormDefault extends Model
         'orientation_new_students',
         'faculty_orientation',
         'lectures_begin',
+        'registrar_name',
+        'registrar_signature',
     ];
 
     protected $casts = [
@@ -30,5 +32,24 @@ class AdmissionFormDefault extends Model
         'faculty_orientation' => 'date',
         'lectures_begin' => 'date',
     ];
+
+    /**
+     * Data URI for the registrar signature image (works in HTML, print, and PDF).
+     */
+    public function registrarSignatureSrc(): ?string
+    {
+        if (empty($this->registrar_signature)) {
+            return null;
+        }
+
+        $fullPath = storage_path('app/public/' . $this->registrar_signature);
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'image/png';
+
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+    }
 }
 
