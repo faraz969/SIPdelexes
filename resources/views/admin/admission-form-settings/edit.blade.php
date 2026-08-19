@@ -49,6 +49,18 @@
                             @enderror
                         </div>
 
+                        <div class="mb-3">
+                            <label for="level" class="form-label">Level</label>
+                            <input type="text" class="form-control @error('level') is-invalid @enderror"
+                                   id="level" name="level"
+                                   value="{{ old('level', $settings->level) }}"
+                                   placeholder="e.g., 100">
+                            <small class="form-text text-muted">Shown on the admission letter, e.g. “admission to level 100”.</small>
+                            @error('level')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="minimum_fee_percentage" class="form-label">Minimum Fee %</label>

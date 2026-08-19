@@ -11,6 +11,7 @@ class AdmissionFormDefault extends Model
 
     protected $fillable = [
         'academic_year',
+        'level',
         'minimum_fee_percentage',
         'balance_percentage',
         'paid_fees_by_date',

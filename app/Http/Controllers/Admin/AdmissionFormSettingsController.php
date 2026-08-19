@@ -46,6 +46,7 @@ class AdmissionFormSettingsController extends Controller
     {
         $validated = $request->validate([
             'academic_year' => 'required|string|max:50',
+            'level' => 'nullable|string|max:50',
             'minimum_fee_percentage' => 'nullable|numeric|min:0|max:100',
             'balance_percentage' => 'nullable|numeric|min:0|max:100',
             'paid_fees_by_date' => 'nullable|date',

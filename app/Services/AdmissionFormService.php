@@ -20,9 +20,6 @@ class AdmissionFormService
         $admissionForm = $application->admissionForm ?? null;
         $user = $student->user;
 
-        // Determine level (100, 200, etc.) - can be extracted from program or academic year
-        $level = '100'; // Default to 100, can be made dynamic based on program/academic year
-        
         // Get preferred session and campus from admission form
         $preferredSession = $admissionForm->preferred_session ?? '';
         $preferredCampus = $admissionForm->preferred_campus ?? '';
@@ -40,6 +37,10 @@ class AdmissionFormService
 
         $defaults = $this->getDefaultsForStudent($student);
         $registrarName = $defaults ? trim((string) $defaults->registrar_name) : '';
+        $level = $defaults ? trim((string) $defaults->level) : '';
+        if ($level === '') {
+            $level = '100';
+        }
 
         return [
             // Header Information
