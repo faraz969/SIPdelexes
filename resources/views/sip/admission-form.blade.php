@@ -449,9 +449,11 @@
     <!-- Action Buttons (Hidden in Print/PDF) -->
     @if(!isset($isPdf) || !$isPdf)
     <div class="action-buttons no-print">
-        <button onclick="window.print()" class="btn btn-info">
-            <i class="fas fa-print"></i> Print
-        </button>
+        @if(!empty($download))
+        <a href="{{ route('sip.downloads.pdf', $download) }}" class="btn btn-info">
+            <i class="fas fa-download"></i> Download PDF
+        </a>
+        @endif
        
         <a href="{{ route('sip.downloads') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Downloads
@@ -463,14 +465,5 @@
         <p>This is an official document from Delexes University College.</p>
         <p>Generated on: {{ now()->format('d/m/Y H:i') }}</p>
     </div>
-
-    @if(!isset($isPdf) || !$isPdf)
-    <script>
-        // Auto-print if requested
-        if (window.location.search.includes('print=true')) {
-            window.print();
-        }
-    </script>
-    @endif
 </body>
 </html>
