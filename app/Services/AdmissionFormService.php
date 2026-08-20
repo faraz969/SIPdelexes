@@ -31,9 +31,9 @@ class AdmissionFormService
         }
 
         // Determine total fees from program (price) or fall back to admission form data
-        $programPrice = $student->program && $student->program->price !== null
-            ? $student->program->price
-            : $formData->total_fees;
+        $totalFees = $student->program && $student->program->price !== null
+            ? (float) $student->program->price
+            : ($formData->total_fees !== null ? (float) $formData->total_fees : null);
 
         $defaults = $this->getDefaultsForStudent($student);
         $registrarName = $defaults ? trim((string) $defaults->registrar_name) : '';
@@ -41,6 +41,20 @@ class AdmissionFormService
         if ($level === '') {
             $level = '100';
         }
+
+        $minimumFeePercentage = $formData->minimum_fee_percentage !== null
+            ? (float) $formData->minimum_fee_percentage
+            : 60.0;
+        $balancePercentage = $formData->balance_percentage !== null
+            ? (float) $formData->balance_percentage
+            : ($totalFees !== null ? max(0, 100 - $minimumFeePercentage) : null);
+
+        $minimumFeeAmount = $totalFees !== null
+            ? round($totalFees * $minimumFeePercentage / 100, 2)
+            : null;
+        $balanceAmount = $totalFees !== null && $balancePercentage !== null
+            ? round($totalFees * $balancePercentage / 100, 2)
+            : null;
 
         return [
             // Header Information
@@ -68,15 +82,11 @@ class AdmissionFormService
             'date' => now()->format('d/m/Y'), // For the offer date
             
             // Admission Form Data
-            'total_fees' => $programPrice ? number_format($programPrice, 2) : '',
-            'minimum_fee_percentage' => $formData->minimum_fee_percentage ? number_format($formData->minimum_fee_percentage, 2) . '%' : '60%',
-            'minimum_fee_amount' => $formData->total_fees && $formData->minimum_fee_percentage 
-                ? number_format(($formData->total_fees * $formData->minimum_fee_percentage / 100), 2) 
-                : ($formData->total_fees ? number_format(($formData->total_fees * 60 / 100), 2) : ''),
-            'balance_percentage' => $formData->balance_percentage ? number_format($formData->balance_percentage, 2) . '%' : '',
-            'balance_amount' => $formData->total_fees && $formData->balance_percentage 
-                ? number_format(($formData->total_fees * $formData->balance_percentage / 100), 2) 
-                : '',
+            'total_fees' => $totalFees !== null ? number_format($totalFees, 2) : '',
+            'minimum_fee_percentage' => number_format($minimumFeePercentage, 2) . '%',
+            'minimum_fee_amount' => $minimumFeeAmount !== null ? number_format($minimumFeeAmount, 2) : '',
+            'balance_percentage' => $balancePercentage !== null ? number_format($balancePercentage, 2) . '%' : '',
+            'balance_amount' => $balanceAmount !== null ? number_format($balanceAmount, 2) : '',
             'paid_fees_by_date' => $formData->paid_fees_by_date ? $formData->paid_fees_by_date->format('d/m/Y') : '',
             'registration_begins' => $formData->registration_begins ? $formData->registration_begins->format('d/m/Y') : '',
             'orientation_new_students' => $formData->orientation_new_students ? $formData->orientation_new_students->format('d/m/Y') : '',
