@@ -98,6 +98,10 @@ class AdmissionFormService
             'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
             'registrar_title' => 'Registrar',
             'registrar_signature' => $defaults ? $defaults->registrarSignatureSrc() : null,
+            'bank_name' => $defaults ? trim((string) $defaults->bank_name) : '',
+            'bank_branch' => $defaults ? trim((string) $defaults->bank_branch) : '',
+            'bank_account_no' => $defaults ? trim((string) $defaults->bank_account_no) : '',
+            'payment_reference' => $defaults ? trim((string) $defaults->payment_reference) : '',
         ];
     }
 

@@ -21,6 +21,10 @@ class AdmissionFormDefault extends Model
         'lectures_begin',
         'registrar_name',
         'registrar_signature',
+        'bank_name',
+        'bank_branch',
+        'bank_account_no',
+        'payment_reference',
     ];
 
     protected $casts = [

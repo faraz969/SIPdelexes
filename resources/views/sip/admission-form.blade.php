@@ -258,6 +258,51 @@
         body.is-pdf .footer {
             display: none;
         }
+        .bank-details-page {
+            page-break-before: always;
+            break-before: page;
+            padding-top: 20px;
+        }
+        .bank-details-page .page-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: underline;
+            margin-bottom: 20px;
+        }
+        .bank-details-page .intro {
+            text-align: justify;
+            margin-bottom: 18px;
+            font-size: 10.5pt;
+            line-height: 1.5;
+        }
+        .bank-details-table {
+            width: 100%;
+            max-width: 480px;
+            border-collapse: collapse;
+            margin: 20px auto;
+            font-size: 11pt;
+        }
+        .bank-details-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+        }
+        .bank-details-table .bank-label {
+            font-weight: bold;
+            width: 40%;
+            white-space: nowrap;
+        }
+        .bank-details-table .bank-value {
+            font-weight: bold;
+        }
+        .bank-details-page .note {
+            margin-top: 24px;
+            font-size: 10pt;
+            text-align: justify;
+            line-height: 1.5;
+        }
         .action-buttons {
             text-align: center;
             margin: 30px 0;
@@ -465,5 +510,47 @@
         <p>This is an official document from Delexes University College.</p>
         <p>Generated on: {{ now()->format('d/m/Y H:i') }}</p>
     </div>
+
+    @php
+        $hasBankDetails = !empty($data['bank_name'])
+            || !empty($data['bank_branch'])
+            || !empty($data['bank_account_no'])
+            || !empty($data['payment_reference']);
+    @endphp
+
+    @if($hasBankDetails)
+    <!-- Page 2: Bank Payment Details -->
+    <div class="bank-details-page">
+        <div class="page-title">Bank Payment Details</div>
+        <p class="intro">
+            Please use the bank account details below when making fee payments related to this offer of admission.
+            Ensure the payment reference is clearly stated on the deposit slip or transfer narration.
+        </p>
+
+        <table class="bank-details-table">
+            <tr>
+                <td class="bank-label">Bank Name:</td>
+                <td class="bank-value">{{ $data['bank_name'] ?: '—' }}</td>
+            </tr>
+            <tr>
+                <td class="bank-label">Branch:</td>
+                <td class="bank-value">{{ $data['bank_branch'] ?: '—' }}</td>
+            </tr>
+            <tr>
+                <td class="bank-label">Account No:</td>
+                <td class="bank-value">{{ $data['bank_account_no'] ?: '—' }}</td>
+            </tr>
+            <tr>
+                <td class="bank-label">Payment Reference:</td>
+                <td class="bank-value">{{ $data['payment_reference'] ?: '—' }}</td>
+            </tr>
+        </table>
+
+        <p class="note">
+            After payment, keep your receipt/slip safely. You may be required to present it during registration
+            or upload it through the Student Information Portal (SIP) for verification by the accounts department.
+        </p>
+    </div>
+    @endif
 </body>
 </html>

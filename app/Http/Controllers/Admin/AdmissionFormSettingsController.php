@@ -56,6 +56,10 @@ class AdmissionFormSettingsController extends Controller
             'lectures_begin' => 'nullable|date',
             'registrar_name' => 'nullable|string|max:255',
             'registrar_signature' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_branch' => 'nullable|string|max:255',
+            'bank_account_no' => 'nullable|string|max:255',
+            'payment_reference' => 'nullable|string|max:255',
         ]);
 
         $settings = AdmissionFormDefault::firstOrNew([
