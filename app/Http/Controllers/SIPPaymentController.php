@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Student;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -107,7 +110,7 @@ class SIPPaymentController extends Controller
     }
 
     /**
-     * Start invoice payment via Paystack.
+     * Start invoice payment via Paystack or bank payment slip upload.
      */
     public function processPayment(Request $request, Invoice $invoice)
     {
@@ -124,12 +127,107 @@ class SIPPaymentController extends Controller
 
         $request->validate([
             'amount' => 'required|numeric|min:0.01|max:' . $invoice->balance,
-            'payment_method' => 'required|in:paystack',
+            'payment_method' => 'required|in:paystack,bank',
+            'bank_slip' => 'required_if:payment_method,bank|nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
+        if ($request->payment_method === 'bank') {
+            return $this->processBankSlipPayment($request, $invoice, $student);
+        }
+
+        return $this->processPaystackPayment($request, $invoice, $student);
+    }
+
+    /**
+     * Store bank payment slip and email accounts for ERP update.
+     */
+    protected function processBankSlipPayment(Request $request, Invoice $invoice, Student $student)
+    {
+        $amount = round((float) $request->amount, 2);
+        $paymentReference = 'BANK-' . strtoupper(Str::random(12));
+
+        $slipPath = $request->file('bank_slip')->store('payment-slips/' . $student->id, 'public');
+
+        $payment = Payment::create([
+            'student_id' => $student->id,
+            'invoice_id' => $invoice->id,
+            'payment_reference' => $paymentReference,
+            'payment_method' => 'bank',
+            'amount' => $amount,
+            'status' => 'pending',
+            'erp_status' => 'pending',
+            'bank_slip_path' => $slipPath,
+            'payment_details' => [
+                'submitted_via' => 'sip_bank_slip',
+                'original_filename' => $request->file('bank_slip')->getClientOriginalName(),
+                'mime_type' => $request->file('bank_slip')->getMimeType(),
+            ],
+        ]);
+
+        try {
+            $this->emailBankSlipToAccounts($payment, $student, $invoice);
+        } catch (\Exception $e) {
+            Log::error('Failed to email bank payment slip to accounts', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('sip.payments.history')
+                ->with('info', 'Your payment slip was uploaded, but the accounts email could not be sent. Reference: ' . $paymentReference . '. Please contact the finance office.');
+        }
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'bank_slip_submitted',
+            'model_type' => Payment::class,
+            'model_id' => $payment->id,
+            'system_source' => 'SIP',
+            'description' => "Bank payment slip of GHS {$amount} submitted for invoice {$invoice->invoice_number}.",
+        ]);
+
+        return redirect()->route('sip.payments.history')
+            ->with('success', 'Payment slip submitted successfully. Accounts has been notified to update ERP. Reference: ' . $paymentReference);
+    }
+
+    /**
+     * Email accounts department with bank slip attached.
+     */
+    protected function emailBankSlipToAccounts(Payment $payment, Student $student, Invoice $invoice): void
+    {
+        $accountsEmail = config('services.accounts.email');
+        if (empty($accountsEmail)) {
+            throw new \RuntimeException('Accounts email is not configured (ACCOUNTS_EMAIL).');
+        }
+
+        $student->loadMissing('user');
+        $absoluteSlipPath = storage_path('app/public/' . ltrim($payment->bank_slip_path, '/'));
+        $attachmentName = basename($payment->bank_slip_path);
+
+        Mail::send('emails.bank-payment-slip', [
+            'payment' => $payment,
+            'student' => $student,
+            'invoice' => $invoice,
+        ], function ($message) use ($accountsEmail, $payment, $absoluteSlipPath, $attachmentName) {
+            $message->to($accountsEmail)
+                ->subject('SIP Bank Payment Slip - ' . $payment->payment_reference);
+
+            if (file_exists($absoluteSlipPath)) {
+                $message->attach($absoluteSlipPath, [
+                    'as' => $attachmentName,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Start invoice payment via Paystack.
+     */
+    protected function processPaystackPayment(Request $request, Invoice $invoice, Student $student)
+    {
         if (!$this->paystackService->isConfigured()) {
             return redirect()->route('sip.payments.pay', $invoice->id)
-                ->with('error', 'Paystack is not configured. Please contact the finance office.');
+                ->with('error', 'Paystack is not configured. Please use bank payment slip upload or contact the finance office.');
         }
 
         $amount = round((float) $request->amount, 2);

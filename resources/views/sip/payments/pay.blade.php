@@ -17,6 +17,9 @@
     @if(session('info'))
         <div class="alert alert-info">{{ session('info') }}</div>
     @endif
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
     <div class="row">
         <div class="col-md-8">
@@ -52,7 +55,7 @@
                         </tr>
                         <tr>
                             <th>Due Date:</th>
-                            <td>{{ $invoice->due_date->format('d M Y') }}</td>
+                            <td>{{ $invoice->due_date ? $invoice->due_date->format('d M Y') : 'N/A' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -63,56 +66,87 @@
                     <h5 class="mb-0">Payment Form</h5>
                 </div>
                 <div class="card-body">
-                    @if(!$paystackConfigured)
-                        <div class="alert alert-warning mb-0">
-                            Paystack is not configured. Please contact the finance office to make a payment.
+                    <form method="POST" action="{{ route('sip.payments.process', $invoice->id) }}" enctype="multipart/form-data" id="paymentForm">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Payment Amount</label>
+                            <input type="number"
+                                   class="form-control @error('amount') is-invalid @enderror"
+                                   id="amount"
+                                   name="amount"
+                                   step="0.01"
+                                   min="0.01"
+                                   max="{{ $invoice->balance }}"
+                                   value="{{ old('amount', $invoice->balance) }}"
+                                   required>
+                            @error('amount')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">Maximum: GHS {{ number_format($invoice->balance, 2) }}</small>
                         </div>
-                    @else
-                        <form method="POST" action="{{ route('sip.payments.process', $invoice->id) }}">
-                            @csrf
 
-                            <div class="mb-3">
-                                <label for="amount" class="form-label">Payment Amount</label>
-                                <input type="number"
-                                       class="form-control @error('amount') is-invalid @enderror"
-                                       id="amount"
-                                       name="amount"
-                                       step="0.01"
-                                       min="0.01"
-                                       max="{{ $invoice->balance }}"
-                                       value="{{ old('amount', $invoice->balance) }}"
-                                       required>
-                                @error('amount')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">Maximum: GHS {{ number_format($invoice->balance, 2) }}</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Payment Method</label>
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="payment_paystack" value="paystack" checked required>
-                                        <label class="form-check-label fw-semibold" for="payment_paystack">
-                                            <i class="fas fa-credit-card me-1"></i> Paystack
-                                        </label>
-                                    </div>
-                                    <small class="text-muted d-block mt-2">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <div class="border rounded p-3 bg-light">
+                                @if($paystackConfigured)
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_paystack" value="paystack"
+                                           {{ old('payment_method', 'paystack') === 'paystack' ? 'checked' : '' }} required>
+                                    <label class="form-check-label fw-semibold" for="payment_paystack">
+                                        <i class="fas fa-credit-card me-1"></i> Paystack
+                                    </label>
+                                    <small class="text-muted d-block ms-4">
                                         Pay securely with card, mobile money, or bank via Paystack.
                                     </small>
                                 </div>
-                            </div>
+                                @endif
 
-                            <div class="alert alert-info">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank"
+                                           {{ old('payment_method', $paystackConfigured ? '' : 'bank') === 'bank' ? 'checked' : '' }}
+                                           {{ !$paystackConfigured ? 'checked' : '' }}
+                                           required>
+                                    <label class="form-check-label fw-semibold" for="payment_bank">
+                                        <i class="fas fa-university me-1"></i> Bank Transfer / Payment Slip
+                                    </label>
+                                    <small class="text-muted d-block ms-4">
+                                        Pay at the bank, then scan/upload your payment slip. Accounts will be notified to update ERP.
+                                    </small>
+                                </div>
+                            </div>
+                            @error('payment_method')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div id="bankSlipSection" class="mb-3" style="display: none;">
+                            <label for="bank_slip" class="form-label">Upload Bank Payment Slip <span class="text-danger">*</span></label>
+                            <input type="file"
+                                   class="form-control @error('bank_slip') is-invalid @enderror"
+                                   id="bank_slip"
+                                   name="bank_slip"
+                                   accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+                            @error('bank_slip')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">Accepted formats: JPG, PNG, PDF. Max size: 5MB.</small>
+
+                            <div class="alert alert-info mt-3 mb-0">
                                 <i class="fas fa-info-circle"></i>
-                                <strong>Note:</strong> You will be redirected to Paystack to complete your payment.
+                                <strong>Note:</strong> After you submit, an email with your slip will be sent to the accounts department so they can update ERP. Your payment will show as <strong>Pending</strong> until accounts verifies it.
                             </div>
+                        </div>
 
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-lock"></i> Pay with Paystack
-                            </button>
-                        </form>
-                    @endif
+                        <div id="paystackNote" class="alert alert-info" style="{{ $paystackConfigured ? '' : 'display:none;' }}">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> You will be redirected to Paystack to complete your payment.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitPaymentBtn">
+                            <i class="fas fa-lock"></i> <span id="submitPaymentLabel">{{ $paystackConfigured ? 'Pay with Paystack' : 'Submit Payment Slip' }}</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -138,3 +172,47 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const paystackRadio = document.getElementById('payment_paystack');
+        const bankRadio = document.getElementById('payment_bank');
+        const bankSlipSection = document.getElementById('bankSlipSection');
+        const bankSlipInput = document.getElementById('bank_slip');
+        const paystackNote = document.getElementById('paystackNote');
+        const submitLabel = document.getElementById('submitPaymentLabel');
+        const submitBtn = document.getElementById('submitPaymentBtn');
+
+        function syncPaymentMethodUI() {
+            const isBank = bankRadio && bankRadio.checked;
+
+            if (bankSlipSection) {
+                bankSlipSection.style.display = isBank ? 'block' : 'none';
+            }
+            if (bankSlipInput) {
+                bankSlipInput.required = !!isBank;
+                if (!isBank) {
+                    bankSlipInput.value = '';
+                }
+            }
+            if (paystackNote) {
+                paystackNote.style.display = (!isBank && paystackRadio) ? 'block' : 'none';
+            }
+            if (submitLabel) {
+                submitLabel.textContent = isBank ? 'Submit Payment Slip' : 'Pay with Paystack';
+            }
+            if (submitBtn) {
+                const icon = submitBtn.querySelector('i');
+                if (icon) {
+                    icon.className = isBank ? 'fas fa-upload' : 'fas fa-lock';
+                }
+            }
+        }
+
+        if (paystackRadio) paystackRadio.addEventListener('change', syncPaymentMethodUI);
+        if (bankRadio) bankRadio.addEventListener('change', syncPaymentMethodUI);
+        syncPaymentMethodUI();
+    })();
+</script>
+@endpush

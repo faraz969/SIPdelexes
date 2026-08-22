@@ -19,6 +19,7 @@ class Payment extends Model
         'status',
         'transaction_id',
         'payment_details',
+        'bank_slip_path',
         'erp_status',
         'erp_synced_at',
         'erp_response',

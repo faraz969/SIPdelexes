@@ -49,4 +49,8 @@ return [
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
     ],
 
+    'accounts' => [
+        'email' => env('ACCOUNTS_EMAIL', 'accounts@delexesuniversity.edu.gh'),
+    ],
+
 ];

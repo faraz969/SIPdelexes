@@ -42,7 +42,7 @@
                                     <td><strong>GHS {{ number_format($payment->amount, 2) }}</strong></td>
                                     <td>
                                         <span class="badge bg-secondary">
-                                            {{ ucfirst($payment->payment_method) }}
+                                            {{ $payment->payment_method === 'bank' ? 'Bank Slip' : ucfirst($payment->payment_method) }}
                                         </span>
                                     </td>
                                     <td>
@@ -50,6 +50,8 @@
                                             <span class="badge bg-success">Completed</span>
                                         @elseif($payment->status === 'processing')
                                             <span class="badge bg-warning">Processing</span>
+                                        @elseif($payment->status === 'pending')
+                                            <span class="badge bg-info">Pending Verification</span>
                                         @elseif($payment->status === 'failed')
                                             <span class="badge bg-danger">Failed</span>
                                         @else
