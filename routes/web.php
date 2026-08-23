@@ -104,6 +104,10 @@ Route::middleware(['auth', 'role:hod'])->prefix('hod')->name('hod.')->group(func
     Route::get('/applications/{application}', [App\Http\Controllers\HODController::class, 'showApplication'])->name('applications.show');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\HODController::class, 'approveApplication'])->name('applications.approve');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\HODController::class, 'rejectApplication'])->name('applications.reject');
+
+    Route::resource('courses', App\Http\Controllers\HODCourseController::class);
+    Route::get('/course-enrollments', [App\Http\Controllers\HODCourseController::class, 'enrollments'])->name('course-enrollments');
+    Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\HODCourseController::class, 'enrollmentStudents'])->name('course-enrollments.students');
 });
 
 // President Routes
@@ -129,6 +133,9 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
     Route::post('/deferments/{deferment}/approve', [App\Http\Controllers\RegistrarController::class, 'approveDeferment'])->name('deferments.approve');
     Route::post('/deferments/{deferment}/reject', [App\Http\Controllers\RegistrarController::class, 'rejectDeferment'])->name('deferments.reject');
     Route::post('/deferments/{deferment}/reactivate', [App\Http\Controllers\RegistrarController::class, 'reactivateStudent'])->name('deferments.reactivate');
+
+    Route::get('/course-enrollments', [App\Http\Controllers\RegistrarController::class, 'courseEnrollments'])->name('course-enrollments');
+    Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\RegistrarController::class, 'courseEnrollmentStudents'])->name('course-enrollments.students');
 });
 
 // Lecturer Routes

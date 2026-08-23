@@ -96,6 +96,10 @@
                                 <a class="{{ $navActive('hod.applications.pending') }}" href="{{ route('hod.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
                                 <a class="{{ $navActive('hod.applications.approved') }}" href="{{ route('hod.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
                                 <a class="{{ $navActive('hod.applications.rejected') }}" href="{{ route('hod.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
+                                <div class="sidebar-group-label">COURSES</div>
+                                <a class="{{ request()->routeIs('hod.courses.*') && !request()->routeIs('hod.courses.create') ? 'active' : '' }}" href="{{ route('hod.courses.index') }}"><i class="fas fa-book"></i> Manage Courses</a>
+                                <a class="{{ $navActive('hod.courses.create') }}" href="{{ route('hod.courses.create') }}"><i class="fas fa-plus"></i> Add Course</a>
+                                <a class="{{ $navActive('hod.course-enrollments*') }}" href="{{ route('hod.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
                             @elseif($user->isPresident())
                                 <a class="{{ $navActive('president.*') }}" href="{{ route('president.dashboard') }}"><i class="fas fa-crown"></i> President Dashboard</a>
                             @elseif($user->isRegistrar())
@@ -104,6 +108,8 @@
                                 <a class="{{ $navActive('registrar.applications.pending') }}" href="{{ route('registrar.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
                                 <a class="{{ $navActive('registrar.applications.approved') }}" href="{{ route('registrar.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
                                 <a class="{{ $navActive('registrar.applications.rejected') }}" href="{{ route('registrar.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
+                                <div class="sidebar-group-label">COURSES</div>
+                                <a class="{{ $navActive('registrar.course-enrollments*') }}" href="{{ route('registrar.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
                                 <div class="sidebar-group-label">DEFERMENTS</div>
                                 <a class="{{ $navActive('registrar.deferments*') }}" href="{{ route('registrar.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
                             @else

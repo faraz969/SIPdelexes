@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Application;
+use App\Models\Course;
 use App\Models\Department;
 use App\Models\AdmissionFormData;
+use App\Models\Program;
+use App\Models\SiteSetting;
 use App\Services\SIPAutomationService;
 use App\Services\AdmissionFormService;
+use App\Services\CourseEnrollmentService;
 
 class RegistrarController extends Controller
 {
@@ -404,5 +408,61 @@ class RegistrarController extends Controller
 
         return redirect()->route('registrar.deferments')
             ->with('success', 'Student reactivated successfully.');
+    }
+
+    public function courseEnrollments(Request $request, CourseEnrollmentService $enrollmentService)
+    {
+        $filters = [
+            'department_id' => $request->filled('department_id') ? (int) $request->department_id : null,
+            'program_id' => $request->filled('program_id') ? (int) $request->program_id : null,
+            'semester' => $request->get('semester'),
+            'academic_year' => $request->get('academic_year', SiteSetting::currentAcademicYear()),
+        ];
+
+        $rows = $enrollmentService->getEnrollmentRows($filters);
+        $options = $enrollmentService->filterOptions($filters['department_id']);
+        $departments = Department::orderBy('name')->get();
+        $programsQuery = Program::where('is_active', true)->orderBy('name');
+        if (!empty($filters['department_id'])) {
+            $programsQuery->where('department_id', $filters['department_id']);
+        }
+        $programs = $programsQuery->get();
+
+        return view('shared.course-enrollments.index', [
+            'rows' => $rows,
+            'departments' => $departments,
+            'programs' => $programs,
+            'semesters' => $options['semesters'],
+            'academicYears' => $options['academicYears'],
+            'semester' => $filters['semester'] ?? '',
+            'academicYear' => $filters['academic_year'] ?? '',
+            'programId' => $filters['program_id'],
+            'departmentId' => $filters['department_id'],
+            'showStudentsRoute' => 'registrar.course-enrollments.students',
+            'filterRoute' => 'registrar.course-enrollments',
+            'pageTitle' => 'Course Enrollments',
+        ]);
+    }
+
+    public function courseEnrollmentStudents(Request $request, Course $course, CourseEnrollmentService $enrollmentService)
+    {
+        $semester = trim((string) $request->get('semester', ''));
+        $academicYear = trim((string) $request->get('academic_year', ''));
+
+        if ($semester === '' || $academicYear === '') {
+            return redirect()->route('registrar.course-enrollments')
+                ->with('error', 'Semester and academic year are required.');
+        }
+
+        $students = $enrollmentService->getRegisteredStudents($course, $semester, $academicYear);
+        $course->load(['program.department']);
+
+        return view('shared.course-enrollments.students', [
+            'course' => $course,
+            'students' => $students,
+            'semester' => $semester,
+            'academicYear' => $academicYear,
+            'backRoute' => 'registrar.course-enrollments',
+        ]);
     }
 }
