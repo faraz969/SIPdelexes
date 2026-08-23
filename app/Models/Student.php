@@ -119,16 +119,19 @@ class Student extends Model
 
     public function getTotalPaid()
     {
-        return $this->payments()->where('status', 'completed')->sum('amount');
+        return (float) $this->invoices()->sum('paid_amount');
     }
 
     public function getPaymentPercentage()
     {
-        $totalInvoiced = $this->invoices()->sum('total_amount');
-        if ($totalInvoiced == 0) {
+        $totalInvoiced = (float) $this->invoices()->sum('total_amount');
+        if ($totalInvoiced <= 0) {
             return 0;
         }
-        return ($this->getTotalPaid() / $totalInvoiced) * 100;
+
+        $totalPaid = (float) $this->invoices()->sum('paid_amount');
+
+        return ($totalPaid / $totalInvoiced) * 100;
     }
 
     public function canRegisterForCourses()
