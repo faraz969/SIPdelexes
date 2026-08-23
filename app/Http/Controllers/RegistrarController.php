@@ -88,6 +88,85 @@ class RegistrarController extends Controller
         ));
     }
 
+    /**
+     * List applications by registrar review status.
+     */
+    public function applications(Request $request, $status)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            abort(404);
+        }
+
+        $academicYear = trim((string) $request->get('academic_year', ''));
+        $departmentId = $request->get('department_id');
+
+        $departments = Department::orderBy('name')->get();
+
+        $academicYears = Application::where('status', '!=', 'draft')
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $baseQuery = Application::query()->where('status', '!=', 'draft');
+
+        if ($academicYear !== '') {
+            $baseQuery->where('academic_year', $academicYear);
+        }
+
+        if (!empty($departmentId)) {
+            $baseQuery->where(function ($query) use ($departmentId) {
+                $query->where('department_id', $departmentId)
+                    ->orWhereJsonContains('department_ids', (int) $departmentId)
+                    ->orWhereJsonContains('department_ids', (string) $departmentId);
+            });
+        }
+
+        if ($status === 'pending') {
+            $baseQuery->where('hod_status', 'approved')->where('registrar_status', 'pending');
+            $baseQuery->orderBy('hod_reviewed_at', 'desc');
+        } else {
+            $baseQuery->where('registrar_status', $status);
+            $baseQuery->orderBy('registrar_reviewed_at', 'desc');
+        }
+
+        $applications = $baseQuery
+            ->with(['user', 'department', 'examRecords.subjects'])
+            ->get();
+
+        $titles = [
+            'pending' => 'Pending Applications',
+            'approved' => 'Approved Applications',
+            'rejected' => 'Rejected Applications',
+        ];
+
+        return view('registrar.applications.index', [
+            'applications' => $applications,
+            'status' => $status,
+            'pageTitle' => $titles[$status],
+            'departments' => $departments,
+            'academicYears' => $academicYears,
+            'academicYear' => $academicYear,
+            'departmentId' => $departmentId,
+        ]);
+    }
+
+    public function pendingApplications(Request $request)
+    {
+        return $this->applications($request, 'pending');
+    }
+
+    public function approvedApplications(Request $request)
+    {
+        return $this->applications($request, 'approved');
+    }
+
+    public function rejectedApplications(Request $request)
+    {
+        return $this->applications($request, 'rejected');
+    }
+
     public function showApplication(Application $application)
     {
         // Prevent registrar from viewing draft applications

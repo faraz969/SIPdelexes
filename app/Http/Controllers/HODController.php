@@ -77,6 +77,87 @@ class HODController extends Controller
         ));
     }
 
+    /**
+     * List applications by HOD review status.
+     */
+    public function applications(Request $request, $status)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            abort(404);
+        }
+
+        $user = Auth::user();
+        $department = $user->department;
+
+        if (!$department) {
+            return redirect()->route('admin.dashboard')->with('error', 'No department assigned to your account.');
+        }
+
+        $academicYear = trim((string) $request->get('academic_year', ''));
+
+        $baseQuery = Application::query()
+            ->where('status', '!=', 'draft')
+            ->where(function ($query) use ($department) {
+                $query->where('department_id', $department->id)
+                    ->orWhereJsonContains('department_ids', $department->id)
+                    ->orWhereJsonContains('department_ids', (string) $department->id);
+            });
+
+        $academicYears = (clone $baseQuery)
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $filteredQuery = clone $baseQuery;
+        if ($academicYear !== '') {
+            $filteredQuery->where('academic_year', $academicYear);
+        }
+
+        $filteredQuery->where('hod_status', $status);
+
+        if ($status === 'pending') {
+            $filteredQuery->orderBy('created_at', 'desc');
+        } else {
+            $filteredQuery->orderBy('hod_reviewed_at', 'desc');
+        }
+
+        $applications = $filteredQuery
+            ->with(['user', 'department', 'examRecords.subjects'])
+            ->get();
+
+        $titles = [
+            'pending' => 'Pending Applications',
+            'approved' => 'Approved Applications',
+            'rejected' => 'Rejected Applications',
+        ];
+
+        return view('hod.applications.index', [
+            'department' => $department,
+            'applications' => $applications,
+            'status' => $status,
+            'pageTitle' => $titles[$status],
+            'academicYears' => $academicYears,
+            'academicYear' => $academicYear,
+        ]);
+    }
+
+    public function pendingApplications(Request $request)
+    {
+        return $this->applications($request, 'pending');
+    }
+
+    public function approvedApplications(Request $request)
+    {
+        return $this->applications($request, 'approved');
+    }
+
+    public function rejectedApplications(Request $request)
+    {
+        return $this->applications($request, 'rejected');
+    }
+
     public function showApplication(Application $application)
     {
         $user = Auth::user();

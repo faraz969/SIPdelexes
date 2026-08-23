@@ -91,11 +91,21 @@
                         @else
                             <div class="sidebar-group-label">DASHBOARD</div>
                             @if($user->isHOD())
-                                <a class="{{ $navActive('hod.*') }}" href="{{ route('hod.dashboard') }}"><i class="fas fa-user-tie"></i> HOD Dashboard</a>
+                                <a class="{{ $navActive('hod.dashboard') }}" href="{{ route('hod.dashboard') }}"><i class="fas fa-gauge-high"></i> HOD Dashboard</a>
+                                <div class="sidebar-group-label">APPLICATIONS</div>
+                                <a class="{{ $navActive('hod.applications.pending') }}" href="{{ route('hod.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
+                                <a class="{{ $navActive('hod.applications.approved') }}" href="{{ route('hod.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
+                                <a class="{{ $navActive('hod.applications.rejected') }}" href="{{ route('hod.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
                             @elseif($user->isPresident())
                                 <a class="{{ $navActive('president.*') }}" href="{{ route('president.dashboard') }}"><i class="fas fa-crown"></i> President Dashboard</a>
                             @elseif($user->isRegistrar())
-                                <a class="{{ $navActive('registrar.*') }}" href="{{ route('registrar.dashboard') }}"><i class="fas fa-id-badge"></i> Registrar Dashboard</a>
+                                <a class="{{ $navActive('registrar.dashboard') }}" href="{{ route('registrar.dashboard') }}"><i class="fas fa-gauge-high"></i> Registrar Dashboard</a>
+                                <div class="sidebar-group-label">APPLICATIONS</div>
+                                <a class="{{ $navActive('registrar.applications.pending') }}" href="{{ route('registrar.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
+                                <a class="{{ $navActive('registrar.applications.approved') }}" href="{{ route('registrar.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
+                                <a class="{{ $navActive('registrar.applications.rejected') }}" href="{{ route('registrar.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
+                                <div class="sidebar-group-label">DEFERMENTS</div>
+                                <a class="{{ $navActive('registrar.deferments*') }}" href="{{ route('registrar.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
                             @else
                                 <a class="{{ $navActive('admin.dashboard', 'admin.applications.*') }}" href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Dashboard</a>
                                 <div class="sidebar-group-label">MANAGE</div>

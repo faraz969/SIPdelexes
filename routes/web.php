@@ -98,6 +98,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 // HOD Routes
 Route::middleware(['auth', 'role:hod'])->prefix('hod')->name('hod.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HODController::class, 'dashboard'])->name('dashboard');
+    Route::get('/applications/pending', [App\Http\Controllers\HODController::class, 'pendingApplications'])->name('applications.pending');
+    Route::get('/applications/approved', [App\Http\Controllers\HODController::class, 'approvedApplications'])->name('applications.approved');
+    Route::get('/applications/rejected', [App\Http\Controllers\HODController::class, 'rejectedApplications'])->name('applications.rejected');
     Route::get('/applications/{application}', [App\Http\Controllers\HODController::class, 'showApplication'])->name('applications.show');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\HODController::class, 'approveApplication'])->name('applications.approve');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\HODController::class, 'rejectApplication'])->name('applications.reject');
@@ -114,6 +117,9 @@ Route::middleware(['auth', 'role:president'])->prefix('president')->name('presid
 // Registrar Routes
 Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('registrar.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\RegistrarController::class, 'dashboard'])->name('dashboard');
+    Route::get('/applications/pending', [App\Http\Controllers\RegistrarController::class, 'pendingApplications'])->name('applications.pending');
+    Route::get('/applications/approved', [App\Http\Controllers\RegistrarController::class, 'approvedApplications'])->name('applications.approved');
+    Route::get('/applications/rejected', [App\Http\Controllers\RegistrarController::class, 'rejectedApplications'])->name('applications.rejected');
     Route::get('/applications/{application}', [App\Http\Controllers\RegistrarController::class, 'showApplication'])->name('applications.show');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\RegistrarController::class, 'approveApplication'])->name('applications.approve');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\RegistrarController::class, 'rejectApplication'])->name('applications.reject');
