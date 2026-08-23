@@ -82,6 +82,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'edit'])->name('admission-form-settings.edit');
     Route::put('admission-form-settings', [App\Http\Controllers\Admin\AdmissionFormSettingsController::class, 'update'])->name('admission-form-settings.update');
     Route::get('admission-payments', [App\Http\Controllers\Admin\AdmissionPaymentController::class, 'index'])->name('admission-payments.index');
+    Route::get('bank-payment-slips', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'index'])->name('bank-payment-slips.index');
+    Route::get('bank-payment-slips/{payment}', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'show'])->name('bank-payment-slips.show');
+    Route::get('bank-payment-slips/{payment}/slip', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'slip'])->name('bank-payment-slips.slip');
     
     // Lecturers Management
     Route::resource('lecturers', App\Http\Controllers\Admin\LecturerController::class);
