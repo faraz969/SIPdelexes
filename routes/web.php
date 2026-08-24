@@ -85,6 +85,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('bank-payment-slips', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'index'])->name('bank-payment-slips.index');
     Route::get('bank-payment-slips/{payment}', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'show'])->name('bank-payment-slips.show');
     Route::get('bank-payment-slips/{payment}/slip', [App\Http\Controllers\Admin\BankPaymentSlipController::class, 'slip'])->name('bank-payment-slips.slip');
+
+    Route::resource('sip-documents', App\Http\Controllers\Admin\SipDocumentController::class)->except(['show']);
+    Route::get('sip-documents/{sip_document}/file', [App\Http\Controllers\Admin\SipDocumentController::class, 'file'])->name('sip-documents.file');
     
     // Lecturers Management
     Route::resource('lecturers', App\Http\Controllers\Admin\LecturerController::class);
@@ -217,6 +220,7 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{download}/file', [App\Http\Controllers\SIPController::class, 'downloadDocument'])->name('downloads.file');
     Route::get('/downloads/{download}/pdf', [App\Http\Controllers\SIPController::class, 'downloadAdmissionFormPdf'])->name('downloads.pdf');
+    Route::get('/documents/{sip_document}/file', [App\Http\Controllers\SIPController::class, 'downloadSharedDocument'])->name('documents.file');
     
     // Payments
     Route::prefix('payments')->name('payments.')->group(function () {

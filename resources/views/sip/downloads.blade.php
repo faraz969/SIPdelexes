@@ -30,11 +30,37 @@
         </div>
     @endif
 
+    @if(!empty($sharedDocuments) && $sharedDocuments->isNotEmpty())
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-folder-open"></i> University Documents
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    @foreach($sharedDocuments as $document)
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ $document->name }}</h6>
+                                <small class="text-muted">{{ $document->original_filename }}</small>
+                            </div>
+                            <a href="{{ route('sip.documents.file', $document) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if($downloads->isEmpty())
         <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> No other documents are available for download yet.
+            <i class="fas fa-info-circle"></i> No personal documents are available for download yet.
         </div>
     @else
+        <h5 class="mb-3 text-muted">My Documents</h5>
         @foreach($downloads as $documentType => $documents)
             <div class="card mb-4">
                 <div class="card-header">

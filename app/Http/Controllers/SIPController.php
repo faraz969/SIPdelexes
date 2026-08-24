@@ -14,8 +14,10 @@ use App\Models\Payment;
 use App\Models\ExamPin;
 use App\Models\Deferment;
 use App\Models\Download;
+use App\Models\SipDocument;
 use App\Services\ActivityLogService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class SIPController extends Controller
 {
@@ -197,7 +199,43 @@ class SIPController extends Controller
         $medicalFormAvailable = file_exists($medicalFormPath);
         $medicalFormUrl = $medicalFormAvailable ? asset('STUDENTS-MEDICAL-EXAMINATION-FORM.pdf') : null;
 
-        return view('sip.downloads', compact('student', 'downloads', 'medicalFormAvailable', 'medicalFormUrl'));
+        $sharedDocuments = SipDocument::active()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('sip.downloads', compact('student', 'downloads', 'medicalFormAvailable', 'medicalFormUrl', 'sharedDocuments'));
+    }
+
+    /**
+     * Download a shared document uploaded by admin (prospectus, etc.).
+     */
+    public function downloadSharedDocument(SipDocument $sip_document)
+    {
+        $this->getStudent();
+
+        if (!$sip_document->is_active) {
+            abort(404, 'Document not found.');
+        }
+
+        if (!Storage::disk('public')->exists($sip_document->file_path)) {
+            abort(404, 'File not found.');
+        }
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'shared_document_downloaded',
+            'model_type' => SipDocument::class,
+            'model_id' => $sip_document->id,
+            'system_source' => 'SIP',
+            'description' => "Downloaded shared document: {$sip_document->name}",
+        ]);
+
+        return Storage::disk('public')->download(
+            $sip_document->file_path,
+            $sip_document->original_filename
+        );
     }
 
     /**

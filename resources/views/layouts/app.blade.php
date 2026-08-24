@@ -139,6 +139,7 @@
                                 <a class="{{ $navActive('admin.erp.student-emails') }}" href="{{ route('admin.erp.student-emails') }}"><i class="fas fa-envelope"></i> Student Emails & Passwords</a>
                                 <a class="{{ $navActive('admin.registration-rules.*') }}" href="{{ route('admin.registration-rules.index') }}"><i class="fas fa-ruler-combined"></i> Registration Rules</a>
                                 <a class="{{ $navActive('admin.admission-form-settings.*') }}" href="{{ route('admin.admission-form-settings.edit') }}"><i class="fas fa-sliders"></i> Admission Form Defaults</a>
+                                <a class="{{ $navActive('admin.sip-documents.*') }}" href="{{ route('admin.sip-documents.index') }}"><i class="fas fa-file-download"></i> SIP Documents</a>
 
                                 <div class="sidebar-group-label">ACADEMIC SETUP</div>
                                 <a class="{{ $navActive('admin.academic-year-settings.*') }}" href="{{ route('admin.academic-year-settings.edit') }}"><i class="fas fa-calendar-check"></i> Academic Year</a>
