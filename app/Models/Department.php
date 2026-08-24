@@ -11,9 +11,10 @@ class Department extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'description',
         'is_active',
-        'sort_order'
+        'sort_order',
     ];
 
     protected $casts = [

@@ -39,10 +39,14 @@ class DepartmentController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50|unique:departments,code',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-            'sort_order' => 'integer|min:0'
+            'sort_order' => 'integer|min:0',
         ]);
+
+        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['code'] = $validated['code'] ?: null;
 
         Department::create($validated);
 
@@ -84,10 +88,14 @@ class DepartmentController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50|unique:departments,code,' . $department->id,
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-            'sort_order' => 'integer|min:0'
+            'sort_order' => 'integer|min:0',
         ]);
+
+        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['code'] = $validated['code'] ?: null;
 
         $department->update($validated);
 

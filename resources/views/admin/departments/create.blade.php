@@ -23,6 +23,16 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="code" class="form-label">Department Code</label>
+                            <input type="text" class="form-control @error('code') is-invalid @enderror"
+                                   id="code" name="code" value="{{ old('code') }}" placeholder="e.g. ICT, BBA">
+                            @error('code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Short unique code for this department.</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control @error('description') is-invalid @enderror" 
                                       id="description" name="description" rows="3">{{ old('description') }}</textarea>

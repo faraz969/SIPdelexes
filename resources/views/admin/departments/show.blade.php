@@ -27,6 +27,10 @@
                                     <td>{{ $department->name }}</td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Code:</strong></td>
+                                    <td>{{ $department->code ?: '—' }}</td>
+                                </tr>
+                                <tr>
                                     <td><strong>Description:</strong></td>
                                     <td>{{ $department->description ?: 'No description provided' }}</td>
                                 </tr>

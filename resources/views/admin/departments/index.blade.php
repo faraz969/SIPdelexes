@@ -25,6 +25,7 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
+                                        <th>Code</th>
                                         <th>Name</th>
                                         <th>Description</th>
                                         <th>Programs</th>
@@ -36,6 +37,7 @@
                                 <tbody>
                                     @foreach($departments as $department)
                                         <tr>
+                                            <td>{{ $department->code ?: '—' }}</td>
                                             <td>{{ $department->name }}</td>
                                             <td>{{ Str::limit($department->description, 50) }}</td>
                                             <td>
