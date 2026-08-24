@@ -11,6 +11,7 @@ class CourseRegistration extends Model
 
     protected $fillable = [
         'student_id',
+        'semester_course_offering_id',
         'semester',
         'academic_year',
         'courses',
@@ -30,6 +31,11 @@ class CourseRegistration extends Model
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    public function offering()
+    {
+        return $this->belongsTo(SemesterCourseOffering::class, 'semester_course_offering_id');
     }
 }
 

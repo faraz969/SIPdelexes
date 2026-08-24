@@ -108,6 +108,9 @@ Route::middleware(['auth', 'role:hod'])->prefix('hod')->name('hod.')->group(func
     Route::resource('courses', App\Http\Controllers\HODCourseController::class);
     Route::get('/course-enrollments', [App\Http\Controllers\HODCourseController::class, 'enrollments'])->name('course-enrollments');
     Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\HODCourseController::class, 'enrollmentStudents'])->name('course-enrollments.students');
+
+    Route::resource('semester-offerings', App\Http\Controllers\SemesterCourseOfferingController::class);
+    Route::post('/semester-offerings/{semester_offering}/toggle-publish', [App\Http\Controllers\SemesterCourseOfferingController::class, 'togglePublish'])->name('semester-offerings.toggle-publish');
 });
 
 // President Routes
@@ -136,6 +139,9 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
 
     Route::get('/course-enrollments', [App\Http\Controllers\RegistrarController::class, 'courseEnrollments'])->name('course-enrollments');
     Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\RegistrarController::class, 'courseEnrollmentStudents'])->name('course-enrollments.students');
+
+    Route::resource('semester-offerings', App\Http\Controllers\SemesterCourseOfferingController::class);
+    Route::post('/semester-offerings/{semester_offering}/toggle-publish', [App\Http\Controllers\SemesterCourseOfferingController::class, 'togglePublish'])->name('semester-offerings.toggle-publish');
 });
 
 // Lecturer Routes
