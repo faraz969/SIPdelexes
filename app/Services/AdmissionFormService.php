@@ -37,10 +37,7 @@ class AdmissionFormService
 
         $defaults = $this->getDefaultsForStudent($student);
         $registrarName = $defaults ? trim((string) $defaults->registrar_name) : '';
-        $level = $defaults ? trim((string) $defaults->level) : '';
-        if ($level === '') {
-            $level = '100';
-        }
+        $level = \App\Models\Student::normalizeLevel($student->level ?? null);
 
         $minimumFeePercentage = $formData->minimum_fee_percentage !== null
             ? (float) $formData->minimum_fee_percentage

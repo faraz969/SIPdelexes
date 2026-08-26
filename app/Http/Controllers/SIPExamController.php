@@ -34,20 +34,18 @@ class SIPExamController extends Controller
     }
 
     /**
-     * Generate Exam PIN
+     * Generate Exam PIN for the student's current level.
      */
     public function generateExamPin(Request $request)
     {
         $student = $this->getStudent();
 
-        // Check eligibility
         if (!$student->canGenerateExamPin()) {
             $balance = $student->getTotalBalance();
             return redirect()->route('sip.dashboard')
                 ->with('error', "You must pay all fees (100%) to generate exam PIN. Current balance: {$balance}");
         }
 
-        // Check if student is deferred
         if ($student->isDeferred()) {
             return redirect()->route('sip.dashboard')
                 ->with('error', 'You cannot generate exam PIN while your admission is deferred.');
@@ -58,26 +56,28 @@ class SIPExamController extends Controller
             'academic_year' => 'required|string',
         ]);
 
-        // Check if PIN already exists for this semester
+        $level = Student::normalizeLevel($student->level ?? null);
+
         $existingPin = ExamPin::where('student_id', $student->id)
             ->where('semester', $request->semester)
             ->where('academic_year', $request->academic_year)
+            ->where('level', $level)
             ->where('is_used', false)
             ->where('expires_at', '>', now())
             ->first();
 
         if ($existingPin) {
             return redirect()->route('sip.exam.pins')
-                ->with('info', 'You already have a valid exam PIN for this semester.');
+                ->with('info', 'You already have a valid exam PIN for this semester at Level ' . $level . '.');
         }
 
-        // Generate new PIN
         $pin = ExamPin::create([
             'student_id' => $student->id,
             'pin' => ExamPin::generateUniquePin(),
             'semester' => $request->semester,
             'academic_year' => $request->academic_year,
-            'expires_at' => now()->addMonths(6), // PIN valid for 6 months
+            'level' => $level,
+            'expires_at' => now()->addMonths(6),
         ]);
 
         $this->activityLogService->log([
@@ -87,11 +87,11 @@ class SIPExamController extends Controller
             'model_type' => ExamPin::class,
             'model_id' => $pin->id,
             'system_source' => 'SIP',
-            'description' => "Exam PIN generated for {$request->semester} {$request->academic_year}",
+            'description' => "Exam PIN generated for {$request->semester} {$request->academic_year} Level {$level}",
         ]);
 
         return redirect()->route('sip.exam.pins')
-            ->with('success', 'Exam PIN generated successfully. Please save it securely.');
+            ->with('success', 'Exam PIN generated successfully for Level ' . $level . '. Please save it securely.');
     }
 
     /**
@@ -107,4 +107,3 @@ class SIPExamController extends Controller
         return view('sip.exam.pins', compact('student', 'pins'));
     }
 }
-

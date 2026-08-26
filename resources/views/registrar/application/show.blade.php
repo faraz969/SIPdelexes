@@ -271,8 +271,23 @@
                         <form method="POST" action="{{ route('registrar.applications.approve', $application->id) }}" id="approveForm" class="mb-3">
                             @csrf
                             <div class="mb-3">
+                                <label for="level" class="form-label">Student Level <span class="text-danger">*</span></label>
+                                <select class="form-select @error('level') is-invalid @enderror" id="level" name="level" required>
+                                    <option value="">-- Select Level --</option>
+                                    @foreach(\App\Models\Student::LEVELS as $levelOption)
+                                        <option value="{{ $levelOption }}" {{ old('level', '100') == $levelOption ? 'selected' : '' }}>
+                                            Level {{ $levelOption }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">This level is attached to the student and used for course packages and exam PINs.</small>
+                                @error('level')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
                                 <label for="approve_comments" class="form-label">Comments (Optional)</label>
-                                <textarea class="form-control" id="approve_comments" name="comments" rows="3" placeholder="Add any comments for approval..."></textarea>
+                                <textarea class="form-control" id="approve_comments" name="comments" rows="3" placeholder="Add any comments for approval...">{{ old('comments') }}</textarea>
                             </div>
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-check"></i> Approve Application

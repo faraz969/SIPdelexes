@@ -200,13 +200,15 @@ class RegistrarController extends Controller
         }
 
         $request->validate([
+            'level' => 'required|in:' . implode(',', \App\Models\Student::LEVELS),
             'comments' => 'nullable|string|max:1000',
         ]);
 
         try {
             $student = $this->sipAutomationService->processAdmissionApproval(
                 $application,
-                $request->comments
+                $request->comments,
+                $request->level
             );
             
             // Apply admission form defaults (set by admin) for this student, by academic year

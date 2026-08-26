@@ -32,11 +32,13 @@ class SIPAutomationService
      *
      * @throws \Exception If ERP or SIP setup fails (application remains unapproved)
      */
-    public function processAdmissionApproval(Application $application, $registrarComments = null)
+    public function processAdmissionApproval(Application $application, $registrarComments = null, ?string $level = '100')
     {
         if (Student::where('application_id', $application->id)->exists()) {
             throw new \RuntimeException('A SIP student account already exists for this application.');
         }
+
+        $level = Student::normalizeLevel($level);
 
         DB::beginTransaction();
         try {
@@ -44,7 +46,7 @@ class SIPAutomationService
             $studentId = $this->generateStudentId($application);
 
             // 2. Create Student SIP Account with the generated ID
-            $student = $this->createStudentAccount($application, $studentId);
+            $student = $this->createStudentAccount($application, $studentId, $level);
 
             // 3. Create student email and update user email
             $studentEmail = $studentId . '@delexesuniversity.edu.gh';
@@ -140,7 +142,7 @@ class SIPAutomationService
     /**
      * Create Student SIP Account
      */
-    protected function createStudentAccount(Application $application, $studentId)
+    protected function createStudentAccount(Application $application, $studentId, string $level = '100')
     {
         $user = $application->user;
         if (!$user) {
@@ -179,6 +181,7 @@ class SIPAutomationService
             'department_id' => $application->department_id,
             'preferred_session_id' => $preferredSessionId,
             'academic_year' => $application->academic_year,
+            'level' => Student::normalizeLevel($level),
             'academic_status' => 'active',
             'admission_date' => now(),
             'biodata' => $biodata,

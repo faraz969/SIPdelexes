@@ -26,8 +26,8 @@
     @elseif($availableOfferings->isEmpty())
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle"></i>
-            Course registration has not been opened for your program yet.
-            Your HOD or Registrar must publish a semester course package before you can register.
+            Course registration has not been opened for your program (Level {{ \App\Models\Student::normalizeLevel($student->level ?? null) }}) yet.
+            Your HOD or Registrar must publish a semester course package for your level before you can register.
         </div>
     @elseif($existingRegistration)
         <div class="alert alert-info">
@@ -43,7 +43,7 @@
                         <select id="offering_id" class="form-select" onchange="window.location='{{ route('sip.course-registration.show') }}?offering_id=' + this.value;">
                             @foreach($availableOfferings as $item)
                                 <option value="{{ $item->id }}" {{ optional($offering)->id == $item->id ? 'selected' : '' }}>
-                                    {{ $item->semester }} — {{ $item->academic_year }}
+                                    {{ $item->semester }} — {{ $item->academic_year }} — Level {{ $item->level ?? '100' }}
                                     ({{ count($item->course_ids ?? []) }} courses)
                                 </option>
                             @endforeach
@@ -143,6 +143,7 @@
                     <div class="card-body">
                         <p><strong>Student ID:</strong> {{ $student->student_id }}</p>
                         <p><strong>Program:</strong> {{ $student->program->name ?? 'N/A' }}</p>
+                        <p><strong>Level:</strong> {{ \App\Models\Student::normalizeLevel($student->level ?? null) }}</p>
                         <p><strong>Semester:</strong> {{ $semester }}</p>
                         <p><strong>Academic Year:</strong> {{ $academicYear }}</p>
                         <hr>

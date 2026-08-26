@@ -5,7 +5,7 @@
 @endphp
 
 <div class="row">
-    <div class="col-md-6 mb-3">
+    <div class="col-md-3 mb-3">
         <label for="program_id" class="form-label">Program <span class="text-danger">*</span></label>
         <select name="program_id" id="program_id" class="form-select @error('program_id') is-invalid @enderror" required>
             <option value="">-- Select Program --</option>
@@ -34,11 +34,22 @@
         </select>
         @error('semester')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
+    <div class="col-md-3 mb-3">
+        <label for="level" class="form-label">Level <span class="text-danger">*</span></label>
+        <select name="level" id="level" class="form-select @error('level') is-invalid @enderror" required>
+            @foreach(($levels ?? \App\Models\Student::LEVELS) as $levelOption)
+                <option value="{{ $levelOption }}" {{ old('level', $offering->level ?? '100') == $levelOption ? 'selected' : '' }}>
+                    Level {{ $levelOption }}
+                </option>
+            @endforeach
+        </select>
+        @error('level')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
 </div>
 
 <div class="mb-3">
     <label class="form-label">Courses for this semester <span class="text-danger">*</span></label>
-    <p class="text-muted small mb-2">Select the courses students will confirm for this program and semester. Students will not choose courses themselves.</p>
+    <p class="text-muted small mb-2">Select the courses students will confirm for this program, semester, and level. Students only see packages matching their level.</p>
     @error('course_ids')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
     @error('course_ids.*')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
 

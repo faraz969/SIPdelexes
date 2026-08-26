@@ -15,6 +15,7 @@ class ExamPin extends Model
         'pin',
         'semester',
         'academic_year',
+        'level',
         'expires_at',
         'is_used',
         'used_at',

@@ -6,7 +6,7 @@
         <div>
             <h3 class="mb-1">{{ $pageTitle }}</h3>
             <p class="text-muted mb-0">
-                {{ $offering->program->name ?? '—' }} · {{ $offering->semester }} · {{ $offering->academic_year }}
+                {{ $offering->program->name ?? '—' }} · Level {{ $offering->level ?? '100' }} · {{ $offering->semester }} · {{ $offering->academic_year }}
             </p>
         </div>
         <div>

@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Program;
 use App\Models\SemesterCourseOffering;
 use App\Models\SiteSetting;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -40,12 +41,18 @@ class SemesterCourseOfferingController extends Controller
             $query->where('semester', $request->semester);
         }
 
+        if ($request->filled('level')) {
+            $query->where('level', Student::normalizeLevel($request->level));
+        }
+
         $offerings = $query->get();
         $programs = $this->allowedPrograms();
+        $levels = Student::LEVELS;
 
         return view('shared.semester-offerings.index', [
             'offerings' => $offerings,
             'programs' => $programs,
+            'levels' => $levels,
             'routePrefix' => $context['route_prefix'],
             'pageTitle' => $context['page_title'] . ' — Semester Course Packages',
             'department' => $context['department'],
@@ -61,6 +68,7 @@ class SemesterCourseOfferingController extends Controller
             'programs' => $programs,
             'coursesByProgram' => $this->coursesGroupedByProgram($programs->pluck('id')->all()),
             'defaultAcademicYear' => SiteSetting::currentAcademicYear(),
+            'levels' => Student::LEVELS,
             'routePrefix' => $context['route_prefix'],
             'pageTitle' => 'Create Semester Course Package',
             'department' => $context['department'],
@@ -75,16 +83,18 @@ class SemesterCourseOfferingController extends Controller
         $exists = SemesterCourseOffering::where('program_id', $validated['program_id'])
             ->where('academic_year', $validated['academic_year'])
             ->where('semester', $validated['semester'])
+            ->where('level', $validated['level'])
             ->exists();
 
         if ($exists) {
-            return back()->withInput()->with('error', 'A course package already exists for this program, academic year, and semester.');
+            return back()->withInput()->with('error', 'A course package already exists for this program, academic year, semester, and level.');
         }
 
         SemesterCourseOffering::create([
             'program_id' => $validated['program_id'],
             'academic_year' => $validated['academic_year'],
             'semester' => $validated['semester'],
+            'level' => $validated['level'],
             'course_ids' => array_map('intval', $validated['course_ids']),
             'is_published' => $request->boolean('is_published'),
             'created_by' => Auth::id(),
@@ -122,6 +132,7 @@ class SemesterCourseOfferingController extends Controller
             'offering' => $semester_offering,
             'programs' => $programs,
             'coursesByProgram' => $this->coursesGroupedByProgram($programs->pluck('id')->all()),
+            'levels' => Student::LEVELS,
             'routePrefix' => $context['route_prefix'],
             'pageTitle' => 'Edit Semester Course Package',
             'department' => $context['department'],
@@ -137,17 +148,19 @@ class SemesterCourseOfferingController extends Controller
         $duplicate = SemesterCourseOffering::where('program_id', $validated['program_id'])
             ->where('academic_year', $validated['academic_year'])
             ->where('semester', $validated['semester'])
+            ->where('level', $validated['level'])
             ->where('id', '!=', $semester_offering->id)
             ->exists();
 
         if ($duplicate) {
-            return back()->withInput()->with('error', 'Another package already exists for this program, academic year, and semester.');
+            return back()->withInput()->with('error', 'Another package already exists for this program, academic year, semester, and level.');
         }
 
         $semester_offering->update([
             'program_id' => $validated['program_id'],
             'academic_year' => $validated['academic_year'],
             'semester' => $validated['semester'],
+            'level' => $validated['level'],
             'course_ids' => array_map('intval', $validated['course_ids']),
             'is_published' => $request->boolean('is_published'),
             'notes' => $validated['notes'] ?? null,
@@ -198,11 +211,14 @@ class SemesterCourseOfferingController extends Controller
             'program_id' => ['required', 'integer', Rule::in($programIds)],
             'academic_year' => 'required|string|max:50',
             'semester' => 'required|string|max:100',
+            'level' => ['required', Rule::in(Student::LEVELS)],
             'course_ids' => 'required|array|min:1',
             'course_ids.*' => 'integer|exists:courses,id',
             'notes' => 'nullable|string|max:2000',
             'is_published' => 'boolean',
         ]);
+
+        $validated['level'] = Student::normalizeLevel($validated['level']);
 
         $invalid = Course::whereIn('id', $validated['course_ids'])
             ->where('program_id', '!=', $validated['program_id'])

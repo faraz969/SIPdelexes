@@ -13,6 +13,7 @@ class SemesterCourseOffering extends Model
         'program_id',
         'academic_year',
         'semester',
+        'level',
         'course_ids',
         'is_published',
         'created_by',
@@ -82,10 +83,21 @@ class SemesterCourseOffering extends Model
         return $query->where('is_published', true);
     }
 
-    public function scopeForProgramSemester($query, int $programId, string $semester, string $academicYear)
+    public function scopeForLevel($query, ?string $level)
     {
-        return $query->where('program_id', $programId)
+        return $query->where('level', Student::normalizeLevel($level));
+    }
+
+    public function scopeForProgramSemester($query, int $programId, string $semester, string $academicYear, ?string $level = null)
+    {
+        $query->where('program_id', $programId)
             ->where('semester', $semester)
             ->where('academic_year', $academicYear);
+
+        if ($level !== null) {
+            $query->where('level', Student::normalizeLevel($level));
+        }
+
+        return $query;
     }
 }

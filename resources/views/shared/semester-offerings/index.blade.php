@@ -32,12 +32,21 @@
                     <label class="form-label">Academic Year</label>
                     <input type="text" name="academic_year" class="form-control" value="{{ request('academic_year') }}" placeholder="e.g. 2025/2026" onchange="this.form.submit()">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Semester</label>
                     <select name="semester" class="form-select" onchange="this.form.submit()">
                         <option value="">All</option>
                         <option value="First Semester" {{ request('semester') == 'First Semester' ? 'selected' : '' }}>First Semester</option>
                         <option value="Second Semester" {{ request('semester') == 'Second Semester' ? 'selected' : '' }}>Second Semester</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Level</label>
+                    <select name="level" class="form-select" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        @foreach(($levels ?? []) as $levelOption)
+                            <option value="{{ $levelOption }}" {{ request('level') == $levelOption ? 'selected' : '' }}>{{ $levelOption }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -59,6 +68,7 @@
                                 @endif
                                 <th>Academic Year</th>
                                 <th>Semester</th>
+                                <th>Level</th>
                                 <th>Courses</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -73,6 +83,7 @@
                                     @endif
                                     <td>{{ $offering->academic_year }}</td>
                                     <td>{{ $offering->semester }}</td>
+                                    <td><span class="badge bg-primary">{{ $offering->level ?? '100' }}</span></td>
                                     <td>{{ count($offering->course_ids ?? []) }}</td>
                                     <td>
                                         @if($offering->is_published)

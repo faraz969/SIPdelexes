@@ -379,7 +379,7 @@
     <!-- Body Text -->
     <div class="body-text">
         <p>
-            The Admissions Committee has considered your application and is delighted to offer you admission to level {{ $data['level'] }} of the <strong class="highlight-yellow">BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
+            The Admissions Committee has considered your application and is delighted to offer you admission to <strong>level {{ $data['level'] }}</strong> of the <strong class="highlight-yellow">BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
         </p>
     </div>
 
@@ -388,6 +388,10 @@
         <tr>
             <td class="detail-label">Student ID:</td>
             <td class="detail-value" colspan="7">{{ $data['student_id'] }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Level:</td>
+            <td class="detail-value" colspan="7"><strong>{{ $data['level'] }}</strong></td>
         </tr>
         <tr>
             <td class="detail-label">Nationality:</td>

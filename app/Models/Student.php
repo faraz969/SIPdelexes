@@ -9,6 +9,8 @@ class Student extends Model
 {
     use HasFactory;
 
+    public const LEVELS = ['100', '200', '300', '400'];
+
     protected $fillable = [
         'user_id',
         'application_id',
@@ -19,6 +21,7 @@ class Student extends Model
         'department_id',
         'preferred_session_id',
         'academic_year',
+        'level',
         'academic_status',
         'admission_date',
         'deferred_at',
@@ -36,6 +39,17 @@ class Student extends Model
         'sip_account_created' => 'boolean',
         'sip_account_created_at' => 'datetime',
     ];
+
+    public static function normalizeLevel(?string $level): string
+    {
+        $level = trim((string) $level);
+        return in_array($level, self::LEVELS, true) ? $level : '100';
+    }
+
+    public function getLevelLabelAttribute(): string
+    {
+        return 'Level ' . self::normalizeLevel($this->level);
+    }
 
     public function user()
     {

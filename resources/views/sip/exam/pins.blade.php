@@ -26,6 +26,10 @@
                 <h5 class="mb-0"><i class="fas fa-check-circle"></i> Generate New Exam PIN</h5>
             </div>
             <div class="card-body">
+                <p class="text-muted mb-3">
+                    Exam PINs are generated for your current level:
+                    <strong>Level {{ \App\Models\Student::normalizeLevel($student->level ?? null) }}</strong>
+                </p>
                 <form method="POST" action="{{ route('sip.exam.generate-pin') }}">
                     @csrf
                     
@@ -41,6 +45,11 @@
                     <div class="mb-3">
                         <label for="academic_year" class="form-label">Academic Year</label>
                         <input type="text" class="form-control" id="academic_year" name="academic_year" value="{{ $student->academic_year }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Level</label>
+                        <input type="text" class="form-control" value="Level {{ \App\Models\Student::normalizeLevel($student->level ?? null) }}" readonly>
                     </div>
 
                     <button type="submit" class="btn btn-success btn-lg">
@@ -68,6 +77,7 @@
                                 <th>PIN</th>
                                 <th>Semester</th>
                                 <th>Academic Year</th>
+                                <th>Level</th>
                                 <th>Status</th>
                                 <th>Expires At</th>
                                 <th>Generated</th>
@@ -84,6 +94,7 @@
                                     </td>
                                     <td>{{ $pin->semester }}</td>
                                     <td>{{ $pin->academic_year }}</td>
+                                    <td><span class="badge bg-primary">{{ $pin->level ?? '100' }}</span></td>
                                     <td>
                                         @if($pin->is_used)
                                             <span class="badge bg-secondary">Used</span>

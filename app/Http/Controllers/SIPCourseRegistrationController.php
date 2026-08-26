@@ -69,8 +69,11 @@ class SIPCourseRegistrationController extends Controller
             ]);
         }
 
+        $studentLevel = \App\Models\Student::normalizeLevel($student->level ?? null);
+
         $availableOfferings = SemesterCourseOffering::published()
             ->where('program_id', $student->program_id)
+            ->forLevel($studentLevel)
             ->orderByDesc('academic_year')
             ->orderBy('semester')
             ->get();
@@ -138,13 +141,16 @@ class SIPCourseRegistrationController extends Controller
             return back()->with('error', 'You have no program assigned. Please contact the registrar.');
         }
 
+        $studentLevel = \App\Models\Student::normalizeLevel($student->level ?? null);
+
         $offering = SemesterCourseOffering::published()
             ->where('id', $request->offering_id)
             ->where('program_id', $student->program_id)
+            ->forLevel($studentLevel)
             ->first();
 
         if (!$offering) {
-            return back()->with('error', 'This course package is not available for your program or is not published.');
+            return back()->with('error', 'This course package is not available for your program/level or is not published.');
         }
 
         $existingRegistration = CourseRegistration::where('student_id', $student->id)
