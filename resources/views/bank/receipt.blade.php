@@ -193,7 +193,8 @@
                 @endif
             </div>
             <div class="receipt-info">
-                <div class="receipt-number">RECEIPT #: {{ $receipt_number }}</div>
+                <div class="receipt-number">INVOICE ID: {{ $invoice_id ?? '—' }}</div>
+                <div class="receipt-number" style="font-size: 13px; margin-top: 4px;">RECEIPT #: {{ $receipt_number }}</div>
                 <div class="date-time">{{ \Carbon\Carbon::parse($transaction_date)->format('d-M-Y H:i:s') }}</div>
             </div>
         </div>
@@ -225,6 +226,10 @@
             </div>
 
             <div class="right-section">
+                <div class="field-group">
+                    <div class="field-label">Invoice ID:</div>
+                    <div class="field-value">{{ $invoice_id ?? '—' }}</div>
+                </div>
                 <div class="field-group">
                     <div class="field-label">Serial #:</div>
                     <div class="field-value">{{ $serial_number }}</div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\BankVoucherService;
 use Illuminate\Http\Request;
 
 class AdmissionPaymentController extends Controller
@@ -39,10 +40,23 @@ class AdmissionPaymentController extends Controller
                     ->orWhereNotNull('payment');
             });
 
+        $totalAmount = 0.0;
+        User::where('role', 'user')
+            ->whereNotNull('payment')
+            ->orderBy('id')
+            ->chunkById(200, function ($users) use (&$totalAmount) {
+                foreach ($users as $user) {
+                    $amount = BankVoucherService::resolvePaymentAmount($user->payment);
+                    if ($amount !== null) {
+                        $totalAmount += $amount;
+                    }
+                }
+            });
+
         $stats = [
             'total_records' => (clone $statsQuery)->count(),
             'with_invoice' => (clone $statsQuery)->whereNotNull('invoice_id')->count(),
-            'total_amount' => (clone $statsQuery)->whereNotNull('payment')->sum('payment'),
+            'total_amount' => $totalAmount,
             'today_records' => (clone $statsQuery)->whereDate('created_at', now()->toDateString())->count(),
         ];
 

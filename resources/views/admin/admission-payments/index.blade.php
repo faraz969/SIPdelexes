@@ -98,9 +98,12 @@
                                 <td>{{ optional($record->formType)->name ?? '-' }}</td>
                                 <td><code>{{ $record->invoice_id ?? '-' }}</code></td>
                                 <td>
-                                    @if(!is_null($record->payment))
+                                    @php
+                                        $amount = \App\Services\BankVoucherService::resolvePaymentAmount($record->payment);
+                                    @endphp
+                                    @if(!is_null($amount))
                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
-                                            GHS {{ number_format((float) $record->payment, 2) }}
+                                            GHS {{ number_format($amount, 2) }}
                                         </span>
                                     @else
                                         -

@@ -10,9 +10,18 @@ use App\Models\User;
 use App\Models\FormType;
 use App\Helpers\CountryCodes;
 use App\Models\SiteSetting;
+use App\Services\BankVoucherService;
+use Carbon\Carbon;
 
 class BankController extends Controller
 {
+    protected $voucherService;
+
+    public function __construct(BankVoucherService $voucherService)
+    {
+        $this->voucherService = $voucherService;
+    }
+
     public function dashboard(Request $request)
     {
         $bankUser = Auth::user();
@@ -26,7 +35,9 @@ class BankController extends Controller
             $query->where(function($q) use ($searchTerm) {
                 $q->where('name', 'like', '%' . $searchTerm . '%')
                   ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('phone', 'like', '%' . $searchTerm . '%');
+                  ->orWhere('phone', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('invoice_id', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('serial_number', 'like', '%' . $searchTerm . '%');
             });
         }
         
@@ -60,22 +71,27 @@ class BankController extends Controller
             $validated['email'] = 'user_' . time() . '_' . rand(1000, 9999) . '@bank.created';
         }
 
-        // Generate a random PIN (8 uppercase alphanumeric)
+        $formType = FormType::findOrFail($validated['form_type_id']);
+        $amount = $this->voucherService->calculateAmount($formType, $validated['nationality']);
+        $invoiceId = $this->voucherService->generateUniqueInvoiceId();
+        $serialNumber = $this->voucherService->generateUniqueSerialNumber();
+        $receiptNumber = $this->voucherService->generateReceiptNumber();
+        $academicYear = SiteSetting::currentAcademicYear();
+        $transactionDate = now()->format('Y-m-d H:i:s');
+
         $pin = Str::upper(Str::random(8));
-        $pinExpiry = \Carbon\Carbon::now()->addMonths(3);
-        
-        // Generate serial number for students
-        $serialNumber = $this->generateUniqueSerialNumber();
-        
-        // Get form type for pricing
-        $formType = FormType::find($validated['form_type_id']);
-        $isLocal = strtolower(trim($validated['nationality'])) === 'ghana';
-        $amount = $isLocal ? $formType->local_price : $formType->international_price;
-        
-        // Convert to GHS if international student
-        if (!$isLocal && $formType->conversion_rate) {
-            $amount = $amount * $formType->conversion_rate;
-        }
+        $pinExpiry = Carbon::now()->addMonths(3);
+
+        $paymentPayload = $this->voucherService->buildPaymentPayload(
+            $invoiceId,
+            $amount,
+            $formType,
+            $validated['voucher_for'] ?? null,
+            'bank_portal',
+            $receiptNumber,
+            $transactionDate,
+            $academicYear
+        );
 
         $user = User::create([
             'name' => $validated['name'],
@@ -89,25 +105,12 @@ class BankController extends Controller
             'serial_number' => $serialNumber,
             'pin_expires_at' => $pinExpiry,
             'created_by' => $bankUser->id,
+            'invoice_id' => $invoiceId,
+            'payment' => json_encode($paymentPayload),
         ]);
-
-        // Generate receipt number
-        $receiptNumber = $this->generateReceiptNumber();
-        
-        // Store receipt data in user's payment field or create a receipt record
-        // For now, we'll store it in a JSON format in a custom field or use the payment field
-        $user->payment = json_encode([
-            'receipt_number' => $receiptNumber,
-            'amount' => $amount,
-            'form_type' => $formType->name,
-            'transaction_date' => now()->format('Y-m-d H:i:s'),
-            'academic_year' => SiteSetting::currentAcademicYear(),
-            'voucher_for' => $validated['voucher_for'] ?? null,
-        ]);
-        $user->save();
 
         return redirect()->route('bank.dashboard')
-            ->with('success', 'User created successfully. PIN: ' . $pin . ', Serial Number: ' . $serialNumber);
+            ->with('success', 'User created successfully. Invoice ID: ' . $invoiceId . ', Amount: GHS ' . number_format($amount, 2) . ', PIN: ' . $pin . ', Serial Number: ' . $serialNumber);
     }
 
     public function downloadReceipt($userId)
@@ -123,38 +126,44 @@ class BankController extends Controller
                 ->with('error', 'Form type not found for this user.');
         }
 
-        // Get payment data
-        $paymentData = $user->payment ? json_decode($user->payment, true) : [];
-        $receiptNumber = $paymentData['receipt_number'] ?? $this->generateReceiptNumber();
-        $isLocalForAmount = strtolower(trim($user->nationality ?? '')) === 'ghana';
-        $amount = $paymentData['amount'] ?? ($isLocalForAmount ? $formType->local_price : $formType->international_price);
+        $paymentData = BankVoucherService::resolvePaymentData($user->payment);
+        $amount = BankVoucherService::resolvePaymentAmount($user->payment);
+
+        if ($amount === null) {
+            $amount = $this->voucherService->calculateAmount($formType, $user->nationality ?? 'Ghana');
+        }
+
         $transactionDate = $paymentData['transaction_date'] ?? $user->created_at->format('Y-m-d H:i:s');
         $academicYear = $paymentData['academic_year'] ?? SiteSetting::currentAcademicYear();
         $voucherFor = $paymentData['voucher_for'] ?? null;
+        $receiptNumber = $paymentData['receipt_number'] ?? $this->voucherService->generateReceiptNumber();
 
-        // Determine amount based on nationality if not stored
-        if (!isset($paymentData['amount'])) {
-            $isLocal = strtolower(trim($user->nationality ?? '')) === 'ghana';
-            $amount = $isLocal ? $formType->local_price : $formType->international_price;
-            if (!$isLocal && $formType->conversion_rate) {
-                $amount = $amount * $formType->conversion_rate;
-            }
+        // Ensure invoice_id exists (backfill for older bank-created users)
+        $invoiceId = $user->invoice_id ?: ($paymentData['invoice_id'] ?? null);
+        if (!$invoiceId) {
+            $invoiceId = $this->voucherService->generateUniqueInvoiceId();
+            $user->invoice_id = $invoiceId;
         }
 
-        // Store receipt number if not already stored
-        if (!isset($paymentData['receipt_number'])) {
-            $user->payment = json_encode([
-                'receipt_number' => $receiptNumber,
-                'amount' => $amount,
-                'form_type' => $formType->name,
-                'transaction_date' => $transactionDate,
-                'academic_year' => $academicYear,
-                'voucher_for' => $voucherFor,
-            ]);
+        $needsSave = $user->isDirty('invoice_id')
+            || !isset($paymentData['receipt_number'])
+            || !isset($paymentData['amount'])
+            || !isset($paymentData['invoice_id']);
+
+        if ($needsSave) {
+            $user->payment = json_encode($this->voucherService->buildPaymentPayload(
+                $invoiceId,
+                (float) $amount,
+                $formType,
+                $voucherFor,
+                $paymentData['created_via'] ?? 'bank_portal',
+                $receiptNumber,
+                $transactionDate,
+                $academicYear
+            ));
             $user->save();
         }
 
-        // Build payment description
         $paymentDescription = 'Payment of Voucher';
         if ($voucherFor) {
             $paymentDescription .= ' for ' . $voucherFor;
@@ -164,6 +173,7 @@ class BankController extends Controller
 
         $data = [
             'receipt_number' => $receiptNumber,
+            'invoice_id' => $invoiceId,
             'institution' => 'Delexes University College',
             'form_type' => $formType->name,
             'serial_number' => $user->serial_number,
@@ -174,39 +184,11 @@ class BankController extends Controller
             'academic_year' => $academicYear,
             'transaction_date' => $transactionDate,
             'payment_description' => $paymentDescription,
-            'amount_paid' => number_format($amount, 2),
+            'amount_paid' => number_format((float) $amount, 2),
             'paid_by' => $user->name,
             'voucher_for' => $voucherFor,
         ];
 
         return view('bank.receipt', $data);
-    }
-
-    private function generateUniqueSerialNumber()
-    {
-        $maxAttempts = 10;
-        $attempt = 0;
-
-        do {
-            $randomNumber = rand(100000, 999999);
-            $serialNumber = 'DUC' . $randomNumber;
-            $exists = User::where('serial_number', $serialNumber)->exists();
-            $attempt++;
-            
-            if (!$exists) {
-                return $serialNumber;
-            }
-            
-            if ($attempt >= $maxAttempts) {
-                return 'DUC' . substr(time(), -6);
-            }
-        } while ($exists);
-
-        return $serialNumber;
-    }
-
-    private function generateReceiptNumber()
-    {
-        return strtoupper(Str::random(20));
     }
 }

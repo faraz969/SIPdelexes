@@ -52,6 +52,8 @@
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
+                                <th>Invoice ID</th>
+                                <th>Amount</th>
                                 <th>Serial Number</th>
                                 <th>PIN</th>
                                 <th>Form Type</th>
@@ -61,10 +63,21 @@
                         </thead>
                         <tbody>
                             @foreach($users as $user)
+                                @php
+                                    $amount = \App\Services\BankVoucherService::resolvePaymentAmount($user->payment);
+                                @endphp
                                 <tr>
                                     <td>{{ $user->name }}</td>
                                     <td>{{ $user->email }}</td>
                                     <td>{{ $user->phone }}</td>
+                                    <td><code>{{ $user->invoice_id ?? '—' }}</code></td>
+                                    <td>
+                                        @if(!is_null($amount))
+                                            GHS {{ number_format($amount, 2) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td><code>{{ $user->serial_number ?? '—' }}</code></td>
                                     <td><code>{{ $user->pin ?? '—' }}</code></td>
                                     <td>{{ $user->formType->name ?? '—' }}</td>

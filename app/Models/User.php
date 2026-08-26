@@ -145,4 +145,12 @@ class User extends Authenticatable
                 return ucfirst($this->role);
         }
     }
+
+    /**
+     * Admission voucher amount (supports numeric payment or bank JSON payload).
+     */
+    public function getAdmissionPaymentAmountAttribute(): ?float
+    {
+        return \App\Services\BankVoucherService::resolvePaymentAmount($this->payment);
+    }
 }

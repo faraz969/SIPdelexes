@@ -216,6 +216,7 @@ Creates an applicant, generates **serial number + PIN**, stores receipt/payment 
     "serial_number": "DUC482193",
     "pin": "A1B2C3D4",
     "pin_expires_at": "2026-11-14 01:00:00",
+    "invoice_id": "DUC1756123456789",
     "receipt_number": "XK29F0A1B2C3D4E5F6G7",
     "amount_paid": 150,
     "currency": "GHS",
@@ -226,7 +227,7 @@ Creates an applicant, generates **serial number + PIN**, stores receipt/payment 
 }
 ```
 
-Give the applicant **`serial_number` + `pin`** so they can log in to the student portal.
+Give the applicant **`serial_number` + `pin`** so they can log in to the student portal. Store **`invoice_id`** and **`amount_paid`** for reconciliation (also printed on the bank receipt).
 
 ### Errors
 
@@ -286,6 +287,7 @@ Includes PIN for that applicant (scoped to this bank).
 {
   "success": true,
   "data": {
+    "invoice_id": "DUC1756123456789",
     "receipt_number": "XK29F0A1B2C3D4E5F6G7",
     "institution": "Delexes University College",
     "form_type": "Undergraduate Application Form",
@@ -306,7 +308,7 @@ Includes PIN for that applicant (scoped to this bank).
 }
 ```
 
-`receipt_url` is the printable web receipt (requires a logged-in bank session in the browser). For system integration, use the JSON fields above.
+`invoice_id` and `amount_paid` are always returned. `receipt_url` is the printable web receipt (requires a logged-in bank session in the browser). For system integration, use the JSON fields above.
 
 ---
 
@@ -316,7 +318,7 @@ Includes PIN for that applicant (scoped to this bank).
 1. POST /api/bank/login
 2. GET  /api/bank/form-types   → choose form_type_id
 3. POST /api/bank/users        → create applicant after bank payment
-4. Store returned serial_number, pin, receipt_number, amount_paid
+4. Store returned invoice_id, amount_paid, serial_number, pin, receipt_number
 5. Optionally GET /api/bank/users/{id}/receipt for reprint/sync
 ```
 
