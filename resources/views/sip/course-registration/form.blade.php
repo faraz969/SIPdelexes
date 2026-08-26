@@ -39,7 +39,7 @@
             <div class="col-md-8">
                 <div class="card mb-3">
                     <div class="card-body">
-                        <label for="offering_id" class="form-label"><strong>Select semester package</strong></label>
+                        <label for="offering_id" class="form-label"><strong>Select semester Course registration</strong></label>
                         <select id="offering_id" class="form-select" onchange="window.location='{{ route('sip.course-registration.show') }}?offering_id=' + this.value;">
                             @foreach($availableOfferings as $item)
                                 <option value="{{ $item->id }}" {{ optional($offering)->id == $item->id ? 'selected' : '' }}>

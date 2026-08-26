@@ -1,0 +1,376 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-bank-api-delexes",
+    "name": "Delexes SIP — Bank Integration API",
+    "description": "APIs for banks to create admission-form voucher applicants (same flow as the Bank Dashboard).\n\n**Setup**\n1. Set `base_url` (e.g. https://sip.delexesuniversity.edu.gh or http://localhost:8000)\n2. Set `bank_email` and `bank_password` for a bank-role account\n3. Run **1. Login** first — the token is saved automatically\n4. Run the other requests (Bearer token is applied from `{{token}}`)\n\n**Docs:** See BANK_API_DOCUMENTATION.md in the project.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://sip.delexesuniversity.edu.gh/",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bank_email",
+      "value": "bank@example.com",
+      "type": "string"
+    },
+    {
+      "key": "bank_password",
+      "value": "your-password",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "form_type_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "1. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.token) {",
+                  "        pm.collectionVariables.set('token', json.data.token);",
+                  "        console.log('Token saved to collection variable {{token}}');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{bank_email}}\",\n  \"password\": \"{{bank_password}}\",\n  \"device_name\": \"postman-bank-api\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bank/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "login"]
+            },
+            "description": "Authenticate with a bank-role account and receive a Sanctum Bearer token.\n\nOn success, the test script stores `data.token` in the collection variable `token` for subsequent requests."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "logout"]
+            },
+            "description": "Revoke the current API token."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Bank Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "me"]
+            },
+            "description": "Returns the authenticated bank account details."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Lookups",
+      "item": [
+        {
+          "name": "4. List Form Types",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.collectionVariables.set('form_type_id', String(json.data[0].id));",
+                  "        console.log('form_type_id set to', json.data[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/form-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "form-types"]
+            },
+            "description": "Active form types and prices. Use `id` as `form_type_id` when creating a user.\n\nPricing:\n- Nationality Ghana → local_price (GHS)\n- Other → international_price × conversion_rate"
+          },
+          "response": []
+        },
+        {
+          "name": "5. List Countries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/countries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "countries"]
+            },
+            "description": "Nationality options (use exact country name, e.g. Ghana)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Applicants (Users)",
+      "item": [
+        {
+          "name": "6. Create User (Applicant + Voucher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.user_id) {",
+                  "        pm.collectionVariables.set('user_id', String(json.data.user_id));",
+                  "        console.log('user_id set to', json.data.user_id);",
+                  "        console.log('serial_number:', json.data.serial_number);",
+                  "        console.log('pin:', json.data.pin);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ama Mensah\",\n  \"email\": \"ama.mensah@example.com\",\n  \"phone\": \"+233551234567\",\n  \"nationality\": \"Ghana\",\n  \"form_type_id\": {{form_type_id}},\n  \"voucher_for\": \"Ama Mensah\",\n  \"send_sms\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bank/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users"]
+            },
+            "description": "Main integration endpoint.\n\nCreates an applicant, generates serial number + PIN, stores receipt/payment data, and optionally sends SMS.\n\n| Field | Required | Notes |\n|-------|----------|-------|\n| name | Yes | Full name |\n| email | No | Unique if provided; auto-generated if omitted |\n| phone | Yes | Used for SMS |\n| nationality | Yes | Exact country name (e.g. Ghana) |\n| form_type_id | Yes | From List Form Types |\n| voucher_for | No | Name on receipt |\n| send_sms | No | Default true |\n\nGive the applicant `serial_number` + `pin` so they can log in to the student portal.\n\nOn success, `user_id` is saved for Get User / Get Receipt."
+          },
+          "response": []
+        },
+        {
+          "name": "6b. Create User (without email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kwame Asante\",\n  \"phone\": \"+233209998877\",\n  \"nationality\": \"Ghana\",\n  \"form_type_id\": {{form_type_id}},\n  \"voucher_for\": \"Kwame Asante\",\n  \"send_sms\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bank/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users"]
+            },
+            "description": "Same as Create User, but omits email — the API auto-generates one."
+          },
+          "response": []
+        },
+        {
+          "name": "6c. Create User (international / no SMS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe.intl@example.com\",\n  \"phone\": \"+14155552671\",\n  \"nationality\": \"United States\",\n  \"form_type_id\": {{form_type_id}},\n  \"voucher_for\": \"John Doe\",\n  \"send_sms\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bank/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users"]
+            },
+            "description": "International nationality uses international_price × conversion_rate. SMS skipped."
+          },
+          "response": []
+        },
+        {
+          "name": "7. List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/users?search=&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Optional — matches name, email, phone, serial number"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Default 20, max 100"
+                }
+              ]
+            },
+            "description": "List applicants created by this bank (`created_by` = authenticated bank)."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users", "{{user_id}}"]
+            },
+            "description": "Get one applicant (includes PIN). Scoped to applicants created by this bank.\n\nSet `user_id` after Create User, or run Create User so the test script saves it."
+          },
+          "response": []
+        },
+        {
+          "name": "9. Get Receipt",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/users/{{user_id}}/receipt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "users", "{{user_id}}", "receipt"]
+            },
+            "description": "Receipt details: PIN, serial, amount, receipt_number, etc.\n\nUse JSON fields for system integration. `receipt_url` is the printable web receipt (browser bank session)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
