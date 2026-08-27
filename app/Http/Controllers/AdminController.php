@@ -14,7 +14,7 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $query = Application::with(['user', 'examRecords.subjects']);
+        $query = Application::with(['user', 'examRecords.subjects', 'admissionForm']);
         
         // Apply search filter if provided
         if ($request->has('search') && !empty($request->search)) {

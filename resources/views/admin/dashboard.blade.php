@@ -46,6 +46,7 @@
                     <th>Email</th>
                     <th>Application #</th>
                     <th>Academic Year</th>
+                    <th>Preferred Session</th>
                     <th>Form Type</th>
                     <th>Qualification</th>
                     <th>Status</th>
@@ -60,6 +61,10 @@
                         <td>{{ $app->user->email ?? '-' }}</td>
                         <td>{{ $app->application_number }}</td>
                         <td>{{ $app->academic_year }}</td>
+                        <td>
+                            {{ $app->admissionForm?->preferred_session
+                                ?? ($app->data['preferred_session'] ?? '—') }}
+                        </td>
                         <td>{{ ucfirst($app->form_type) }}</td>
                         <td>
                             @php
@@ -90,7 +95,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center">
+                        <td colspan="10" class="text-center">
                             @if(request('search'))
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-info-circle"></i> No applications found matching your search criteria.
