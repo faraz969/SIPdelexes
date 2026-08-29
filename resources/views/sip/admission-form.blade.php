@@ -47,23 +47,27 @@
         body.is-pdf {
             padding: 4mm 6mm;
         }
-        .header-container {
-            display: flex;
-            align-items: flex-start;
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 6px;
         }
-        .logo-container {
-            width: 58px;
-            margin-right: 12px;
+        .header-table td {
+            vertical-align: top;
+            padding: 0;
         }
-        .logo-container img {
-            width: 100%;
+        .header-table .logo-cell {
+            width: 70px;
+            padding-right: 12px;
+        }
+        .header-table .logo-cell img {
+            width: 58px;
             height: auto;
             max-width: 58px;
+            display: block;
         }
         .header-content {
-            flex: 1;
-            margin-left: 12px;
+            vertical-align: top;
         }
         .university-name {
             font-size: 15pt;
@@ -91,6 +95,19 @@
             justify-content: space-between;
             align-items: flex-start;
             margin: 6px 0;
+        }
+        body.is-pdf .student-name-date {
+            display: table;
+            width: 100%;
+        }
+        body.is-pdf .student-name,
+        body.is-pdf .document-date {
+            display: table-cell;
+            vertical-align: top;
+        }
+        body.is-pdf .document-date {
+            text-align: right;
+            white-space: nowrap;
         }
         .student-name {
             font-size: 11pt;
@@ -344,22 +361,29 @@
 </head>
 <body class="{{ !empty($isPdf) ? 'is-pdf' : '' }}">
     <!-- Header with Logo -->
-    <div class="header-container">
-        <div class="logo-container">
-            @if(file_exists(public_path('images/logo_blue.png')))
-                <img src="{{ asset('images/logo_blue.png') }}" alt="DUC Logo" style="max-width: 58px;">
-            @else
-                <div style="width: 58px; height: 58px; border: 2px solid #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e3a8a;">
-                    DUC
-                </div>
-            @endif
-        </div>
-        <div class="header-content">
-            <div class="university-name">DELEXES UNIVERSITY COLLEGE, GHANA</div>
-            <div class="address-line">P.O.Box Co 3538,Tema | Peace Bee Junction C25 Tema-Aflao Road, Ningo-Prampram, Greater Accra, Ghana</div>
-            <div class="contact-line">Tel: +233 (0) 55 1126 448 +233 (0) 55 1198 100 GPS: GN-0603-8481</div>
-        </div>
-    </div>
+    @php
+        $logoPath = public_path('images/logo_blue.png');
+        $logoExists = file_exists($logoPath);
+        $logoSrc = ($logoExists && !empty($isPdf)) ? $logoPath : asset('images/logo_blue.png');
+    @endphp
+    <table class="header-table" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="logo-cell">
+                @if($logoExists)
+                    <img src="{{ $logoSrc }}" alt="DUC Logo" width="58">
+                @else
+                    <div style="width: 58px; height: 58px; border: 2px solid #1e3a8a; border-radius: 50%; text-align: center; line-height: 54px; font-weight: bold; color: #1e3a8a;">
+                        DUC
+                    </div>
+                @endif
+            </td>
+            <td class="header-content">
+                <div class="university-name">DELEXES UNIVERSITY COLLEGE, GHANA</div>
+                <div class="address-line">P.O.Box Co 3538,Tema | Peace Bee Junction C25 Tema-Aflao Road, Ningo-Prampram, Greater Accra, Ghana</div>
+                <div class="contact-line">Tel: +233 (0) 55 1126 448 +233 (0) 55 1198 100 GPS: GN-0603-8481</div>
+            </td>
+        </tr>
+    </table>
 
     <div class="divider"></div>
 
