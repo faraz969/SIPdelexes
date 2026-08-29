@@ -101,6 +101,8 @@
                                 <a class="{{ $navActive('hod.courses.create') }}" href="{{ route('hod.courses.create') }}"><i class="fas fa-plus"></i> Add Course</a>
                                 <a class="{{ $navActive('hod.semester-offerings*') }}" href="{{ route('hod.semester-offerings.index') }}"><i class="fas fa-clipboard-list"></i> Course Registrations</a>
                                 <a class="{{ $navActive('hod.course-enrollments*') }}" href="{{ route('hod.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
+                                <div class="sidebar-group-label">DEFERMENTS</div>
+                                <a class="{{ $navActive('hod.deferments*') }}" href="{{ route('hod.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
                             @elseif($user->isPresident())
                                 <a class="{{ $navActive('president.*') }}" href="{{ route('president.dashboard') }}"><i class="fas fa-crown"></i> President Dashboard</a>
                             @elseif($user->isRegistrar())

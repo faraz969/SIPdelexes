@@ -91,7 +91,7 @@ class SIPDefermentController extends Controller
         ]);
 
         return redirect()->route('sip.deferment.status')
-            ->with('success', 'Deferment request submitted successfully. Waiting for registrar approval.');
+            ->with('success', 'Deferment request submitted successfully. Waiting for HOD approval.');
     }
 
     /**
@@ -101,7 +101,7 @@ class SIPDefermentController extends Controller
     {
         $student = $this->getStudent();
         $deferments = $student->deferments()
-            ->with('approver')
+            ->with(['approver', 'hodReviewer'])
             ->orderBy('created_at', 'desc')
             ->get();
 

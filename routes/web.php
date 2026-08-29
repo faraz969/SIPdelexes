@@ -108,6 +108,10 @@ Route::middleware(['auth', 'role:hod'])->prefix('hod')->name('hod.')->group(func
     Route::post('/applications/{application}/approve', [App\Http\Controllers\HODController::class, 'approveApplication'])->name('applications.approve');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\HODController::class, 'rejectApplication'])->name('applications.reject');
 
+    Route::get('/deferments', [App\Http\Controllers\HODController::class, 'deferments'])->name('deferments');
+    Route::post('/deferments/{deferment}/approve', [App\Http\Controllers\HODController::class, 'approveDeferment'])->name('deferments.approve');
+    Route::post('/deferments/{deferment}/reject', [App\Http\Controllers\HODController::class, 'rejectDeferment'])->name('deferments.reject');
+
     Route::resource('courses', App\Http\Controllers\HODCourseController::class);
     Route::get('/course-enrollments', [App\Http\Controllers\HODCourseController::class, 'enrollments'])->name('course-enrollments');
     Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\HODCourseController::class, 'enrollmentStudents'])->name('course-enrollments.students');

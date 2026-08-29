@@ -22,15 +22,9 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         Request #{{ $deferment->id }}
-                        @if($deferment->status === 'pending')
-                            <span class="badge bg-warning float-end">Pending</span>
-                        @elseif($deferment->status === 'approved')
-                            <span class="badge bg-success float-end">Approved</span>
-                        @elseif($deferment->status === 'rejected')
-                            <span class="badge bg-danger float-end">Rejected</span>
-                        @elseif($deferment->status === 'reactivated')
-                            <span class="badge bg-info float-end">Reactivated</span>
-                        @endif
+                        <span class="badge bg-{{ $deferment->displayStatusClass() }} float-end">
+                            {{ $deferment->displayStatusLabel() }}
+                        </span>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -48,20 +42,43 @@
                         </div>
                     </div>
 
-                    @if($deferment->registrar_comments)
+                    @if($deferment->hod_comments || $deferment->hod_reviewed_at)
                         <hr>
-                        <div class="alert alert-{{ $deferment->status === 'approved' ? 'success' : ($deferment->status === 'rejected' ? 'danger' : 'info') }}">
-                            <strong>Registrar Comments:</strong>
-                            <p class="mb-0">{{ $deferment->registrar_comments }}</p>
+                        <div class="alert alert-{{ $deferment->hod_status === 'approved' ? 'success' : ($deferment->hod_status === 'rejected' ? 'danger' : 'warning') }}">
+                            <strong>HOD Review:</strong>
+                            @if($deferment->hod_comments)
+                                <p class="mb-0">{{ $deferment->hod_comments }}</p>
+                            @endif
+                            @if($deferment->hodReviewer)
+                                <small>Reviewed by: {{ $deferment->hodReviewer->name }} on {{ $deferment->hod_reviewed_at?->format('d M Y H:i') }}</small>
+                            @elseif($deferment->isPendingHodReview())
+                                <p class="mb-0">Waiting for Head of Department review.</p>
+                            @endif
+                        </div>
+                    @elseif($deferment->isPendingHodReview())
+                        <hr>
+                        <div class="alert alert-warning mb-0">
+                            <strong>HOD Review:</strong> Waiting for Head of Department review.
+                        </div>
+                    @endif
+
+                    @if($deferment->registrar_comments || $deferment->isPendingRegistrarReview() || $deferment->approver)
+                        <div class="alert alert-{{ $deferment->registrar_status === 'approved' ? 'success' : ($deferment->registrar_status === 'rejected' ? 'danger' : 'info') }}">
+                            <strong>Registrar Review:</strong>
+                            @if($deferment->registrar_comments)
+                                <p class="mb-0">{{ $deferment->registrar_comments }}</p>
+                            @elseif($deferment->isPendingRegistrarReview())
+                                <p class="mb-0">Approved by HOD. Waiting for Registrar review.</p>
+                            @endif
                             @if($deferment->approver)
-                                <small>Reviewed by: {{ $deferment->approver->name }} on {{ $deferment->approved_at->format('d M Y H:i') }}</small>
+                                <small>Reviewed by: {{ $deferment->approver->name }} on {{ $deferment->approved_at?->format('d M Y H:i') }}</small>
                             @endif
                         </div>
                     @endif
 
                     @if($deferment->reactivated_at)
                         <div class="alert alert-info">
-                            <i class="fas fa-check-circle"></i> 
+                            <i class="fas fa-check-circle"></i>
                             Reactivated on: {{ $deferment->reactivated_at->format('d M Y H:i') }}
                         </div>
                     @endif
@@ -77,4 +94,3 @@
     </div>
 </div>
 @endsection
-

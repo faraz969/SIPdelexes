@@ -307,12 +307,14 @@ class RegistrarController extends Controller
      */
     public function deferments()
     {
-        $pendingDeferments = \App\Models\Deferment::with(['student.user', 'student.program'])
+        $pendingDeferments = \App\Models\Deferment::with(['student.user', 'student.program', 'hodReviewer'])
             ->where('status', 'pending')
+            ->where('hod_status', 'approved')
+            ->where('registrar_status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $allDeferments = \App\Models\Deferment::with(['student.user', 'student.program', 'approver'])
+        $allDeferments = \App\Models\Deferment::with(['student.user', 'student.program', 'approver', 'hodReviewer'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -324,12 +326,18 @@ class RegistrarController extends Controller
      */
     public function approveDeferment(Request $request, \App\Models\Deferment $deferment)
     {
+        if (!$deferment->isPendingRegistrarReview()) {
+            return redirect()->route('registrar.deferments')
+                ->with('error', 'This deferment must be approved by the HOD before registrar review.');
+        }
+
         $request->validate([
             'comments' => 'nullable|string|max:1000',
         ]);
 
         $deferment->update([
             'status' => 'approved',
+            'registrar_status' => 'approved',
             'registrar_comments' => $request->comments,
             'approved_by' => auth()->id(),
             'approved_at' => now(),
@@ -363,12 +371,18 @@ class RegistrarController extends Controller
      */
     public function rejectDeferment(Request $request, \App\Models\Deferment $deferment)
     {
+        if (!$deferment->isPendingRegistrarReview()) {
+            return redirect()->route('registrar.deferments')
+                ->with('error', 'This deferment must be approved by the HOD before registrar review.');
+        }
+
         $request->validate([
             'comments' => 'required|string|max:1000',
         ]);
 
         $deferment->update([
             'status' => 'rejected',
+            'registrar_status' => 'rejected',
             'registrar_comments' => $request->comments,
             'approved_by' => auth()->id(),
             'approved_at' => now(),

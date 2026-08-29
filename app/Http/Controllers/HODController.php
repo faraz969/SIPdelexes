@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Application;
 use App\Models\Department;
+use App\Models\Deferment;
 use App\Services\SmsService;
 
 class HODController extends Controller
@@ -244,6 +245,95 @@ class HODController extends Controller
 
         return redirect()->route('hod.dashboard')
             ->with('success', 'Application rejected.');
+    }
+
+    public function deferments()
+    {
+        $user = Auth::user();
+        $department = $user->department;
+
+        if (!$department) {
+            return redirect()->route('admin.dashboard')->with('error', 'No department assigned to your account.');
+        }
+
+        $departmentScope = function ($query) use ($department) {
+            $query->whereHas('student', function ($studentQuery) use ($department) {
+                $studentQuery->where('department_id', $department->id);
+            });
+        };
+
+        $pendingDeferments = Deferment::with(['student.user', 'student.program'])
+            ->where('status', 'pending')
+            ->where('hod_status', 'pending')
+            ->where($departmentScope)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $allDeferments = Deferment::with(['student.user', 'student.program', 'hodReviewer'])
+            ->where($departmentScope)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('hod.deferments.index', compact('department', 'pendingDeferments', 'allDeferments'));
+    }
+
+    public function approveDeferment(Request $request, Deferment $deferment)
+    {
+        $user = Auth::user();
+        $department = $user->department;
+
+        if (!$department || $deferment->student->department_id !== $department->id) {
+            abort(403, 'You can only review deferments from your department.');
+        }
+
+        if (!$deferment->isPendingHodReview()) {
+            return redirect()->route('hod.deferments')
+                ->with('error', 'This deferment is no longer awaiting HOD review.');
+        }
+
+        $request->validate([
+            'comments' => 'nullable|string|max:1000',
+        ]);
+
+        $deferment->update([
+            'hod_status' => 'approved',
+            'hod_comments' => $request->comments,
+            'hod_reviewed_by' => $user->id,
+            'hod_reviewed_at' => now(),
+        ]);
+
+        return redirect()->route('hod.deferments')
+            ->with('success', 'Deferment approved and forwarded to the Registrar.');
+    }
+
+    public function rejectDeferment(Request $request, Deferment $deferment)
+    {
+        $user = Auth::user();
+        $department = $user->department;
+
+        if (!$department || $deferment->student->department_id !== $department->id) {
+            abort(403, 'You can only review deferments from your department.');
+        }
+
+        if (!$deferment->isPendingHodReview()) {
+            return redirect()->route('hod.deferments')
+                ->with('error', 'This deferment is no longer awaiting HOD review.');
+        }
+
+        $request->validate([
+            'comments' => 'required|string|max:1000',
+        ]);
+
+        $deferment->update([
+            'status' => 'rejected',
+            'hod_status' => 'rejected',
+            'hod_comments' => $request->comments,
+            'hod_reviewed_by' => $user->id,
+            'hod_reviewed_at' => now(),
+        ]);
+
+        return redirect()->route('hod.deferments')
+            ->with('success', 'Deferment rejected.');
     }
 
     /**

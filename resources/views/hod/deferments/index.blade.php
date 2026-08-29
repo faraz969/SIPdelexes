@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Deferment Management - Registrar')
+@section('title', 'Deferment Management - HOD')
 
 @section('content')
 <div class="container py-4">
     <div class="row">
         <div class="col-12">
             <h2 class="mb-4"><i class="fas fa-pause-circle"></i> Deferment Management</h2>
-            <p class="text-muted">Review deferments that have been approved by the Head of Department.</p>
-            <a href="{{ route('registrar.dashboard') }}" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <p class="text-muted">Department: <strong>{{ $department->name }}</strong></p>
+            <a href="{{ route('hod.dashboard') }}" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
         </div>
     </div>
 
     @if($pendingDeferments->count() > 0)
         <div class="card mb-4">
             <div class="card-header bg-warning text-white">
-                <h5 class="mb-0">Pending Registrar Review ({{ $pendingDeferments->count() }})</h5>
+                <h5 class="mb-0">Pending Deferment Requests ({{ $pendingDeferments->count() }})</h5>
             </div>
             <div class="card-body">
                 @foreach($pendingDeferments as $deferment)
@@ -33,18 +33,9 @@
                                         <p><strong>Defer To:</strong> {{ $deferment->defer_to->format('d M Y') }}</p>
                                     @endif
                                     <p><small class="text-muted">Submitted: {{ $deferment->created_at->format('d M Y H:i') }}</small></p>
-                                    @if($deferment->hodReviewer)
-                                        <p><small class="text-success">
-                                            HOD approved by {{ $deferment->hodReviewer->name }}
-                                            on {{ $deferment->hod_reviewed_at?->format('d M Y H:i') }}
-                                        </small></p>
-                                    @endif
-                                    @if($deferment->hod_comments)
-                                        <p><strong>HOD Comments:</strong> {{ $deferment->hod_comments }}</p>
-                                    @endif
                                 </div>
                                 <div class="col-md-4">
-                                    <form method="POST" action="{{ route('registrar.deferments.approve', $deferment->id) }}" class="mb-2">
+                                    <form method="POST" action="{{ route('hod.deferments.approve', $deferment->id) }}" class="mb-2">
                                         @csrf
                                         <div class="mb-2">
                                             <textarea name="comments" class="form-control" rows="3" placeholder="Comments (optional)"></textarea>
@@ -53,7 +44,7 @@
                                             <i class="fas fa-check"></i> Approve
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('registrar.deferments.reject', $deferment->id) }}">
+                                    <form method="POST" action="{{ route('hod.deferments.reject', $deferment->id) }}">
                                         @csrf
                                         <div class="mb-2">
                                             <textarea name="comments" class="form-control" rows="3" placeholder="Rejection reason (required)" required></textarea>
@@ -71,13 +62,13 @@
         </div>
     @else
         <div class="alert alert-info mb-4">
-            <i class="fas fa-info-circle"></i> No deferment requests awaiting registrar review.
+            <i class="fas fa-info-circle"></i> No deferment requests awaiting HOD review.
         </div>
     @endif
 
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">All Deferments</h5>
+            <h5 class="mb-0">All Department Deferments</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -89,11 +80,10 @@
                             <th>Reason</th>
                             <th>Defer From</th>
                             <th>Status</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($allDeferments as $deferment)
+                        @forelse($allDeferments as $deferment)
                             <tr>
                                 <td>{{ $deferment->student->user->name ?? 'N/A' }}</td>
                                 <td>{{ $deferment->student->student_id ?? 'N/A' }}</td>
@@ -104,18 +94,12 @@
                                         {{ $deferment->displayStatusLabel() }}
                                     </span>
                                 </td>
-                                <td>
-                                    @if($deferment->status === 'approved' && $deferment->student->academic_status === 'deferred')
-                                        <form method="POST" action="{{ route('registrar.deferments.reactivate', $deferment->id) }}" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-info">
-                                                <i class="fas fa-play"></i> Reactivate
-                                            </button>
-                                        </form>
-                                    @endif
-                                </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No deferment requests found.</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
