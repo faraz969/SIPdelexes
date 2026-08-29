@@ -76,7 +76,7 @@ class AdmissionFormService
             'admission_date' => $student->admission_date ? $student->admission_date->format('d/m/Y') : now()->format('d/m/Y'),
             'preferred_session' => $preferredSession,
             'preferred_campus' => $preferredCampus,
-            'date' => now()->format('d/m/Y'), // For the offer date
+            'date' => ($formData->created_at ?? $student->admission_date ?? now())->format('d/m/Y'),
             
             // Admission Form Data
             'total_fees' => $totalFees !== null ? number_format($totalFees, 2) : '',
