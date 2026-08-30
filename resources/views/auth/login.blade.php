@@ -30,7 +30,7 @@
                         <button type="button" class="help-trigger" aria-label="Identification format help">
                             ?
                             <span class="help-tooltip">
-                                <strong>Students:</strong> Use your Student Email (e.g., 11000001@delexesuniversity.edu.gh) or Student ID (e.g., 11000001)<br>
+                                <strong>Students:</strong> Use your Student Email (e.g., 110000526@delexesuniversity.edu.gh) or Student ID (e.g., 110000526)<br>
                                 <strong>Others:</strong> Use your email, serial number (e.g., DUC927121), or Student ID
                             </span>
                         </button>

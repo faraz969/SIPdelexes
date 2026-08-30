@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\User;
 use App\Models\Program;
 use App\Models\Session;
+use App\Models\Department;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\DB;
@@ -194,50 +195,107 @@ class SIPAutomationService
 
     /**
      * Generate Unique Student ID / Index Number
-     * Pattern: 11000000, 12000000, 13000000
-     * - First digit: 1 = undergraduate
-     * - Second digit: 1 = ICT, 2 = Business, 3 = Healthcare
-     * - Last 6 digits: student number in that department
+     * Pattern: 110000526
+     * - Digit 1: degree type (1 = undergraduate, 2 = postgraduate)
+     * - Digit 2: department code (from departments.code, e.g. 1, 2, 3)
+     * - Digits 3-7: sequential student number within dept/year (00001-99999)
+     * - Digits 8-9: admission year suffix (e.g. 26 for 2026)
      */
     protected function generateStudentId(Application $application)
     {
-        // Get department ID from application
-        $departmentId = $application->department_id;
-        
-        // Map department ID to student ID prefix
-        // Department 1 (ICT) -> 11, Department 2 (Business) -> 12, Department 3 (Healthcare) -> 13
-        $departmentPrefix = '1' . $departmentId; // 1 (undergraduate) + department ID
-        
-        // Get the last student number for this department
-        $lastStudent = Student::where('student_id', 'like', $departmentPrefix . '%')
+        $application->loadMissing(['department', 'user.formType']);
+
+        $degreeTypeDigit = $this->resolveDegreeTypeDigit($application);
+        $departmentCodeDigit = $this->resolveDepartmentCodeDigit($application);
+        $yearSuffix = $this->resolveAdmissionYearSuffix($application);
+
+        $prefix = $degreeTypeDigit . $departmentCodeDigit;
+        $likePattern = $prefix . '_____' . $yearSuffix;
+
+        $lastStudent = Student::where('student_id', 'like', $likePattern)
             ->orderBy('student_id', 'desc')
             ->first();
-        
+
         $studentNumber = 1;
         if ($lastStudent) {
-            // Extract the last 6 digits and increment
-            $lastNumber = (int) substr($lastStudent->student_id, -6);
-            $studentNumber = $lastNumber + 1;
+            $studentNumber = (int) substr($lastStudent->student_id, 2, 5) + 1;
         }
-        
-        // Ensure student number doesn't exceed 999999
-        if ($studentNumber > 999999) {
-            throw new \Exception("Maximum student capacity reached for department {$departmentId}");
+
+        if ($studentNumber > 99999) {
+            throw new \Exception('Maximum student capacity reached for this department and admission year.');
         }
-        
-        // Format: 11000001, 12000001, etc.
-        $studentId = $departmentPrefix . str_pad($studentNumber, 6, '0', STR_PAD_LEFT);
-        
-        // Double-check uniqueness (shouldn't happen, but safety check)
+
+        $studentId = $prefix
+            . str_pad((string) $studentNumber, 5, '0', STR_PAD_LEFT)
+            . $yearSuffix;
+
         if (Student::where('student_id', $studentId)->exists()) {
-            // If exists, find next available number
             do {
                 $studentNumber++;
-                $studentId = $departmentPrefix . str_pad($studentNumber, 6, '0', STR_PAD_LEFT);
-            } while (Student::where('student_id', $studentId)->exists() && $studentNumber <= 999999);
+                $studentId = $prefix
+                    . str_pad((string) $studentNumber, 5, '0', STR_PAD_LEFT)
+                    . $yearSuffix;
+            } while (Student::where('student_id', $studentId)->exists() && $studentNumber <= 99999);
+        }
+
+        if ($studentNumber > 99999) {
+            throw new \Exception('Maximum student capacity reached for this department and admission year.');
         }
 
         return $studentId;
+    }
+
+    protected function resolveDegreeTypeDigit(Application $application): string
+    {
+        $formType = strtolower((string) ($application->form_type ?? ''));
+
+        if (
+            str_contains($formType, 'postgraduate')
+            || str_contains($formType, 'post graduate')
+            || str_contains($formType, 'masters')
+            || str_contains($formType, 'phd')
+        ) {
+            return '2';
+        }
+
+        $userFormType = strtolower((string) optional($application->user)->formType?->name ?? '');
+        if (str_contains($userFormType, 'postgraduate')) {
+            return '2';
+        }
+
+        return '1';
+    }
+
+    protected function resolveDepartmentCodeDigit(Application $application): string
+    {
+        $department = $application->department;
+        if (!$department && $application->department_id) {
+            $department = Department::find($application->department_id);
+        }
+
+        $code = trim((string) ($department->code ?? ''));
+        if ($code !== '' && preg_match('/^\d$/', $code)) {
+            return $code;
+        }
+
+        $departmentId = (string) ($application->department_id ?? '');
+        if (preg_match('/^\d$/', $departmentId)) {
+            return $departmentId;
+        }
+
+        throw new \Exception(
+            'Department code must be a single digit (1-9) to generate a student ID. Please set it in Admin > Departments.'
+        );
+    }
+
+    protected function resolveAdmissionYearSuffix(Application $application): string
+    {
+        $academicYear = trim((string) ($application->academic_year ?? ''));
+        if (preg_match('/(\d{4})/', $academicYear, $matches)) {
+            return substr($matches[1], -2);
+        }
+
+        return now()->format('y');
     }
 
     /**

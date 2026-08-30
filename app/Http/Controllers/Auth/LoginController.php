@@ -60,7 +60,7 @@ class LoginController extends Controller
         $login = $request->get('login');
         
         // Check if it's a Student ID email format: Student_ID@delexesuniversity.edu.gh
-        if (preg_match('/^(\d{8})@delexesuniversity\.edu\.gh$/', $login, $matches)) {
+        if (preg_match('/^(\d{8,9})@delexesuniversity\.edu\.gh$/', $login, $matches)) {
             $studentId = $matches[1];
             $student = \App\Models\Student::where('student_id', $studentId)
                 ->where('sip_account_created', true)
@@ -85,8 +85,8 @@ class LoginController extends Controller
             ];
         }
         
-        // Check if it's a Student ID (numeric 8 digits: 11000000, 12000000, etc.)
-        if (preg_match('/^\d{8}$/', $login)) {
+        // Check if it's a Student ID (8-digit legacy or 9-digit current format)
+        if (preg_match('/^\d{8,9}$/', $login)) {
             $student = \App\Models\Student::where('student_id', $login)
                 ->where('sip_account_created', true)
                 ->with('user')
