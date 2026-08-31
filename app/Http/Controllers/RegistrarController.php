@@ -53,20 +53,20 @@ class RegistrarController extends Controller
         }
 
         $pendingApplications = (clone $baseQuery)
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->where('hod_status', 'approved')
             ->where('registrar_status', 'pending')
             ->orderBy('hod_reviewed_at', 'desc')
             ->get();
 
         $reviewedApplications = (clone $baseQuery)
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->whereIn('registrar_status', ['approved', 'rejected'])
             ->orderBy('registrar_reviewed_at', 'desc')
             ->get();
 
         $allApplications = (clone $baseQuery)
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -136,7 +136,7 @@ class RegistrarController extends Controller
         }
 
         $applications = $baseQuery
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->get();
 
         $titles = [

@@ -51,13 +51,13 @@ class HODController extends Controller
         }
 
         $pendingApplications = (clone $filteredQuery)
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->where('hod_status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
 
         $reviewedApplications = (clone $filteredQuery)
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->whereIn('hod_status', ['approved', 'rejected'])
             ->orderBy('hod_reviewed_at', 'desc')
             ->get();
@@ -125,7 +125,7 @@ class HODController extends Controller
         }
 
         $applications = $filteredQuery
-            ->with(['user', 'department', 'examRecords.subjects'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
             ->get();
 
         $titles = [

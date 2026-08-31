@@ -76,6 +76,7 @@
                                 <th>Email</th>
                                 <th>Application #</th>
                                 <th>Academic Year</th>
+                                <th>Preferred Session</th>
                                 <th>Form Type</th>
                                 <th>Qualification</th>
                                 <th>Submitted</th>
@@ -90,6 +91,7 @@
                                     <td>{{ $app->user->email ?? '-' }}</td>
                                     <td>{{ $app->application_number }}</td>
                                     <td>{{ $app->academic_year }}</td>
+                                    <td>{{ $app->admissionForm?->preferred_session ?? ($app->data['preferred_session'] ?? '—') }}</td>
                                     <td>{{ ucfirst($app->form_type) }}</td>
                                     <td>
                                         @php
@@ -140,6 +142,7 @@
                                 <th>Email</th>
                                 <th>Application #</th>
                                 <th>Academic Year</th>
+                                <th>Preferred Session</th>
                                 <th>Form Type</th>
                                 <th>Qualification</th>
                                 <th>HOD Status</th>
@@ -155,6 +158,7 @@
                                     <td>{{ $app->user->email ?? '-' }}</td>
                                     <td>{{ $app->application_number }}</td>
                                     <td>{{ $app->academic_year }}</td>
+                                    <td>{{ $app->admissionForm?->preferred_session ?? ($app->data['preferred_session'] ?? '—') }}</td>
                                     <td>{{ ucfirst($app->form_type) }}</td>
                                     <td>
                                         @php
