@@ -955,7 +955,12 @@
             </div>
           @endif
           <input id="ghana_card_front" name="ghana_card_front" type="file" accept="image/*,application/pdf" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['ghana_card_front'])) ? 'required' : '' }} />
-          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['ghana_card_front'])). Leave empty to keep current file.@endif</small>
+          <small class="hint">
+            Max file size: 1MB
+            @if(!empty($submitted) && !empty($uploadedFiles['ghana_card_front']))
+              . Leave empty to keep current file.
+            @endif
+          </small>
         </div>
         <div>
           <label for="ghana_card_back">Ghana Card (Back) <span style="color:red">*</span></label>
@@ -968,7 +973,12 @@
             </div>
           @endif
           <input id="ghana_card_back" name="ghana_card_back" type="file" accept="image/*,application/pdf" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['ghana_card_back'])) ? 'required' : '' }} />
-          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['ghana_card_back'])). Leave empty to keep current file.@endif</small>
+          <small class="hint">
+            Max file size: 1MB
+            @if(!empty($submitted) && !empty($uploadedFiles['ghana_card_back']))
+              . Leave empty to keep current file.
+            @endif
+          </small>
         </div>
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['ghana_card_front','ghana_card_back'],'preview_ghana_card')">Preview</button>
@@ -989,7 +999,12 @@
             </div>
           @endif
           <input id="official_transcript" name="official_transcript" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['official_transcript'])). Leave empty to keep current file.@endif</small>
+          <small class="hint">
+            Max file size: 1MB
+            @if(!empty($submitted) && !empty($uploadedFiles['official_transcript']))
+              . Leave empty to keep current file.
+            @endif
+          </small>
         </div>
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['official_transcript'],'preview_transcript')">Preview</button>
@@ -1010,7 +1025,12 @@
             </div>
           @endif
           <input id="passport_picture" name="passport_picture" type="file" accept="image/*" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['passport_picture'])) ? 'required' : '' }} />
-          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['passport_picture'])). Leave empty to keep current file.@endif</small>
+          <small class="hint">
+            Max file size: 1MB
+            @if(!empty($submitted) && !empty($uploadedFiles['passport_picture']))
+              . Leave empty to keep current file.
+            @endif
+          </small>
         </div>
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['passport_picture'],'preview_passport')">Preview</button>
@@ -1094,7 +1114,12 @@
             </div>
           @endif
           <input id="other_academic_records" name="other_academic_records" type="file" accept="application/pdf,image/*" multiple class="file-upload" data-max-size="1048576" />
-          <small class="hint">Max file size: 1MB per file@if(!empty($submitted)). New uploads will be added to your existing records.@endif</small>
+          <small class="hint">
+            Max file size: 1MB per file
+            @if(!empty($submitted))
+              . New uploads will be added to your existing records.
+            @endif
+          </small>
           <div id="other_files_list" class="file-names"></div>
         </div>
         <div class="inline-options" style="justify-content:flex-end;">
