@@ -268,10 +268,17 @@
 <div class="container py-2">
   <h1>Delexes University College <br/>Undergraduate Admission Form</h1>
 
+  @if(session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+  @endif
+  @if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+  @endif
+
   @if(!empty($submitted))
     <div class="alert alert-info">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span>Application submitted. You can still edit your personal data below.</span>
+        <span>Application submitted. You can still edit your personal data and documents below.</span>
         <a href="{{ route('portal.application.print') }}" target="_blank" class="btn btn-primary" style="background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; width:auto; text-decoration: none;">
           <i class="fas fa-print"></i> Print Application
         </a>
@@ -922,11 +929,9 @@
 
       <!-- Tab 5: Documents -->
       @php
-        $admissionUploads = optional(optional($application ?? null)->admissionForm)->uploads;
-        $admissionUploads = is_array($admissionUploads) ? $admissionUploads : [];
-        $hasGhanaFront = !empty($uploadedFiles['ghana_card_front']) || !empty($admissionUploads['ghana_card_front']);
-        $hasGhanaBack = !empty($uploadedFiles['ghana_card_back']) || !empty($admissionUploads['ghana_card_back']);
-        $hasPassportPicture = !empty($uploadedFiles['passport_picture']) || !empty($admissionUploads['passport_picture']);
+        $hasGhanaFront = !empty($uploadedFiles['ghana_card_front']);
+        $hasGhanaBack = !empty($uploadedFiles['ghana_card_back']);
+        $hasPassportPicture = !empty($uploadedFiles['passport_picture']);
       @endphp
       <div class="tab-content" id="documents"
            data-uploaded-ghana-card-front="{{ $hasGhanaFront ? '1' : '0' }}"
@@ -934,11 +939,14 @@
            data-uploaded-passport-picture="{{ $hasPassportPicture ? '1' : '0' }}">
     <fieldset>
       <legend>Checklist</legend>
+      @if(!empty($submitted))
+        <p class="hint" style="margin-bottom: 12px;">Upload a new file only when you want to replace an existing document. Required documents must remain on file.</p>
+      @endif
 
       <div class="file-row three">
         <div>
           <label for="ghana_card_front">Ghana Card (Front) <span style="color:red">*</span></label>
-          @if(!empty($submitted) && !empty($uploadedFiles['ghana_card_front']))
+          @if(!empty($uploadedFiles['ghana_card_front']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['ghana_card_front']) }}" target="_blank">View uploaded file</a>
               @if(preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $uploadedFiles['ghana_card_front']))
@@ -946,14 +954,12 @@
               @endif
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="ghana_card_front" name="ghana_card_front" type="file" accept="image/*,application/pdf" required class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="ghana_card_front" name="ghana_card_front" type="file" accept="image/*,application/pdf" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['ghana_card_front'])) ? 'required' : '' }} />
+          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['ghana_card_front'])). Leave empty to keep current file.@endif</small>
         </div>
         <div>
           <label for="ghana_card_back">Ghana Card (Back) <span style="color:red">*</span></label>
-          @if(!empty($submitted) && !empty($uploadedFiles['ghana_card_back']))
+          @if(!empty($uploadedFiles['ghana_card_back']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['ghana_card_back']) }}" target="_blank">View uploaded file</a>
               @if(preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $uploadedFiles['ghana_card_back']))
@@ -961,24 +967,20 @@
               @endif
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="ghana_card_back" name="ghana_card_back" type="file" accept="image/*,application/pdf" required class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="ghana_card_back" name="ghana_card_back" type="file" accept="image/*,application/pdf" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['ghana_card_back'])) ? 'required' : '' }} />
+          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['ghana_card_back'])). Leave empty to keep current file.@endif</small>
         </div>
-        @if(empty($submitted))
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['ghana_card_front','ghana_card_back'],'preview_ghana_card')">Preview</button>
           <button type="button" class="btn-link" onclick="clearUploads(['ghana_card_front','ghana_card_back'], 'preview_ghana_card')">Remove</button>
         </div>
-        @endif
       </div>
       <div id="preview_ghana_card" class="preview-box" aria-live="polite"></div>
 
       <div class="file-row two" style="margin-top:12px;">
         <div>
           <label for="official_transcript">Official Transcript (PDF or Image)</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['official_transcript']))
+          @if(!empty($uploadedFiles['official_transcript']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['official_transcript']) }}" target="_blank">View uploaded file</a>
               @if(preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $uploadedFiles['official_transcript']))
@@ -986,24 +988,20 @@
               @endif
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="official_transcript" name="official_transcript" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="official_transcript" name="official_transcript" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['official_transcript'])). Leave empty to keep current file.@endif</small>
         </div>
-        @if(empty($submitted))
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['official_transcript'],'preview_transcript')">Preview</button>
           <button type="button" class="btn-link" onclick="clearUploads(['official_transcript'],'preview_transcript')">Remove</button>
         </div>
-        @endif
       </div>
       <div id="preview_transcript" class="preview-box" aria-live="polite"></div>
 
       <div class="file-row two" style="margin-top:12px;">
         <div>
           <label for="passport_picture">Passport Picture (Image) <span style="color:red">*</span></label>
-          @if(!empty($submitted) && !empty($uploadedFiles['passport_picture']))
+          @if(!empty($uploadedFiles['passport_picture']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['passport_picture']) }}" target="_blank">View uploaded file</a>
               @if(preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $uploadedFiles['passport_picture']))
@@ -1011,17 +1009,13 @@
               @endif
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="passport_picture" name="passport_picture" type="file" accept="image/*" required class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="passport_picture" name="passport_picture" type="file" accept="image/*" class="file-upload" data-max-size="1048576" {{ (empty($submitted) || empty($uploadedFiles['passport_picture'])) ? 'required' : '' }} />
+          <small class="hint">Max file size: 1MB@if(!empty($submitted) && !empty($uploadedFiles['passport_picture'])). Leave empty to keep current file.@endif</small>
         </div>
-        @if(empty($submitted))
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['passport_picture'],'preview_passport')">Preview</button>
           <button type="button" class="btn-link" onclick="clearUploads(['passport_picture'],'preview_passport')">Remove</button>
         </div>
-        @endif
       </div>
       <div id="preview_passport" class="preview-box" aria-live="polite"></div>
 
@@ -1031,73 +1025,63 @@
       <div class="file-row three" style="margin-top:8px;">
         <div>
           <label for="gazette_document">Gazette (for change of name or date of birth)</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['gazette_document']))
+          @if(!empty($uploadedFiles['gazette_document']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['gazette_document']) }}" target="_blank">View uploaded file</a>
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="gazette_document" name="gazette_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="gazette_document" name="gazette_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB</small>
         </div>
         <div>
           <label for="marriage_certificate">Marriage Certificate</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['marriage_certificate']))
+          @if(!empty($uploadedFiles['marriage_certificate']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['marriage_certificate']) }}" target="_blank">View uploaded file</a>
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="marriage_certificate" name="marriage_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="marriage_certificate" name="marriage_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB</small>
         </div>
         <div>
           <label for="recommendation_letter">Recommendation Letter</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['recommendation_letter']))
+          @if(!empty($uploadedFiles['recommendation_letter']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['recommendation_letter']) }}" target="_blank">View uploaded file</a>
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="recommendation_letter" name="recommendation_letter" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="recommendation_letter" name="recommendation_letter" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB</small>
         </div>
       </div>
 
       <div class="file-row two" style="margin-top:12px;">
         <div>
           <label for="birth_certificate">Birth Certificate</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['birth_certificate']))
+          @if(!empty($uploadedFiles['birth_certificate']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['birth_certificate']) }}" target="_blank">View uploaded file</a>
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="birth_certificate" name="birth_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="birth_certificate" name="birth_certificate" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB</small>
         </div>
         <div>
           <label for="exam_results_document">Examination Results (e.g., WASSCE, Diploma or equivalent)</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['exam_results_document']))
+          @if(!empty($uploadedFiles['exam_results_document']))
             <div class="mb-2">
               <a href="{{ asset('storage/'.$uploadedFiles['exam_results_document']) }}" target="_blank">View uploaded file</a>
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="exam_results_document" name="exam_results_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB</small>
-          @endif
+          <input id="exam_results_document" name="exam_results_document" type="file" accept="application/pdf,image/*" class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB</small>
         </div>
       </div>
 
       <div class="file-row two" style="margin-top:12px;">
         <div>
           <label for="other_academic_records">Other Academic Records (PDFs or Images)</label>
-          @if(!empty($submitted) && !empty($uploadedFiles['other_academic_records']) && is_array($uploadedFiles['other_academic_records']))
+          @if(!empty($uploadedFiles['other_academic_records']) && is_array($uploadedFiles['other_academic_records']))
             <div class="mb-2">
               @foreach($uploadedFiles['other_academic_records'] as $path)
                 <div style="margin-bottom: 15px;">
@@ -1109,18 +1093,14 @@
               @endforeach
             </div>
           @endif
-          @if(empty($submitted))
-            <input id="other_academic_records" name="other_academic_records" type="file" accept="application/pdf,image/*" multiple class="file-upload" data-max-size="1048576" />
-            <small class="hint">Max file size: 1MB per file</small>
-          @endif
+          <input id="other_academic_records" name="other_academic_records" type="file" accept="application/pdf,image/*" multiple class="file-upload" data-max-size="1048576" />
+          <small class="hint">Max file size: 1MB per file@if(!empty($submitted)). New uploads will be added to your existing records.@endif</small>
           <div id="other_files_list" class="file-names"></div>
         </div>
-        @if(empty($submitted))
         <div class="inline-options" style="justify-content:flex-end;">
           <button type="button" class="btn-link" onclick="previewFiles(['other_academic_records'],'preview_other')">Preview</button>
           <button type="button" class="btn-link" onclick="clearUploads(['other_academic_records'],'preview_other', true)">Clear all</button>
         </div>
-        @endif
       </div>
       <div id="preview_other" class="preview-box" aria-live="polite"></div>
 
@@ -1149,8 +1129,11 @@
           <button type="button" class="tab-nav-btn" id="nextBtn" onclick="changeTab(1)">
             Next →
           </button>
-          <button type="submit" class="tab-nav-btn btn-primary" id="updatePersonalDataBtn" style="display: none;">
+          <button type="submit" name="update_section" value="personal" class="tab-nav-btn btn-primary" id="updatePersonalDataBtn" style="display: none;">
             Update Personal Data
+          </button>
+          <button type="submit" name="update_section" value="documents" class="tab-nav-btn btn-primary" id="updateDocumentsBtn" style="display: none;">
+            Update Documents
           </button>
         </div>
         @endif
@@ -1519,19 +1502,19 @@ let currentTab = 0;
 const totalTabs = 5;
 const isSubmitted = {{ !empty($submitted) ? 'true' : 'false' }};
 
-// Make non-personal-data fields readonly when submitted
+// Make non-personal-data fields readonly when submitted (documents tab stays editable)
 if (isSubmitted) {
   document.addEventListener('DOMContentLoaded', function() {
-    const allTabs = ['education', 'programs', 'employment', 'documents'];
+    const lockedTabs = ['education', 'programs', 'employment'];
     
-    allTabs.forEach(tabId => {
+    lockedTabs.forEach(tabId => {
       const tab = document.getElementById(tabId);
       if (tab) {
         const inputs = tab.querySelectorAll('input, select, textarea');
         const buttons = tab.querySelectorAll('button');
         
         inputs.forEach(input => {
-          if (input.type !== 'hidden' && input.id !== 'updatePersonalDataBtn') {
+          if (input.type !== 'hidden' && input.id !== 'updatePersonalDataBtn' && input.id !== 'updateDocumentsBtn') {
             input.disabled = true;
             input.readOnly = true;
             input.style.backgroundColor = '#f5f5f5';
@@ -1540,7 +1523,7 @@ if (isSubmitted) {
         });
         
         buttons.forEach(button => {
-          if (button.type !== 'submit' && button.id !== 'updatePersonalDataBtn') {
+          if (button.type !== 'submit' && button.id !== 'updatePersonalDataBtn' && button.id !== 'updateDocumentsBtn') {
             button.disabled = true;
             button.style.opacity = '0.5';
             button.style.cursor = 'not-allowed';
@@ -1573,13 +1556,16 @@ function showTab(n) {
   const nextBtn = document.getElementById('nextBtn');
   const submitBtn = document.getElementById('submitBtn');
   const updatePersonalDataBtn = document.getElementById('updatePersonalDataBtn');
+  const updateDocumentsBtn = document.getElementById('updateDocumentsBtn');
   
   if (prevBtn) prevBtn.disabled = n === 0;
   
   if (isSubmitted) {
-    // Show update button only on personal data tab
     if (updatePersonalDataBtn) {
       updatePersonalDataBtn.style.display = n === 0 ? 'inline-block' : 'none';
+    }
+    if (updateDocumentsBtn) {
+      updateDocumentsBtn.style.display = n === totalTabs - 1 ? 'inline-block' : 'none';
     }
     if (nextBtn) nextBtn.disabled = n === totalTabs - 1;
   } else {
@@ -2416,13 +2402,13 @@ document.addEventListener('DOMContentLoaded', function() {
   form.addEventListener('submit', function (e) {
     console.log('Form submit validation triggered');
     
-    // If application is submitted, only validate personal data tab and only if update button was clicked
+    // If application is submitted, only validate when an update button was clicked
     if (isSubmitted) {
-      const updateBtn = document.getElementById('updatePersonalDataBtn');
       const clickedButton = e.submitter || document.activeElement;
-      
-      // Only validate if the update button was clicked
-      if (clickedButton && clickedButton.id === 'updatePersonalDataBtn') {
+      const isPersonalUpdate = clickedButton && clickedButton.id === 'updatePersonalDataBtn';
+      const isDocumentsUpdate = clickedButton && clickedButton.id === 'updateDocumentsBtn';
+
+      if (isPersonalUpdate) {
         const personalTab = document.getElementById('personal');
         if (!personalTab) return;
         
@@ -2437,12 +2423,44 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
           }
         }
-        return true; // Allow submission for updates
-      } else {
-        // If not updating personal data, prevent form submission
-        e.preventDefault();
-        return false;
+        return true;
       }
+
+      if (isDocumentsUpdate) {
+        const documentsTab = document.getElementById('documents');
+        const fileInputs = documentsTab ? documentsTab.querySelectorAll('input[type="file"].file-upload') : [];
+        let hasNewUpload = false;
+
+        for (let fileInput of fileInputs) {
+          if (fileInput.files && fileInput.files.length > 0) {
+            hasNewUpload = true;
+            const maxSize = parseInt(fileInput.getAttribute('data-max-size')) || 1048576;
+            for (let file of fileInput.files) {
+              if (file.size > maxSize) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.style.outline = '2px solid #e53935';
+                setTimeout(() => fileInput.focus(), 100);
+                const sizeMB = (file.size / 1048576).toFixed(2);
+                alert(`File "${file.name}" is too large (${sizeMB}MB). Maximum allowed size is 1MB.`);
+                return false;
+              }
+            }
+          }
+        }
+
+        if (!hasNewUpload) {
+          e.preventDefault();
+          e.stopPropagation();
+          alert('Please select at least one document to upload.');
+          return false;
+        }
+
+        return true;
+      }
+
+      e.preventDefault();
+      return false;
     }
     
     // FIRST: Validate all file uploads for size (1MB = 1048576 bytes)

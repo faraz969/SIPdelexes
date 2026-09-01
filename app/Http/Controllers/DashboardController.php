@@ -10,6 +10,7 @@ use App\Models\Application;
 use App\Models\AdmissionForm;
 use App\Models\Department;
 use App\Models\Program;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use App\Models\ExamRecord;
 use App\Models\ExamSubjectGrade;
@@ -38,15 +39,21 @@ class DashboardController extends Controller
             $uploadedFiles = $application->data['_files'] ?? [];
             unset($prefill['_files']);
         }
-        
-        // If application is submitted, also load data from AdmissionForm for the new address fields
-        if ($submitted && $application) {
-            $admissionForm = AdmissionForm::where('application_id', $application->id)->first();
-            if ($admissionForm) {
+
+        $admissionForm = $application
+            ? AdmissionForm::where('application_id', $application->id)->first()
+            : null;
+
+        if ($admissionForm) {
+            if ($submitted) {
                 $prefill['street_address'] = $admissionForm->street_address ?? ($prefill['street_address'] ?? '');
                 $prefill['post_code'] = $admissionForm->post_code ?? ($prefill['post_code'] ?? '');
                 $prefill['city'] = $admissionForm->city ?? ($prefill['city'] ?? '');
                 $prefill['country'] = $admissionForm->country ?? ($prefill['country'] ?? '');
+            }
+
+            if (is_array($admissionForm->uploads)) {
+                $uploadedFiles = array_replace_recursive($admissionForm->uploads, $uploadedFiles);
             }
         }
 
@@ -83,8 +90,8 @@ class DashboardController extends Controller
     public function applicationSave(Request $request)
     {
         $user = Auth::user();
-        $data = $request->all();
         $application = $user->applications()->latest()->first();
+
         if (! $application) {
             $application = new Application();
             $application->user_id = $user->id;
@@ -92,18 +99,24 @@ class DashboardController extends Controller
             $application->academic_year = SiteSetting::currentAcademicYear();
             $application->form_type = $request->input('form_type', 'undergraduate');
         }
-        // Merge incoming draft data with any existing saved data to avoid losing previously filled fields
+
+        $isSubmittedApplication = in_array($application->status, ['submitted', 'successful', 'not_successful'], true);
+        $updateSection = $request->input('update_section');
+
+        if ($isSubmittedApplication && $updateSection === 'documents') {
+            return $this->updateApplicationDocuments($request, $application, $user);
+        }
+
+        $data = $request->except(['_token', 'update_section']);
         $existing = is_array($application->data) ? $application->data : [];
         $application->data = array_replace_recursive($existing, $data);
-        
-        // If application is already submitted, keep it as submitted but allow personal data updates
-        if ($application->status !== 'submitted' && $application->status !== 'successful' && $application->status !== 'not_successful') {
+
+        if (! $isSubmittedApplication) {
             $application->status = 'draft';
         }
-        
+
         $application->save();
-        
-        // Update AdmissionForm if it exists (for submitted applications)
+
         if ($application->id) {
             $form = AdmissionForm::where('application_id', $application->id)->first();
             if ($form) {
@@ -130,11 +143,87 @@ class DashboardController extends Controller
                 ]);
             }
         }
-        
+
         if ($request->wantsJson()) {
             return response()->json(['ok' => true]);
         }
+
         return back()->with('status', 'Personal data updated successfully');
+    }
+
+    protected function updateApplicationDocuments(Request $request, Application $application, User $user)
+    {
+        $existing = is_array($application->data) ? $application->data : [];
+        $existingFiles = $existing['_files'] ?? [];
+
+        $admissionForm = AdmissionForm::where('application_id', $application->id)->first();
+        if ($admissionForm && is_array($admissionForm->uploads)) {
+            $existingFiles = array_replace_recursive($admissionForm->uploads, $existingFiles);
+        }
+
+        $newFiles = $this->storeUploadedFilesRecursively($request->allFiles(), $user->id) ?? [];
+        if (empty($newFiles)) {
+            return back()->with('error', 'Please select at least one document to upload.');
+        }
+
+        $mergedFiles = $this->mergeUploadedFiles($existingFiles, $newFiles);
+        $missingRequired = $this->missingRequiredDocumentKeys($mergedFiles);
+        if (! empty($missingRequired)) {
+            return back()->with('error', 'The following required documents are still missing: ' . implode(', ', $missingRequired));
+        }
+
+        $existing['_files'] = $mergedFiles;
+        $application->data = $existing;
+        $application->save();
+
+        if ($admissionForm) {
+            $admissionForm->update(['uploads' => $mergedFiles]);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return back()->with('status', 'Documents updated successfully');
+    }
+
+    protected function mergeUploadedFiles(array $existing, array $incoming): array
+    {
+        foreach ($incoming as $key => $value) {
+            if ($key === 'other_academic_records' && is_array($value)) {
+                $current = $existing[$key] ?? [];
+                $current = is_array($current) ? $current : ($current ? [$current] : []);
+                $existing[$key] = array_values(array_merge($current, $value));
+                continue;
+            }
+
+            if (is_array($value) && isset($existing[$key]) && is_array($existing[$key])) {
+                $existing[$key] = $this->mergeUploadedFiles($existing[$key], $value);
+                continue;
+            }
+
+            $existing[$key] = $value;
+        }
+
+        return $existing;
+    }
+
+    protected function missingRequiredDocumentKeys(array $files): array
+    {
+        $labels = [
+            'ghana_card_front' => 'Ghana Card (Front)',
+            'ghana_card_back' => 'Ghana Card (Back)',
+            'passport_picture' => 'Passport Picture',
+        ];
+
+        $missing = [];
+        foreach ($labels as $key => $label) {
+            if (empty($files[$key])) {
+                $missing[] = $label;
+            }
+        }
+
+        return $missing;
     }
 
     public function applicationSubmit(Request $request)
