@@ -171,8 +171,9 @@
 
                         <hr>
                         <h5 class="mb-3">Bank Account Details</h5>
-                        <p class="text-muted small">These appear on page 2 of the admission letter PDF (payment instructions).</p>
+                        <p class="text-muted small">These appear in the fees section of the admission letter after the payment percentages.</p>
 
+                        <h6 class="mb-3">Bank Account 1</h6>
                         <div class="mb-3">
                             <label for="bank_name" class="form-label">Bank Name</label>
                             <input type="text" class="form-control @error('bank_name') is-invalid @enderror"
@@ -185,11 +186,22 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="bank_account_name" class="form-label">Account Name</label>
+                            <input type="text" class="form-control @error('bank_account_name') is-invalid @enderror"
+                                   id="bank_account_name" name="bank_account_name"
+                                   value="{{ old('bank_account_name', $settings->bank_account_name) }}"
+                                   placeholder="e.g., Delexes University College">
+                            @error('bank_account_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
                             <label for="bank_branch" class="form-label">Branch</label>
                             <input type="text" class="form-control @error('bank_branch') is-invalid @enderror"
                                    id="bank_branch" name="bank_branch"
                                    value="{{ old('bank_branch', $settings->bank_branch) }}"
-                                   placeholder="e.g., Tema Main">
+                                   placeholder="e.g., Tema, Community 25">
                             @error('bank_branch')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -200,7 +212,7 @@
                             <input type="text" class="form-control @error('bank_account_no') is-invalid @enderror"
                                    id="bank_account_no" name="bank_account_no"
                                    value="{{ old('bank_account_no', $settings->bank_account_no) }}"
-                                   placeholder="e.g., 1234567890123">
+                                   placeholder="e.g., 1721180004173">
                             @error('bank_account_no')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -213,6 +225,63 @@
                                    value="{{ old('payment_reference', $settings->payment_reference) }}"
                                    placeholder="e.g., Student ID / Surname">
                             @error('payment_reference')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Bank Account 2</h6>
+                        <div class="mb-3">
+                            <label for="bank_name_2" class="form-label">Bank Name</label>
+                            <input type="text" class="form-control @error('bank_name_2') is-invalid @enderror"
+                                   id="bank_name_2" name="bank_name_2"
+                                   value="{{ old('bank_name_2', $settings->bank_name_2) }}"
+                                   placeholder="e.g., Ecobank">
+                            @error('bank_name_2')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bank_account_name_2" class="form-label">Account Name</label>
+                            <input type="text" class="form-control @error('bank_account_name_2') is-invalid @enderror"
+                                   id="bank_account_name_2" name="bank_account_name_2"
+                                   value="{{ old('bank_account_name_2', $settings->bank_account_name_2) }}"
+                                   placeholder="e.g., Delexes University College">
+                            @error('bank_account_name_2')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bank_branch_2" class="form-label">Branch</label>
+                            <input type="text" class="form-control @error('bank_branch_2') is-invalid @enderror"
+                                   id="bank_branch_2" name="bank_branch_2"
+                                   value="{{ old('bank_branch_2', $settings->bank_branch_2) }}"
+                                   placeholder="e.g., Tema, Community 25">
+                            @error('bank_branch_2')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bank_account_no_2" class="form-label">Account No</label>
+                            <input type="text" class="form-control @error('bank_account_no_2') is-invalid @enderror"
+                                   id="bank_account_no_2" name="bank_account_no_2"
+                                   value="{{ old('bank_account_no_2', $settings->bank_account_no_2) }}"
+                                   placeholder="e.g., 1441005037251">
+                            @error('bank_account_no_2')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="payment_reference_2" class="form-label">Payment Reference</label>
+                            <input type="text" class="form-control @error('payment_reference_2') is-invalid @enderror"
+                                   id="payment_reference_2" name="payment_reference_2"
+                                   value="{{ old('payment_reference_2', $settings->payment_reference_2) }}"
+                                   placeholder="e.g., Student ID / Surname">
+                            @error('payment_reference_2')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

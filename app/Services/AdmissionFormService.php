@@ -95,11 +95,54 @@ class AdmissionFormService
             'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
             'registrar_title' => 'Registrar',
             'registrar_signature' => $defaults ? $defaults->registrarSignatureSrc() : null,
+            'bank_payment_lines' => $this->buildBankPaymentLines($defaults),
             'bank_name' => $defaults ? trim((string) $defaults->bank_name) : '',
+            'bank_account_name' => $defaults ? trim((string) $defaults->bank_account_name) : '',
             'bank_branch' => $defaults ? trim((string) $defaults->bank_branch) : '',
             'bank_account_no' => $defaults ? trim((string) $defaults->bank_account_no) : '',
             'payment_reference' => $defaults ? trim((string) $defaults->payment_reference) : '',
+            'bank_name_2' => $defaults ? trim((string) $defaults->bank_name_2) : '',
+            'bank_account_name_2' => $defaults ? trim((string) $defaults->bank_account_name_2) : '',
+            'bank_branch_2' => $defaults ? trim((string) $defaults->bank_branch_2) : '',
+            'bank_account_no_2' => $defaults ? trim((string) $defaults->bank_account_no_2) : '',
+            'payment_reference_2' => $defaults ? trim((string) $defaults->payment_reference_2) : '',
         ];
+    }
+
+    protected function buildBankPaymentLines(?AdmissionFormDefault $defaults): array
+    {
+        if (!$defaults) {
+            return [];
+        }
+
+        return array_values(array_filter([
+            $this->formatBankPaymentLine(
+                $defaults->bank_name,
+                $defaults->bank_account_name,
+                $defaults->bank_account_no,
+                $defaults->bank_branch
+            ),
+            $this->formatBankPaymentLine(
+                $defaults->bank_name_2,
+                $defaults->bank_account_name_2,
+                $defaults->bank_account_no_2,
+                $defaults->bank_branch_2
+            ),
+        ]));
+    }
+
+    protected function formatBankPaymentLine(?string $bankName, ?string $accountName, ?string $accountNo, ?string $branch): ?string
+    {
+        $bankName = trim((string) $bankName);
+        if ($bankName === '') {
+            return null;
+        }
+
+        $accountName = trim((string) $accountName) ?: 'Delexes University College';
+        $accountNo = trim((string) $accountNo);
+        $branch = trim((string) $branch);
+
+        return "{$bankName} (Account Name: {$accountName} and Account Number: {$accountNo} Branch: {$branch})";
     }
 
     protected function getDefaultsForStudent(Student $student): ?AdmissionFormDefault

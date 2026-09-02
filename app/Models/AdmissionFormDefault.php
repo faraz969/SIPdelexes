@@ -22,9 +22,15 @@ class AdmissionFormDefault extends Model
         'registrar_name',
         'registrar_signature',
         'bank_name',
+        'bank_account_name',
         'bank_branch',
         'bank_account_no',
         'payment_reference',
+        'bank_name_2',
+        'bank_account_name_2',
+        'bank_branch_2',
+        'bank_account_no_2',
+        'payment_reference_2',
     ];
 
     protected $casts = [

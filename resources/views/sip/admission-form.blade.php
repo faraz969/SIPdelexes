@@ -372,9 +372,7 @@
             Kindly note that your fees per semester is <strong>GHS {{ $data['total_fees'] }}</strong>.
             However, you can pay a minimum of <strong>{{ $data['minimum_fee_percentage'] }}</strong> of the fees
             (<strong>GHS {{ $data['minimum_fee_amount'] }}</strong>) before Registration, and the remaining
-            <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong> before end-of-semester exams,
-            through any Branch of <strong>GCB Bank (Account Name: Delexes University College and Account Number: 1721180004173 Branch: Tema, Community 25)</strong>
-            or <strong>Ecobank (Account Name: Delexes University College and Account Number: 1441005037251 Branch: Tema, Community 25)</strong>.
+            <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong> before end-of-semester exams@if(!empty($data['bank_payment_lines'])), through any Branch of @foreach($data['bank_payment_lines'] as $index => $bankLine)@if($index > 0) or @endif<strong>{{ $bankLine }}</strong>@endforeach@endif.
             Note that Fees paid are <strong>NOT REFUNDABLE</strong>.
         </div>
     </div>
