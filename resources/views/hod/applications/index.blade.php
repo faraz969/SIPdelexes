@@ -19,7 +19,7 @@
 
     <form method="GET" action="{{ route('hod.applications.' . $status) }}" class="card mb-4">
         <div class="card-body">
-            <div class="row align-items-end">
+            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label for="academic_year" class="form-label">Academic Year</label>
                     <select name="academic_year" id="academic_year" class="form-select" onchange="this.form.submit()">
@@ -29,7 +29,18 @@
                         @endforeach
                     </select>
                 </div>
-                @if($academicYear)
+                <div class="col-md-4">
+                    <label for="program_id" class="form-label">Program</label>
+                    <select name="program_id" id="program_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All programs</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->id }}" {{ (string) ($programId ?? '') === (string) $program->id ? 'selected' : '' }}>
+                                {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @if($academicYear || !empty($programId))
                     <div class="col-md-2">
                         <a href="{{ route('hod.applications.' . $status) }}" class="btn btn-outline-secondary">Clear</a>
                     </div>

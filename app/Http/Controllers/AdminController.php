@@ -17,17 +17,61 @@ class AdminController extends Controller
         $query = Application::with(['user', 'examRecords.subjects', 'admissionForm']);
         
         // Apply search filter if provided
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('application_number', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('academic_year', 'like', '%' . $searchTerm . '%')
-                  ->orWhereHas('user', function($userQuery) use ($searchTerm) {
-                      $userQuery->where('name', 'like', '%' . $searchTerm . '%')
-                                 ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                                 ->orWhere('phone', 'like', '%' . $searchTerm . '%')
-                                 ->orWhere('serial_number', 'like', '%' . $searchTerm . '%');
-                  });
+        if ($request->filled('search')) {
+            $searchTerm = trim((string) $request->search);
+            $like = '%' . $searchTerm . '%';
+
+            $query->where(function ($q) use ($like, $searchTerm) {
+                $q->where('id', 'like', $like)
+                    ->orWhere('application_number', 'like', $like)
+                    ->orWhere('academic_year', 'like', $like)
+                    ->orWhere('form_type', 'like', $like)
+                    ->orWhere('applicant_type', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhere('hod_status', 'like', $like)
+                    ->orWhere('registrar_status', 'like', $like)
+                    ->orWhere('president_status', 'like', $like)
+                    ->orWhere('hod_comments', 'like', $like)
+                    ->orWhere('registrar_comments', 'like', $like)
+                    ->orWhere('president_comments', 'like', $like)
+                    ->orWhere('data', 'like', $like)
+                    ->orWhereHas('user', function ($userQuery) use ($like) {
+                        $userQuery->where('name', 'like', $like)
+                            ->orWhere('email', 'like', $like)
+                            ->orWhere('phone', 'like', $like)
+                            ->orWhere('serial_number', 'like', $like)
+                            ->orWhere('nationality', 'like', $like);
+                    })
+                    ->orWhereHas('department', function ($departmentQuery) use ($like) {
+                        $departmentQuery->where('name', 'like', $like)
+                            ->orWhere('code', 'like', $like);
+                    })
+                    ->orWhereHas('admissionForm', function ($formQuery) use ($like) {
+                        $formQuery->where('full_name', 'like', $like)
+                            ->orWhere('email', 'like', $like)
+                            ->orWhere('telephone', 'like', $like)
+                            ->orWhere('nationality', 'like', $like)
+                            ->orWhere('preferred_session', 'like', $like)
+                            ->orWhere('preferred_campus', 'like', $like)
+                            ->orWhere('intake_option', 'like', $like)
+                            ->orWhere('pref1', 'like', $like)
+                            ->orWhere('pref2', 'like', $like)
+                            ->orWhere('pref3', 'like', $like)
+                            ->orWhere('passport_number', 'like', $like)
+                            ->orWhere('mailing_address', 'like', $like)
+                            ->orWhere('city', 'like', $like)
+                            ->orWhere('country', 'like', $like);
+                    })
+                    ->orWhereHas('student', function ($studentQuery) use ($like) {
+                        $studentQuery->where('student_id', 'like', $like)
+                            ->orWhere('academic_year', 'like', $like)
+                            ->orWhere('level', 'like', $like)
+                            ->orWhere('academic_status', 'like', $like);
+                    });
+
+                if (ctype_digit($searchTerm)) {
+                    $q->orWhere('id', (int) $searchTerm);
+                }
             });
         }
         

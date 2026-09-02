@@ -16,7 +16,7 @@
                         <input type="text" 
                                class="form-control" 
                                name="search" 
-                               placeholder="Search by applicant name, email, phone, serial number, application number, or academic year..." 
+                               placeholder="Search all fields: name, email, phone, serial, application #, session, campus, program, status, student ID..." 
                                value="{{ request('search') }}">
                     </div>
                     <div class="col-md-2">

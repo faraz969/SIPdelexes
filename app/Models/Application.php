@@ -48,6 +48,45 @@ class Application extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    /**
+     * Filter applications that selected a given program (by program id).
+     */
+    public function scopeWhereSelectedProgram($query, $programId)
+    {
+        $program = Program::find($programId);
+        if (!$program) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $programName = $program->name;
+        $programKeys = Department::query()->pluck('id')->map(function ($id) {
+            return 'prog_' . $id;
+        })->push('prog_' . $program->department_id)->unique()->values();
+
+        return $query->where(function ($q) use ($programName, $programKeys) {
+            foreach ($programKeys as $programKey) {
+                $q->orWhere("data->{$programKey}", $programName);
+            }
+
+            $q->orWhere('data->pref1', $programName)
+                ->orWhere('data->pref2', $programName)
+                ->orWhere('data->pref3', $programName)
+                ->orWhereHas('admissionForm', function ($formQuery) use ($programName) {
+                    $formQuery->where('pref1', $programName)
+                        ->orWhere('pref2', $programName)
+                        ->orWhere('pref3', $programName)
+                        ->orWhere('prog_eng', $programName)
+                        ->orWhere('prog_focis', $programName)
+                        ->orWhere('prog_business', $programName);
+                });
+        });
+    }
+
     public function admissionForm()
     {
         return $this->hasOne(AdmissionForm::class);

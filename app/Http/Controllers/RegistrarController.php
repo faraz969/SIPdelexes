@@ -28,6 +28,7 @@ class RegistrarController extends Controller
     {
         $academicYear = trim((string) $request->get('academic_year', ''));
         $departmentId = $request->get('department_id');
+        $programId = $request->get('program_id');
 
         $departments = Department::orderBy('name')->get();
 
@@ -37,6 +38,16 @@ class RegistrarController extends Controller
             ->distinct()
             ->orderBy('academic_year', 'desc')
             ->pluck('academic_year');
+
+        $programsQuery = Program::where('is_active', true)->orderBy('name');
+        if (!empty($departmentId)) {
+            $programsQuery->where('department_id', $departmentId);
+        }
+        $programs = $programsQuery->get();
+
+        if (!empty($programId) && !$programs->contains('id', (int) $programId)) {
+            $programId = null;
+        }
 
         $baseQuery = Application::query()->where('status', '!=', 'draft');
 
@@ -50,6 +61,10 @@ class RegistrarController extends Controller
                     ->orWhereJsonContains('department_ids', (int) $departmentId)
                     ->orWhereJsonContains('department_ids', (string) $departmentId);
             });
+        }
+
+        if (!empty($programId)) {
+            $baseQuery->whereSelectedProgram($programId);
         }
 
         $pendingApplications = (clone $baseQuery)
@@ -88,7 +103,9 @@ class RegistrarController extends Controller
             'departments',
             'academicYears',
             'academicYear',
-            'departmentId'
+            'departmentId',
+            'programs',
+            'programId'
         ));
     }
 
@@ -103,6 +120,7 @@ class RegistrarController extends Controller
 
         $academicYear = trim((string) $request->get('academic_year', ''));
         $departmentId = $request->get('department_id');
+        $programId = $request->get('program_id');
 
         $departments = Department::orderBy('name')->get();
 
@@ -112,6 +130,16 @@ class RegistrarController extends Controller
             ->distinct()
             ->orderBy('academic_year', 'desc')
             ->pluck('academic_year');
+
+        $programsQuery = Program::where('is_active', true)->orderBy('name');
+        if (!empty($departmentId)) {
+            $programsQuery->where('department_id', $departmentId);
+        }
+        $programs = $programsQuery->get();
+
+        if (!empty($programId) && !$programs->contains('id', (int) $programId)) {
+            $programId = null;
+        }
 
         $baseQuery = Application::query()->where('status', '!=', 'draft');
 
@@ -125,6 +153,10 @@ class RegistrarController extends Controller
                     ->orWhereJsonContains('department_ids', (int) $departmentId)
                     ->orWhereJsonContains('department_ids', (string) $departmentId);
             });
+        }
+
+        if (!empty($programId)) {
+            $baseQuery->whereSelectedProgram($programId);
         }
 
         if ($status === 'pending') {
@@ -153,6 +185,8 @@ class RegistrarController extends Controller
             'academicYears' => $academicYears,
             'academicYear' => $academicYear,
             'departmentId' => $departmentId,
+            'programs' => $programs,
+            'programId' => $programId,
         ]);
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Application;
 use App\Models\Department;
 use App\Models\Deferment;
+use App\Models\Program;
 use App\Services\SmsService;
 
 class HODController extends Controller
@@ -29,6 +30,7 @@ class HODController extends Controller
         }
 
         $academicYear = trim((string) $request->get('academic_year', ''));
+        $programId = $request->get('program_id');
 
         $baseQuery = Application::query()
             ->where('status', '!=', 'draft')
@@ -45,9 +47,18 @@ class HODController extends Controller
             ->orderBy('academic_year', 'desc')
             ->pluck('academic_year');
 
+        $programs = Program::where('department_id', $department->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         $filteredQuery = clone $baseQuery;
         if ($academicYear !== '') {
             $filteredQuery->where('academic_year', $academicYear);
+        }
+        if (!empty($programId)) {
+            $filteredQuery->whereSelectedProgram($programId);
         }
 
         $pendingApplications = (clone $filteredQuery)
@@ -74,6 +85,8 @@ class HODController extends Controller
             'reviewedApplications',
             'academicYears',
             'academicYear',
+            'programs',
+            'programId',
             'stats'
         ));
     }
@@ -95,6 +108,7 @@ class HODController extends Controller
         }
 
         $academicYear = trim((string) $request->get('academic_year', ''));
+        $programId = $request->get('program_id');
 
         $baseQuery = Application::query()
             ->where('status', '!=', 'draft')
@@ -111,9 +125,18 @@ class HODController extends Controller
             ->orderBy('academic_year', 'desc')
             ->pluck('academic_year');
 
+        $programs = Program::where('department_id', $department->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         $filteredQuery = clone $baseQuery;
         if ($academicYear !== '') {
             $filteredQuery->where('academic_year', $academicYear);
+        }
+        if (!empty($programId)) {
+            $filteredQuery->whereSelectedProgram($programId);
         }
 
         $filteredQuery->where('hod_status', $status);
@@ -141,6 +164,8 @@ class HODController extends Controller
             'pageTitle' => $titles[$status],
             'academicYears' => $academicYears,
             'academicYear' => $academicYear,
+            'programs' => $programs,
+            'programId' => $programId,
         ]);
     }
 
