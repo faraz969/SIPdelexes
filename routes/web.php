@@ -224,6 +224,7 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{download}/file', [App\Http\Controllers\SIPController::class, 'downloadDocument'])->name('downloads.file');
     Route::get('/downloads/{download}/pdf', [App\Http\Controllers\SIPController::class, 'downloadAdmissionFormPdf'])->name('downloads.pdf');
+    Route::post('/downloads/{download}/accept-offer', [App\Http\Controllers\SIPController::class, 'acceptAdmissionOffer'])->name('downloads.accept-offer');
     Route::get('/documents/{sip_document}/file', [App\Http\Controllers\SIPController::class, 'downloadSharedDocument'])->name('documents.file');
     
     // Payments

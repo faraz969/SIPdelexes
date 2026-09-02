@@ -258,7 +258,7 @@ class SIPAutomationService
             return '2';
         }
 
-        $userFormType = strtolower((string) optional($application->user)->formType?->name ?? '');
+        $userFormType = strtolower((string) (optional(optional($application->user)->formType)->name ?? ''));
         if (str_contains($userFormType, 'postgraduate')) {
             return '2';
         }

@@ -14,6 +14,7 @@ class AdmissionFormData extends Model
         'application_id',
         'offer_type',
         'conditional_subject',
+        'offer_accepted_at',
         'total_fees',
         'minimum_fee_percentage',
         'balance_percentage',
@@ -42,7 +43,13 @@ class AdmissionFormData extends Model
         'orientation_new_students' => 'date',
         'faculty_orientation' => 'date',
         'lectures_begin' => 'date',
+        'offer_accepted_at' => 'datetime',
     ];
+
+    public function isOfferAccepted(): bool
+    {
+        return $this->offer_accepted_at !== null;
+    }
 
     public function student()
     {

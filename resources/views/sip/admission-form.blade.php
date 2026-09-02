@@ -477,13 +477,36 @@
 
     <!-- Action Buttons (Hidden in Print/PDF) -->
     @if(!isset($isPdf) || !$isPdf)
+    @php
+        $offerAccepted = !empty($formData) && $formData->isOfferAccepted();
+    @endphp
     <div class="action-buttons no-print">
-        @if(!empty($download))
-        <a href="{{ route('sip.downloads.pdf', $download) }}" class="btn btn-info">
-            <i class="fas fa-download"></i> Download PDF
-        </a>
+        @if(session('status'))
+            <div class="alert alert-success" style="text-align:left; margin-bottom:16px;">{{ session('status') }}</div>
         @endif
-       
+        @if(session('error'))
+            <div class="alert alert-danger" style="text-align:left; margin-bottom:16px;">{{ session('error') }}</div>
+        @endif
+
+        @if(!empty($download) && !$offerAccepted)
+            <div class="alert alert-warning" style="text-align:left; margin-bottom:16px;">
+                Please review this admission offer carefully. You must accept it before you can download the PDF.
+            </div>
+            <form method="POST" action="{{ route('sip.downloads.accept-offer', $download) }}" style="display:inline-block; margin:5px;">
+                @csrf
+                <button type="submit" class="btn btn-primary" onclick="return confirm('By clicking Accept, you confirm that you accept this offer of admission. Continue?');">
+                    <i class="fas fa-check"></i> Accept Admission Offer
+                </button>
+            </form>
+        @elseif(!empty($download) && $offerAccepted)
+            <div class="alert alert-success" style="text-align:left; margin-bottom:16px;">
+                Admission offer accepted{{ $formData->offer_accepted_at ? ' on ' . $formData->offer_accepted_at->format('d M Y H:i') : '' }}.
+            </div>
+            <a href="{{ route('sip.downloads.pdf', $download) }}" class="btn btn-info">
+                <i class="fas fa-download"></i> Download PDF
+            </a>
+        @endif
+
         <a href="{{ route('sip.downloads') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Downloads
         </a>

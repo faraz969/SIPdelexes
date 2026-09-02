@@ -307,6 +307,47 @@ class SIPController extends Controller
     }
 
     /**
+     * Accept admission offer (required before PDF download)
+     */
+    public function acceptAdmissionOffer(Download $download)
+    {
+        $student = $this->getStudent();
+
+        if ($download->student_id !== $student->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if ($download->document_type !== 'admission_form') {
+            abort(404, 'Admission form not found.');
+        }
+
+        $formData = $student->admissionFormData;
+        if (!$formData) {
+            abort(404, 'Admission form data not found.');
+        }
+
+        if (!$formData->isOfferAccepted()) {
+            $formData->update([
+                'offer_accepted_at' => now(),
+            ]);
+
+            $this->activityLogService->log([
+                'user_id' => Auth::id(),
+                'role' => 'student',
+                'action' => 'admission_offer_accepted',
+                'model_type' => Download::class,
+                'model_id' => $download->id,
+                'system_source' => 'SIP',
+                'description' => 'Accepted admission offer',
+            ]);
+        }
+
+        return redirect()
+            ->route('sip.downloads.file', $download)
+            ->with('status', 'You have accepted the admission offer. You can now download the PDF.');
+    }
+
+    /**
      * Download admission form as PDF
      */
     public function downloadAdmissionFormPdf(Download $download)
@@ -320,6 +361,12 @@ class SIPController extends Controller
         $formData = $student->admissionFormData;
         if (!$formData) {
             abort(404, 'Admission form data not found.');
+        }
+
+        if (!$formData->isOfferAccepted()) {
+            return redirect()
+                ->route('sip.downloads.file', $download)
+                ->with('error', 'Please accept the admission offer before downloading the PDF.');
         }
 
         $admissionFormService = app(\App\Services\AdmissionFormService::class);
