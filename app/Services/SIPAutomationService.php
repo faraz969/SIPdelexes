@@ -10,10 +10,10 @@ use App\Models\Session;
 use App\Models\Department;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
+use App\Services\SmsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -21,11 +21,16 @@ class SIPAutomationService
 {
     protected $erpService;
     protected $activityLogService;
+    protected $smsService;
 
-    public function __construct(ERPIntegrationService $erpService, ActivityLogService $activityLogService)
-    {
+    public function __construct(
+        ERPIntegrationService $erpService,
+        ActivityLogService $activityLogService,
+        SmsService $smsService
+    ) {
         $this->erpService = $erpService;
         $this->activityLogService = $activityLogService;
+        $this->smsService = $smsService;
     }
 
     /**
@@ -352,9 +357,11 @@ class SIPAutomationService
         }
 
         // Send SMS with credentials (non-blocking)
+        // Note: Many SMS gateways strip "@", so spell it as " AT ".
         try {
-            $smsMessage = "Admission Approved! Login Email: {$loginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
-            $this->sendSMS($user->phone, $smsMessage);
+            $smsLoginEmail = $student->student_id . ' AT delexesuniversity.edu.gh';
+            $smsMessage = "Admission Approved! Student ID: {$student->student_id}. Login Email: {$smsLoginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
+            $this->smsService->send($user->phone, $smsMessage);
             
             \Log::info("Admission approval SMS sent successfully", [
                 'student_id' => $student->student_id,
@@ -368,133 +375,6 @@ class SIPAutomationService
                 'error' => $e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Send SMS for SIP admission: primary Arkesel (sender DELEXESUC), fallback Nalo.
-     */
-    protected function sendSMS($phone, $message)
-    {
-        $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
-        $arkeselTo = $this->normalizePhoneForArkesel($cleanPhone);
-
-        $naloPhone = $cleanPhone;
-        if (strpos($cleanPhone, '+233') === 0) {
-            $naloPhone = '0' . substr($cleanPhone, 4);
-        } elseif (strpos($cleanPhone, '233') === 0 && strpos($cleanPhone, '+') !== 0) {
-            $naloPhone = '0' . substr($cleanPhone, 3);
-        }
-
-        try {
-            $arkeselApiKey = env('ARKESEL_SMS_KEY', 'Ok1GNWlYWFB0VHI1NHJZUUQ=');
-            $arkeselSenderId = env('ARKESEL_SENDER_ID', 'DELEXESUC');
-
-            Log::info('Attempting SIP Admission SMS via Arkesel API', [
-                'to' => $arkeselTo,
-                'original_phone' => $cleanPhone,
-                'sender' => $arkeselSenderId,
-                'message_length' => strlen($message),
-            ]);
-
-            $arkeselResponse = Http::timeout(10)
-                ->get('https://sms.arkesel.com/sms/api', [
-                    'action' => 'send-sms',
-                    'api_key' => $arkeselApiKey,
-                    'to' => $arkeselTo,
-                    'from' => $arkeselSenderId,
-                    'sms' => $message,
-                ]);
-
-            Log::info('Arkesel SMS API Response (SIP Admission)', [
-                'to' => $arkeselTo,
-                'status' => $arkeselResponse->status(),
-                'response' => $arkeselResponse->body(),
-            ]);
-
-            if ($arkeselResponse->successful()) {
-                $responseData = $arkeselResponse->json();
-                if (is_array($responseData)) {
-                    $code = isset($responseData['code']) ? strtolower((string) $responseData['code']) : '';
-                    $status = isset($responseData['status']) ? strtolower((string) $responseData['status']) : '';
-                    if ($code === 'ok' || $status === 'success') {
-                        Log::info('SIP Admission SMS sent successfully via Arkesel', [
-                            'to' => $arkeselTo,
-                            'payload' => $responseData,
-                        ]);
-                        return;
-                    }
-                }
-            }
-
-            Log::warning('Arkesel SMS API failed or returned error for SIP Admission, trying backup Nalo API');
-        } catch (\Exception $e) {
-            Log::error('Arkesel SMS API Exception (SIP Admission)', [
-                'to' => $arkeselTo ?? $cleanPhone,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        try {
-            $naloKey = env('NALO_SMS_KEY', 'LNMKky07fqvxVO6IK33I7UvuWMVXDR_sZnf8bDRnG7qu2ErL3vTM1farB5UYw26L');
-            $naloSenderId = env('NALO_SENDER_ID', 'DELEXESUC');
-
-            Log::info('Attempting SIP Admission SMS via Nalo API (Backup)', [
-                'phone' => $naloPhone,
-                'original_phone' => $cleanPhone,
-            ]);
-
-            $naloResponse = Http::timeout(10)
-                ->post('https://sms.nalosolutions.com/smsbackend/Resl_Nalo/send-message/', [
-                    'key' => $naloKey,
-                    'msisdn' => $naloPhone,
-                    'message' => $message,
-                    'sender_id' => $naloSenderId,
-                ]);
-
-            Log::info('Nalo SMS API Response (Backup - SIP Admission)', [
-                'phone' => $naloPhone,
-                'status' => $naloResponse->status(),
-                'response' => $naloResponse->body(),
-            ]);
-
-            if ($naloResponse->successful()) {
-                $responseData = $naloResponse->json();
-                if (isset($responseData['status']) && isset($responseData['job_id'])) {
-                    Log::info('SIP Admission SMS sent successfully via Nalo (Backup)', [
-                        'job_id' => $responseData['job_id'],
-                        'status_code' => $responseData['status'],
-                    ]);
-                    return;
-                }
-            }
-
-            Log::warning('Nalo SMS backup failed for SIP Admission');
-        } catch (\Exception $e) {
-            Log::error('Nalo SMS API Exception (Backup - SIP Admission)', [
-                'phone' => $naloPhone,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        Log::error('Both SMS providers failed for SIP Admission', ['phone' => $phone]);
-    }
-
-    /**
-     * Arkesel expects recipients like 233XXXXXXXXX (no leading +).
-     */
-    private function normalizePhoneForArkesel(string $cleanPhone): string
-    {
-        if (strpos($cleanPhone, '+233') === 0) {
-            return substr($cleanPhone, 1);
-        }
-        if (strpos($cleanPhone, '233') === 0) {
-            return $cleanPhone;
-        }
-        if (strpos($cleanPhone, '0') === 0 && strlen($cleanPhone) >= 10) {
-            return '233' . substr($cleanPhone, 1);
-        }
-
-        return $cleanPhone;
     }
 }
 

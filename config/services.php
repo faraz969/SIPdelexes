@@ -57,4 +57,25 @@ return [
         'email' => env('REGISTRAR_EMAIL'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | SMS providers
+    |--------------------------------------------------------------------------
+    |
+    | SMS_PRIMARY_PROVIDER controls which gateway is tried first.
+    | Use "nalo" (default) or "arkesel". The other is used as fallback.
+    |
+    */
+    'sms' => [
+        'primary' => env('SMS_PRIMARY_PROVIDER', 'nalo'),
+        'nalo' => [
+            'key' => env('NALO_SMS_KEY', 'LNMKky07fqvxVO6IK33I7UvuWMVXDR_sZnf8bDRnG7qu2ErL3vTM1farB5UYw26L'),
+            'sender_id' => env('NALO_SENDER_ID', 'DELEXESUC'),
+        ],
+        'arkesel' => [
+            'key' => env('ARKESEL_SMS_KEY', 'Ok1GNWlYWFB0VHI1NHJZUUQ='),
+            'sender_id' => env('ARKESEL_SENDER_ID', 'DELEXESUC'),
+        ],
+    ],
+
 ];

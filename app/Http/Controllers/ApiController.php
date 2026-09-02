@@ -123,35 +123,8 @@ class ApiController extends Controller
      */
     private function sendSMS($phone, $pin, $name, $serialNumber)
     {
-        try {
-            $apiKey = 'Ok1GNWlYWFB0VHI1NHJZUUQ=';
-            $senderId = 'UNIVERSITY';
-            $message = "Hello {$name}, your registration Serial Number is: {$serialNumber} and PIN is: {$pin}. This PIN expires in 3 months. Use this PIN to login to your dashboard.";
-            
-            // Clean phone number (remove any non-numeric characters except +)
-            $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
-            
-            $response = \Illuminate\Support\Facades\Http::get('https://sms.arkesel.com/sms/api', [
-                'action' => 'send-sms',
-                'api_key' => $apiKey,
-                'to' => $cleanPhone,
-                'from' => $senderId,
-                'sms' => $message
-            ]);
-
-            // Log the response for debugging
-            \Illuminate\Support\Facades\Log::info('SMS API Response (API User Creation)', [
-                'phone' => $cleanPhone,
-                'response' => $response->body(),
-                'status' => $response->status()
-            ]);
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('SMS sending failed (API User Creation)', [
-                'phone' => $phone,
-                'error' => $e->getMessage()
-            ]);
-        }
+        $message = "Hello {$name}, your registration Serial Number is: {$serialNumber} and PIN is: {$pin}. This PIN expires in 3 months. Use this PIN to login to your dashboard.";
+        app(\App\Services\SmsService::class)->send($phone, $message);
     }
 
     /**
