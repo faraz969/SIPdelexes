@@ -366,13 +366,24 @@
     </table>
 
     <!-- Fees Section -->
+    @php
+        $bankPaymentLines = $data['bank_payment_lines'] ?? [];
+        $bankPaymentHtml = '';
+        if (!empty($bankPaymentLines)) {
+            $parts = [];
+            foreach ($bankPaymentLines as $bankLine) {
+                $parts[] = '<strong>' . e($bankLine) . '</strong>';
+            }
+            $bankPaymentHtml = ', through any Branch of ' . implode(' or ', $parts);
+        }
+    @endphp
     <div class="fees-section">
         <div class="title">The fees per semester are stated here-below (subject to review):</div>
         <div class="fees-item">
             Kindly note that your fees per semester is <strong>GHS {{ $data['total_fees'] }}</strong>.
             However, you can pay a minimum of <strong>{{ $data['minimum_fee_percentage'] }}</strong> of the fees
             (<strong>GHS {{ $data['minimum_fee_amount'] }}</strong>) before Registration, and the remaining
-            <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong> before end-of-semester exams@if(!empty($data['bank_payment_lines'])), through any Branch of @foreach($data['bank_payment_lines'] as $index => $bankLine)@if($index > 0) or @endif<strong>{{ $bankLine }}</strong>@endforeach@endif.
+            <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong> before end-of-semester exams{!! $bankPaymentHtml !!}.
             Note that Fees paid are <strong>NOT REFUNDABLE</strong>.
         </div>
     </div>
