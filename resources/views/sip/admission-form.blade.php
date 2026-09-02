@@ -21,17 +21,6 @@
                 margin: 0;
                 padding: 0;
                 max-width: none;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            .highlight-yellow {
-                background-color: none !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                box-decoration-break: clone;
-                -webkit-box-decoration-break: clone;
             }
         }
         body {
@@ -172,31 +161,9 @@
             margin: 3px 0;
             font-size: 10pt;
             line-height: 1.4;
-        }
-        .highlight-yellow {
-            background-color: none;
-            padding: 0 2px;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color-adjust: exact;
-            box-decoration-break: clone;
-            -webkit-box-decoration-break: clone;
+            text-align: justify;
         }
         .fees-item strong {
-            font-weight: bold;
-        }
-        .anniversary-cloth {
-            margin: 4px 0;
-            font-size: 10pt;
-        }
-        .anniversary-cloth strong {
-            font-weight: bold;
-        }
-        .hostel-info {
-            margin: 6px 0;
-            font-size: 10pt;
-        }
-        .hostel-info strong {
             font-weight: bold;
         }
         .dates-section {
@@ -275,51 +242,6 @@
         body.is-pdf .footer {
             display: none;
         }
-        .bank-details-page {
-            page-break-before: always;
-            break-before: page;
-            padding-top: 20px;
-        }
-        .bank-details-page .page-title {
-            text-align: center;
-            font-size: 14pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            text-decoration: underline;
-            margin-bottom: 20px;
-        }
-        .bank-details-page .intro {
-            text-align: justify;
-            margin-bottom: 18px;
-            font-size: 10.5pt;
-            line-height: 1.5;
-        }
-        .bank-details-table {
-            width: 100%;
-            max-width: 480px;
-            border-collapse: collapse;
-            margin: 20px auto;
-            font-size: 11pt;
-        }
-        .bank-details-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #ccc;
-            vertical-align: top;
-        }
-        .bank-details-table .bank-label {
-            font-weight: bold;
-            width: 40%;
-            white-space: nowrap;
-        }
-        .bank-details-table .bank-value {
-            font-weight: bold;
-        }
-        .bank-details-page .note {
-            margin-top: 24px;
-            font-size: 10pt;
-            text-align: justify;
-            line-height: 1.5;
-        }
         .action-buttons {
             text-align: center;
             margin: 30px 0;
@@ -390,20 +312,20 @@
     <!-- Student Name and Date -->
     <div class="student-name-date">
         <div class="student-name">
-            <span class="highlight-yellow"><strong>{{ $data['student_name'] }}</strong></span>
+            <span><strong>{{ $data['student_name'] }}</strong></span>
         </div>
-        <div class="document-date highlight-yellow">{{ $data['date'] }}</div>
+        <div class="document-date">{{ $data['date'] }}</div>
     </div>
 
     <!-- Offer Title -->
     <div class="offer-title">
-        OFFER OF ADMISSION FOR <span class="highlight-yellow">{{ strtoupper($data['course_title']) }} DEGREE</span>
+        OFFER OF ADMISSION FOR {{ strtoupper($data['course_title']) }} DEGREE
     </div>
 
     <!-- Body Text -->
     <div class="body-text">
         <p>
-            The Admissions Committee has considered your application and is delighted to offer you admission to <strong>level {{ $data['level'] }}</strong> of the <strong class="highlight-yellow">BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
+            The Admissions Committee has considered your application and is delighted to offer you admission to <strong>level {{ $data['level'] }}</strong> of the <strong>BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
         </p>
     </div>
 
@@ -445,21 +367,15 @@
 
     <!-- Fees Section -->
     <div class="fees-section">
-        <div class="title">The full fees for your enrollment are stated below (subject to review):</div>
+        <div class="title">The fees per semester are stated here-below (subject to review):</div>
         <div class="fees-item">
-            Tuition and other fees <span class="highlight-yellow"><strong>GHS {{ $data['total_fees'] }}</strong></span> per semester. Minimum fees to be paid <span class="highlight-yellow">before Registration</span> <strong>{{ $data['minimum_fee_percentage'] }} (GHS {{ $data['minimum_fee_amount'] }})</strong>.
-        </div>
-        <div class="fees-item">
-            Balance to be paid before end-of-semester exams: <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong>.
-        </div>
-       
-        <div class="hostel-info">
-            <strong>Hostel:</strong> The University assists students to locate decent and affordable hostels.
-        </div>
-        <div class="body-text">
-            <p>
-                If you accept this offer of admission, then you are required to pay not less than {{ $data['minimum_fee_percentage'] ? str_replace('%', '', $data['minimum_fee_percentage']) : '60' }}% of the total fees by <strong>{{ $data['paid_fees_by_date'] }}</strong> and the outstanding balance within the semester. Full payment of fees for the semester is expected two weeks before the End-of-Semester Examinations begin.
-            </p>
+            Kindly note that your fees per semester is <strong>GHS {{ $data['total_fees'] }}</strong>.
+            However, you can pay a minimum of <strong>{{ $data['minimum_fee_percentage'] }}</strong> of the fees
+            (<strong>GHS {{ $data['minimum_fee_amount'] }}</strong>) before Registration, and the remaining
+            <strong>{{ $data['balance_percentage'] }} (GHS {{ $data['balance_amount'] }})</strong> before end-of-semester exams,
+            through any Branch of <strong>GCB Bank (Account Name: Delexes University College and Account Number: 1721180004173 Branch: Tema, Community 25)</strong>
+            or <strong>Ecobank (Account Name: Delexes University College and Account Number: 1441005037251 Branch: Tema, Community 25)</strong>.
+            Note that Fees paid are <strong>NOT REFUNDABLE</strong>.
         </div>
     </div>
 
@@ -538,47 +454,5 @@
         <p>This is an official document from Delexes University College.</p>
         <p>Generated on: {{ now()->format('d/m/Y H:i') }}</p>
     </div>
-
-    @php
-        $hasBankDetails = !empty($data['bank_name'])
-            || !empty($data['bank_branch'])
-            || !empty($data['bank_account_no'])
-            || !empty($data['payment_reference']);
-    @endphp
-
-    @if($hasBankDetails)
-    <!-- Page 2: Bank Payment Details -->
-    <div class="bank-details-page">
-        <div class="page-title">Bank Payment Details</div>
-        <p class="intro">
-            Please use the bank account details below when making fee payments related to this offer of admission.
-            Ensure the payment reference is clearly stated on the deposit slip or transfer narration.
-        </p>
-
-        <table class="bank-details-table">
-            <tr>
-                <td class="bank-label">Bank Name:</td>
-                <td class="bank-value">{{ $data['bank_name'] ?: '—' }}</td>
-            </tr>
-            <tr>
-                <td class="bank-label">Branch:</td>
-                <td class="bank-value">{{ $data['bank_branch'] ?: '—' }}</td>
-            </tr>
-            <tr>
-                <td class="bank-label">Account No:</td>
-                <td class="bank-value">{{ $data['bank_account_no'] ?: '—' }}</td>
-            </tr>
-            <tr>
-                <td class="bank-label">Payment Reference:</td>
-                <td class="bank-value">{{ $data['payment_reference'] ?: '—' }}</td>
-            </tr>
-        </table>
-
-        <p class="note">
-            After payment, keep your receipt/slip safely. You may be required to present it during registration
-            or upload it through the Student Information Portal (SIP) for verification by the accounts department.
-        </p>
-    </div>
-    @endif
 </body>
 </html>
