@@ -74,9 +74,14 @@ class AdmissionFormService
             'nationality' => $admissionForm->nationality ?? ($user->nationality ?? ''),
             'address_full' => $admissionForm->mailing_address ?? '',
             'admission_date' => $student->admission_date ? $student->admission_date->format('d/m/Y') : now()->format('d/m/Y'),
+            'programme_start_date' => $this->formatLongDate(
+                $formData->lectures_begin ?? $student->admission_date ?? now()
+            ),
             'preferred_session' => $preferredSession,
             'preferred_campus' => $preferredCampus,
             'date' => ($formData->created_at ?? $student->admission_date ?? now())->format('d/m/Y'),
+            'offer_type' => AdmissionFormData::normalizeOfferType($formData->offer_type ?? 'regular'),
+            'conditional_subject' => trim((string) ($formData->conditional_subject ?? '')),
             
             // Admission Form Data
             'total_fees' => $totalFees !== null ? number_format($totalFees, 2) : '',
@@ -107,6 +112,19 @@ class AdmissionFormService
             'bank_account_no_2' => $defaults ? trim((string) $defaults->bank_account_no_2) : '',
             'payment_reference_2' => $defaults ? trim((string) $defaults->payment_reference_2) : '',
         ];
+    }
+
+    protected function formatLongDate($date): string
+    {
+        if (!$date) {
+            return '';
+        }
+
+        $carbon = $date instanceof \Carbon\Carbon
+            ? $date
+            : \Carbon\Carbon::parse($date);
+
+        return $carbon->format('jS F, Y');
     }
 
     protected function buildBankPaymentLines(?AdmissionFormDefault $defaults): array

@@ -12,6 +12,8 @@ class AdmissionFormData extends Model
     protected $fillable = [
         'student_id',
         'application_id',
+        'offer_type',
+        'conditional_subject',
         'total_fees',
         'minimum_fee_percentage',
         'balance_percentage',
@@ -22,6 +24,14 @@ class AdmissionFormData extends Model
         'lectures_begin',
         'generated_file_path',
     ];
+
+    public const OFFER_TYPES = ['regular', 'conditional', 'mature'];
+
+    public static function normalizeOfferType(?string $type): string
+    {
+        $type = strtolower(trim((string) $type));
+        return in_array($type, self::OFFER_TYPES, true) ? $type : 'regular';
+    }
 
     protected $casts = [
         'total_fees' => 'decimal:2',

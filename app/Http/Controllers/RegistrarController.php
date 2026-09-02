@@ -201,6 +201,8 @@ class RegistrarController extends Controller
 
         $request->validate([
             'level' => 'required|in:' . implode(',', \App\Models\Student::LEVELS),
+            'offer_type' => 'required|in:' . implode(',', AdmissionFormData::OFFER_TYPES),
+            'conditional_subject' => 'required_if:offer_type,conditional|nullable|string|max:255',
             'comments' => 'nullable|string|max:1000',
         ]);
 
@@ -218,39 +220,42 @@ class RegistrarController extends Controller
                 // Fallback to any default if specific academic year not found
                 $defaults = \App\Models\AdmissionFormDefault::first();
             }
-            if ($defaults) {
-                $program = $student->program;
-                $totalFees = $program && $program->price !== null ? $program->price : null;
+            $program = $student->program;
+            $totalFees = $program && $program->price !== null ? $program->price : null;
+            $offerType = AdmissionFormData::normalizeOfferType($request->offer_type);
 
-                AdmissionFormData::updateOrCreate(
-                    ['student_id' => $student->id],
-                    [
-                        'application_id' => $application->id,
-                        'total_fees' => $totalFees,
-                        'minimum_fee_percentage' => $defaults->minimum_fee_percentage,
-                        'balance_percentage' => $defaults->balance_percentage,
-                        'paid_fees_by_date' => $defaults->paid_fees_by_date,
-                        'registration_begins' => $defaults->registration_begins,
-                        'orientation_new_students' => $defaults->orientation_new_students,
-                        'faculty_orientation' => $defaults->faculty_orientation,
-                        'lectures_begin' => $defaults->lectures_begin,
-                    ]
-                );
+            AdmissionFormData::updateOrCreate(
+                ['student_id' => $student->id],
+                [
+                    'application_id' => $application->id,
+                    'offer_type' => $offerType,
+                    'conditional_subject' => $offerType === 'conditional'
+                        ? trim((string) $request->conditional_subject)
+                        : null,
+                    'total_fees' => $totalFees,
+                    'minimum_fee_percentage' => $defaults->minimum_fee_percentage ?? null,
+                    'balance_percentage' => $defaults->balance_percentage ?? null,
+                    'paid_fees_by_date' => $defaults->paid_fees_by_date ?? null,
+                    'registration_begins' => $defaults->registration_begins ?? null,
+                    'orientation_new_students' => $defaults->orientation_new_students ?? null,
+                    'faculty_orientation' => $defaults->faculty_orientation ?? null,
+                    'lectures_begin' => $defaults->lectures_begin ?? null,
+                ]
+            );
 
-                // Create download record for admission form (HTML/PDF view)
-                try {
-                    $this->admissionFormService->createDownloadRecord($student);
-                    
-                    \Log::info("Admission form download record created", [
-                        'student_id' => $student->student_id,
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error('Failed to create admission form download record', [
-                        'student_id' => $student->student_id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    // Don't fail the approval if download record creation fails
-                }
+            // Create download record for admission form (HTML/PDF view)
+            try {
+                $this->admissionFormService->createDownloadRecord($student);
+                
+                \Log::info("Admission form download record created", [
+                    'student_id' => $student->student_id,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create admission form download record', [
+                    'student_id' => $student->student_id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the approval if download record creation fails
             }
             
             return redirect()->route('registrar.dashboard')

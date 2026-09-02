@@ -318,14 +318,45 @@
     </div>
 
     <!-- Offer Title -->
+    @php
+        $offerType = $data['offer_type'] ?? 'regular';
+        $courseTitle = strtoupper($data['course_title'] ?? '');
+        if ($offerType === 'conditional') {
+            $offerTitle = 'CONDITIONAL OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
+        } elseif ($offerType === 'mature') {
+            $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE AS A MATURE STUDENT';
+        } else {
+            $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
+        }
+    @endphp
     <div class="offer-title">
-        OFFER OF ADMISSION FOR {{ strtoupper($data['course_title']) }} DEGREE
+        {{ $offerTitle }}
     </div>
 
     <!-- Body Text -->
     <div class="body-text">
         <p>
-            The Admissions Committee has considered your application and is delighted to offer you admission to <strong>level {{ $data['level'] }}</strong> of the <strong>BACHELOR OF SCIENCE</strong> {{ strtoupper($data['course_title']) }} degree programme commencing {{ $data['admission_date'] }}. Other details of your admission are as follows:
+            @if($offerType === 'conditional')
+                The Admissions Committee has considered your application and is delighted to offer you
+                <strong>Conditional Admission</strong> to <strong>level {{ $data['level'] }}</strong>
+                of a 4-Year {{ $courseTitle }} degree programme, commencing
+                <strong>{{ $data['programme_start_date'] }}</strong>.
+                You are required to re-sit the WASSCE in <strong>{{ $data['conditional_subject'] }}</strong>
+                within a year of being admitted to the programme. Failure to meet this requirement would result in withdrawal.
+                Other details of your admission are as follows:
+            @elseif($offerType === 'mature')
+                The Admissions Committee has considered your application and is delighted to offer you admission to
+                <strong>level {{ $data['level'] }}</strong> of a 4-Year {{ $courseTitle }} degree programme
+                <strong>as a mature student subject to passing a written exam</strong>.
+                Kindly note that {{ $data['academic_year'] }} academic year starts in
+                <strong>{{ $data['programme_start_date'] }}</strong>.
+                Other details of your admission are as follows:
+            @else
+                The Admissions Committee has considered your application and is delighted to offer you admission to
+                <strong>level {{ $data['level'] }}</strong> of the <strong>BACHELOR OF SCIENCE</strong>
+                {{ $courseTitle }} degree programme commencing {{ $data['admission_date'] }}.
+                Other details of your admission are as follows:
+            @endif
         </p>
     </div>
 

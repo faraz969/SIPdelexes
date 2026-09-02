@@ -286,6 +286,29 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
+                                <label for="offer_type" class="form-label">Admission Offer Type <span class="text-danger">*</span></label>
+                                <select class="form-select @error('offer_type') is-invalid @enderror" id="offer_type" name="offer_type" required>
+                                    <option value="regular" {{ old('offer_type', 'regular') === 'regular' ? 'selected' : '' }}>Regular</option>
+                                    <option value="conditional" {{ old('offer_type') === 'conditional' ? 'selected' : '' }}>Conditional</option>
+                                    <option value="mature" {{ old('offer_type') === 'mature' ? 'selected' : '' }}>Mature</option>
+                                </select>
+                                <small class="text-muted">This controls the wording on the student admission letter.</small>
+                                @error('offer_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3" id="conditionalSubjectWrapper" style="display: none;">
+                                <label for="conditional_subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('conditional_subject') is-invalid @enderror"
+                                       id="conditional_subject" name="conditional_subject"
+                                       value="{{ old('conditional_subject') }}"
+                                       placeholder="e.g., Core Mathematics">
+                                <small class="text-muted">Required for Conditional offers. Shown as the WASSCE re-sit subject on the admission letter.</small>
+                                @error('conditional_subject')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
                                 <label for="approve_comments" class="form-label">Comments (Optional)</label>
                                 <textarea class="form-control" id="approve_comments" name="comments" rows="3" placeholder="Add any comments for approval...">{{ old('comments') }}</textarea>
                             </div>
@@ -293,6 +316,32 @@
                                 <i class="fas fa-check"></i> Approve Application
                             </button>
                         </form>
+
+                        <script>
+                            (function () {
+                                const offerType = document.getElementById('offer_type');
+                                const subjectWrapper = document.getElementById('conditionalSubjectWrapper');
+                                const subjectInput = document.getElementById('conditional_subject');
+
+                                function syncSubjectField() {
+                                    const isConditional = offerType && offerType.value === 'conditional';
+                                    if (subjectWrapper) {
+                                        subjectWrapper.style.display = isConditional ? 'block' : 'none';
+                                    }
+                                    if (subjectInput) {
+                                        subjectInput.required = isConditional;
+                                        if (!isConditional) {
+                                            subjectInput.value = '';
+                                        }
+                                    }
+                                }
+
+                                if (offerType) {
+                                    offerType.addEventListener('change', syncSubjectField);
+                                    syncSubjectField();
+                                }
+                            })();
+                        </script>
 
                         <form method="POST" action="{{ route('registrar.applications.reject', $application->id) }}">
                             @csrf
