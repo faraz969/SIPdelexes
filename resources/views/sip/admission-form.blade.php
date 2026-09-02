@@ -424,7 +424,7 @@
         <div class="title">Arrangements for the semester are as follows:</div>
         <div class="dates-list">
             <div class="date-item">
-                <span class="date-label">Registration begins:</span>
+                <span class="date-label">Registration Period:</span>
                 <span class="date-value">{{ $data['registration_begins'] }}</span>
             </div>
             <div class="date-item">

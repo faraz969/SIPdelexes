@@ -53,4 +53,8 @@ return [
         'email' => env('ACCOUNTS_EMAIL', 'accounts@delexesuniversity.edu.gh'),
     ],
 
+    'registrar' => [
+        'email' => env('REGISTRAR_EMAIL'),
+    ],
+
 ];

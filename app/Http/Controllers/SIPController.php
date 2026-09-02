@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Student;
 use App\Models\StudentAcademicRecord;
@@ -15,6 +17,7 @@ use App\Models\ExamPin;
 use App\Models\Deferment;
 use App\Models\Download;
 use App\Models\SipDocument;
+use App\Models\AdmissionFormData;
 use App\Services\ActivityLogService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
@@ -340,11 +343,64 @@ class SIPController extends Controller
                 'system_source' => 'SIP',
                 'description' => 'Accepted admission offer',
             ]);
+
+            $this->notifyRegistrarOfOfferAcceptance($student, $formData->fresh());
         }
 
         return redirect()
             ->route('sip.downloads.file', $download)
             ->with('status', 'You have accepted the admission offer. You can now download the PDF.');
+    }
+
+    /**
+     * Notify registrar by email when a student accepts an admission offer.
+     */
+    protected function notifyRegistrarOfOfferAcceptance(Student $student, $formData): void
+    {
+        $registrarEmail = config('services.registrar.email');
+        if (empty($registrarEmail)) {
+            Log::warning('REGISTRAR_EMAIL is not set; skipping admission offer acceptance notification', [
+                'student_id' => $student->student_id,
+            ]);
+            return;
+        }
+
+        try {
+            $student->loadMissing(['user', 'program']);
+
+            $studentName = optional($student->user)->name ?: ($student->student_id ?? 'Student');
+            $studentEmail = optional($student->user)->email
+                ?: ($student->student_id . '@delexesuniversity.edu.gh');
+            $programName = optional($student->program)->name;
+            $offerType = $formData->offer_type
+                ? AdmissionFormData::normalizeOfferType($formData->offer_type)
+                : null;
+            $acceptedAt = optional($formData->offer_accepted_at)->format('d M Y H:i')
+                ?: now()->format('d M Y H:i');
+
+            Mail::send('emails.admission-offer-accepted', [
+                'student' => $student,
+                'studentName' => $studentName,
+                'studentEmail' => $studentEmail,
+                'programName' => $programName,
+                'academicYear' => $student->academic_year,
+                'offerType' => $offerType,
+                'acceptedAt' => $acceptedAt,
+            ], function ($message) use ($registrarEmail, $student) {
+                $message->to($registrarEmail)
+                    ->subject('Admission Offer Accepted - ' . $student->student_id);
+            });
+
+            Log::info('Registrar notified of admission offer acceptance', [
+                'student_id' => $student->student_id,
+                'registrar_email' => $registrarEmail,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to notify registrar of admission offer acceptance', [
+                'student_id' => $student->student_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
