@@ -817,7 +817,7 @@
       <div class="row three">
         <div>
           <label for="preferred_session">Preferred Session</label>
-          <select id="preferred_session" name="preferred_session">
+          <select id="preferred_session" name="preferred_session" required>
             <option value="">-- Select --</option>
             @php $ps = $prefill['preferred_session'] ?? '' @endphp
             @if(isset($sessions) && $sessions->count() > 0)
@@ -833,7 +833,7 @@
         </div>
         <div>
           <label for="preferred_campus">Preferred Campus</label>
-          <select id="preferred_campus" name="preferred_campus">
+          <select id="preferred_campus" name="preferred_campus" required>
             <option value="">-- Select --</option>
             @php $pc = $prefill['preferred_campus'] ?? '' @endphp
             @if(isset($campuses) && $campuses->count() > 0)

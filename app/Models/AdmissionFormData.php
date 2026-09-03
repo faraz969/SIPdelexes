@@ -38,11 +38,11 @@ class AdmissionFormData extends Model
         'total_fees' => 'decimal:2',
         'minimum_fee_percentage' => 'decimal:2',
         'balance_percentage' => 'decimal:2',
-        'paid_fees_by_date' => 'date',
-        'registration_begins' => 'date',
-        'orientation_new_students' => 'date',
-        'faculty_orientation' => 'date',
-        'lectures_begin' => 'date',
+        'paid_fees_by_date' => 'string',
+        'registration_begins' => 'string',
+        'orientation_new_students' => 'string',
+        'faculty_orientation' => 'string',
+        'lectures_begin' => 'string',
         'offer_accepted_at' => 'datetime',
     ];
 

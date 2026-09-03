@@ -87,9 +87,10 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="paid_fees_by_date" class="form-label">Paid Fees By Date</label>
-                                <input type="date" class="form-control @error('paid_fees_by_date') is-invalid @enderror"
+                                <input type="text" class="form-control @error('paid_fees_by_date') is-invalid @enderror"
                                        id="paid_fees_by_date" name="paid_fees_by_date"
-                                       value="{{ old('paid_fees_by_date', optional($settings->paid_fees_by_date)->format('Y-m-d')) }}">
+                                       value="{{ old('paid_fees_by_date', $settings->paid_fees_by_date) }}"
+                                       placeholder="e.g., 30th September, 2025">
                                 @error('paid_fees_by_date')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -99,18 +100,20 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="registration_begins" class="form-label">Registration Begins</label>
-                                <input type="date" class="form-control @error('registration_begins') is-invalid @enderror"
+                                <input type="text" class="form-control @error('registration_begins') is-invalid @enderror"
                                        id="registration_begins" name="registration_begins"
-                                       value="{{ old('registration_begins', optional($settings->registration_begins)->format('Y-m-d')) }}">
+                                       value="{{ old('registration_begins', $settings->registration_begins) }}"
+                                       placeholder="e.g., 1st October, 2025">
                                 @error('registration_begins')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="orientation_new_students" class="form-label">Orientation for New Students</label>
-                                <input type="date" class="form-control @error('orientation_new_students') is-invalid @enderror"
+                                <input type="text" class="form-control @error('orientation_new_students') is-invalid @enderror"
                                        id="orientation_new_students" name="orientation_new_students"
-                                       value="{{ old('orientation_new_students', optional($settings->orientation_new_students)->format('Y-m-d')) }}">
+                                       value="{{ old('orientation_new_students', $settings->orientation_new_students) }}"
+                                       placeholder="e.g., 5th October, 2025">
                                 @error('orientation_new_students')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -120,18 +123,20 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="faculty_orientation" class="form-label">Faculty Orientation</label>
-                                <input type="date" class="form-control @error('faculty_orientation') is-invalid @enderror"
+                                <input type="text" class="form-control @error('faculty_orientation') is-invalid @enderror"
                                        id="faculty_orientation" name="faculty_orientation"
-                                       value="{{ old('faculty_orientation', optional($settings->faculty_orientation)->format('Y-m-d')) }}">
+                                       value="{{ old('faculty_orientation', $settings->faculty_orientation) }}"
+                                       placeholder="e.g., 6th October, 2025">
                                 @error('faculty_orientation')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="lectures_begin" class="form-label">Lectures Begin</label>
-                                <input type="date" class="form-control @error('lectures_begin') is-invalid @enderror"
+                                <input type="text" class="form-control @error('lectures_begin') is-invalid @enderror"
                                        id="lectures_begin" name="lectures_begin"
-                                       value="{{ old('lectures_begin', optional($settings->lectures_begin)->format('Y-m-d')) }}">
+                                       value="{{ old('lectures_begin', $settings->lectures_begin) }}"
+                                       placeholder="e.g., 10th October, 2025">
                                 @error('lectures_begin')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

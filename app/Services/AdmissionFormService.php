@@ -74,9 +74,9 @@ class AdmissionFormService
             'nationality' => $admissionForm->nationality ?? ($user->nationality ?? ''),
             'address_full' => $admissionForm->mailing_address ?? '',
             'admission_date' => $student->admission_date ? $student->admission_date->format('d/m/Y') : now()->format('d/m/Y'),
-            'programme_start_date' => $this->formatLongDate(
-                $formData->lectures_begin ?? $student->admission_date ?? now()
-            ),
+            'programme_start_date' => !empty($formData->lectures_begin)
+                ? $formData->lectures_begin
+                : $this->formatLongDate($student->admission_date ?? now()),
             'preferred_session' => $preferredSession,
             'preferred_campus' => $preferredCampus,
             'date' => ($formData->created_at ?? $student->admission_date ?? now())->format('d/m/Y'),
@@ -89,11 +89,11 @@ class AdmissionFormService
             'minimum_fee_amount' => $minimumFeeAmount !== null ? number_format($minimumFeeAmount, 2) : '',
             'balance_percentage' => $balancePercentage !== null ? number_format($balancePercentage, 2) . '%' : '',
             'balance_amount' => $balanceAmount !== null ? number_format($balanceAmount, 2) : '',
-            'paid_fees_by_date' => $formData->paid_fees_by_date ? $formData->paid_fees_by_date->format('d/m/Y') : '',
-            'registration_begins' => $formData->registration_begins ? $formData->registration_begins->format('d/m/Y') : '',
-            'orientation_new_students' => $formData->orientation_new_students ? $formData->orientation_new_students->format('d/m/Y') : '',
-            'faculty_orientation' => $formData->faculty_orientation ? $formData->faculty_orientation->format('d/m/Y') : '',
-            'lectures_begin' => $formData->lectures_begin ? $formData->lectures_begin->format('d/m/Y') : '',
+            'paid_fees_by_date' => $formData->paid_fees_by_date ?? '',
+            'registration_begins' => $formData->registration_begins ?? '',
+            'orientation_new_students' => $formData->orientation_new_students ?? '',
+            'faculty_orientation' => $formData->faculty_orientation ?? '',
+            'lectures_begin' => $formData->lectures_begin ?? '',
             
             // Additional fields
             'application_pin' => $user->serial_number ?? '',
