@@ -357,10 +357,12 @@ class SIPAutomationService
         }
 
         // Send SMS with credentials (non-blocking)
-        // Note: Many SMS gateways strip "@", so spell it as " AT ".
         try {
-            $smsLoginEmail = $student->student_id . '@delexesuniversity.edu.gh';
-            $smsMessage = "Admission Approved! Student ID: {$student->student_id}. Login Email: {$smsLoginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
+            $studentName = $user->name ?? 'Student';
+            $programName = optional($student->program)->name ?? 'your programme';
+            $loginUrl = url('/login');
+
+            $smsMessage = "CONGRATULATIONS MR/MS {$studentName}! You have been admitted to BSc. {$programName}. Login: Student ID {$student->student_id}, PIN {$tempPassword}. Change your password on first login: {$loginUrl}. Go to DOWNLOAD >Click ACCEPTANCE to download your admission letter.";
             $this->smsService->send($user->phone, $smsMessage);
             
             \Log::info("Admission approval SMS sent successfully", [
