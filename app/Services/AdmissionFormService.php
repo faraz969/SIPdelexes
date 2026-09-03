@@ -98,7 +98,7 @@ class AdmissionFormService
             // Additional fields
             'application_pin' => $user->serial_number ?? '',
             'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
-            'registrar_title' => 'Registrar',
+            'registrar_title' => 'Deputy Registrar',
             'registrar_signature' => $defaults ? $defaults->registrarSignatureSrc() : null,
             'bank_payment_lines' => $this->buildBankPaymentLines($defaults),
             'bank_name' => $defaults ? trim((string) $defaults->bank_name) : '',

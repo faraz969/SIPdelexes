@@ -359,7 +359,7 @@ class SIPAutomationService
         // Send SMS with credentials (non-blocking)
         // Note: Many SMS gateways strip "@", so spell it as " AT ".
         try {
-            $smsLoginEmail = $student->student_id . ' AT delexesuniversity.edu.gh';
+            $smsLoginEmail = $student->student_id . '@delexesuniversity.edu.gh';
             $smsMessage = "Admission Approved! Student ID: {$student->student_id}. Login Email: {$smsLoginEmail}. Password/PIN: {$tempPassword}. You must change your password on first login. Login: " . url('/login');
             $this->smsService->send($user->phone, $smsMessage);
             

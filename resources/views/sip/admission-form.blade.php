@@ -312,7 +312,7 @@
     <!-- Student Name and Date -->
     <div class="student-name-date">
         <div class="student-name">
-            <span><strong>{{ $data['student_name'] }}</strong></span>
+            <span><strong>Mr/Ms. {{ $data['student_name'] }}</strong></span>
         </div>
         <div class="document-date">{{ $data['date'] }}</div>
     </div>
@@ -424,11 +424,11 @@
         <div class="title">Arrangements for the semester are as follows:</div>
         <div class="dates-list">
             <div class="date-item">
-                <span class="date-label">Registration Period:</span>
+                <span class="date-label">Registration (Online):</span>
                 <span class="date-value">{{ $data['registration_begins'] }}</span>
             </div>
             <div class="date-item">
-                <span class="date-label">Orientation for new students:</span>
+                <span class="date-label">Orientation (General):</span>
                 <span class="date-value">{{ $data['orientation_new_students'] }}</span>
             </div>
             <div class="date-item">
