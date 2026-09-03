@@ -291,6 +291,7 @@
                                     <option value="regular" {{ old('offer_type', 'regular') === 'regular' ? 'selected' : '' }}>Regular</option>
                                     <option value="conditional" {{ old('offer_type') === 'conditional' ? 'selected' : '' }}>Conditional</option>
                                     <option value="mature" {{ old('offer_type') === 'mature' ? 'selected' : '' }}>Mature</option>
+                                    <option value="top-up" {{ old('offer_type') === 'top-up' ? 'selected' : '' }}>Top-up</option>
                                 </select>
                                 <small class="text-muted">This controls the wording on the student admission letter.</small>
                                 @error('offer_type')

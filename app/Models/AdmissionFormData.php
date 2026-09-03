@@ -26,7 +26,7 @@ class AdmissionFormData extends Model
         'generated_file_path',
     ];
 
-    public const OFFER_TYPES = ['regular', 'conditional', 'mature'];
+    public const OFFER_TYPES = ['regular', 'conditional', 'mature', 'top-up'];
 
     public static function normalizeOfferType(?string $type): string
     {

@@ -66,6 +66,7 @@ class AdmissionFormService
             'phone' => $user->phone ?? ($admissionForm->telephone ?? ''),
             'program' => $student->program->name ?? '',
             'course_title' => $student->program->name ?? '', // For "OFFER OF ADMISSION FOR { Course Title} DEGREE"
+            'program_duration' => trim((string) ($student->program->duration ?? '')) ?: '4 year',
             'department' => $student->department->name ?? '',
             'academic_year' => $student->academic_year ?? '',
             'level' => $level,
