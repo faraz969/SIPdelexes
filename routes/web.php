@@ -32,6 +32,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/applications/{id}', [App\Http\Controllers\AdminController::class, 'show'])->name('applications.show');
     Route::put('/applications/{id}/academic-program', [App\Http\Controllers\AdminController::class, 'updateAcademicProgram'])->name('applications.updateAcademicProgram');
     Route::post('/applications/{id}/status', [App\Http\Controllers\AdminController::class, 'updateStatus'])->name('applications.updateStatus');
+    Route::put('/applications/{id}/preferences', [App\Http\Controllers\AdminController::class, 'updatePreferences'])->name('applications.updatePreferences');
     Route::delete('/applications/{id}', [App\Http\Controllers\AdminController::class, 'destroy'])->name('applications.destroy');
     
     // Department Management

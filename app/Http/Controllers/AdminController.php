@@ -101,13 +101,18 @@ class AdminController extends Controller
         $canEditAcademicProgram = $application->registrar_status !== 'approved'
             && !Student::where('application_id', $application->id)->exists();
 
+        $sessions = \App\Models\Session::active()->ordered()->get();
+        $campuses = \App\Models\Campus::active()->ordered()->get();
+
         return view('admin.show', compact(
             'application',
             'form',
             'examRecords',
             'programFields',
             'availableAcademicYears',
-            'canEditAcademicProgram'
+            'canEditAcademicProgram',
+            'sessions',
+            'campuses'
         ));
     }
 
@@ -196,6 +201,34 @@ class AdminController extends Controller
         $application->status = $request->input('status') === 'successful' ? 'successful' : 'not_successful';
         $application->save();
         return Redirect::route('admin.dashboard')->with('status', 'Application status updated');
+    }
+
+    public function updatePreferences(Request $request, $id)
+    {
+        $request->validate([
+            'preferred_session' => 'nullable|string|max:255',
+            'preferred_campus' => 'nullable|string|max:255',
+        ]);
+
+        $application = Application::findOrFail($id);
+
+        // Update application JSON data
+        $data = is_array($application->data) ? $application->data : [];
+        $data['preferred_session'] = $request->input('preferred_session');
+        $data['preferred_campus'] = $request->input('preferred_campus');
+        $application->data = $data;
+        $application->save();
+
+        // Update structured AdmissionForm if it exists
+        $form = AdmissionForm::where('application_id', $application->id)->first();
+        if ($form) {
+            $form->preferred_session = $request->input('preferred_session');
+            $form->preferred_campus = $request->input('preferred_campus');
+            $form->save();
+        }
+
+        return Redirect::route('admin.applications.show', $application->id)
+            ->with('status', 'Preferred session and campus updated successfully.');
     }
 
     public function destroy($id)

@@ -125,6 +125,55 @@
     </div>
   </div>
 
+  <div class="card mb-3">
+    <div class="card-header">Preferred Session &amp; Campus</div>
+    <div class="card-body">
+      <form method="post" action="{{ route('admin.applications.updatePreferences', $application->id) }}">
+        @csrf
+        @method('PUT')
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="preferred_session" class="form-label">Preferred Session</label>
+            <select class="form-select @error('preferred_session') is-invalid @enderror"
+                    id="preferred_session" name="preferred_session">
+              <option value="">-- Select --</option>
+              @php $currentSession = $application->data['preferred_session'] ?? ($form->preferred_session ?? ''); @endphp
+              @foreach($sessions as $session)
+                <option value="{{ $session->name }}" {{ $currentSession === $session->name ? 'selected' : '' }}>{{ $session->name }}</option>
+              @endforeach
+              @if($currentSession && !$sessions->contains('name', $currentSession))
+                <option value="{{ $currentSession }}" selected>{{ $currentSession }}</option>
+              @endif
+            </select>
+            @error('preferred_session')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="preferred_campus" class="form-label">Preferred Campus</label>
+            <select class="form-select @error('preferred_campus') is-invalid @enderror"
+                    id="preferred_campus" name="preferred_campus">
+              <option value="">-- Select --</option>
+              @php $currentCampus = $application->data['preferred_campus'] ?? ($form->preferred_campus ?? ''); @endphp
+              @foreach($campuses as $campus)
+                <option value="{{ $campus->name }}" {{ $currentCampus === $campus->name ? 'selected' : '' }}>{{ $campus->name }}</option>
+              @endforeach
+              @if($currentCampus && !$campuses->contains('name', $currentCampus))
+                <option value="{{ $currentCampus }}" selected>{{ $currentCampus }}</option>
+              @endif
+            </select>
+            @error('preferred_campus')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+          </div>
+          <div class="col-md-4 mb-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Update Preferences</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   @if($form)
   <div class="card mb-3">
     <div class="card-header">Personal Data</div>

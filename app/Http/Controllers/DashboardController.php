@@ -228,6 +228,14 @@ class DashboardController extends Controller
 
     public function applicationSubmit(Request $request)
     {
+        $request->validate([
+            'preferred_session' => 'required|string|max:255',
+            'preferred_campus' => 'required|string|max:255',
+        ], [
+            'preferred_session.required' => 'Please select a preferred session.',
+            'preferred_campus.required' => 'Please select a preferred campus.',
+        ]);
+
         $user = Auth::user();
         $application = $user->applications()->latest()->first();
         if (! $application) {
