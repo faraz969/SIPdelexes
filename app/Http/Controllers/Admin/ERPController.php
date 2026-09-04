@@ -8,17 +8,23 @@ use App\Models\Student;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\ERPIntegrationService;
+use App\Services\ERPInvoiceSyncService;
 use App\Services\ActivityLogService;
 use App\Models\SiteSetting;
 
 class ERPController extends Controller
 {
     protected $erpService;
+    protected $invoiceSyncService;
     protected $activityLogService;
 
-    public function __construct(ERPIntegrationService $erpService, ActivityLogService $activityLogService)
-    {
+    public function __construct(
+        ERPIntegrationService $erpService,
+        ERPInvoiceSyncService $invoiceSyncService,
+        ActivityLogService $activityLogService
+    ) {
         $this->erpService = $erpService;
+        $this->invoiceSyncService = $invoiceSyncService;
         $this->activityLogService = $activityLogService;
     }
 
@@ -27,6 +33,8 @@ class ERPController extends Controller
      */
     public function dashboard()
     {
+        $this->invoiceSyncService->syncAllIfNeeded(10);
+
         $stats = [
             'total_students' => Student::count(),
             'active_students' => Student::where('academic_status', 'active')->count(),
@@ -196,6 +204,8 @@ class ERPController extends Controller
      */
     public function invoices()
     {
+        $this->invoiceSyncService->syncAllIfNeeded(10);
+
         $invoices = Invoice::with(['student.user', 'student.program'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -308,6 +318,8 @@ class ERPController extends Controller
      */
     public function showStudent(Student $student)
     {
+        $this->invoiceSyncService->syncForStudentIfNeeded($student, 5);
+
         $student->load(['user', 'program', 'department', 'invoices', 'payments', 'courseRegistrations', 'examPins', 'deferments']);
         
         return view('admin.erp.student-show', compact('student'));

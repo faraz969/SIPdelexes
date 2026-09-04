@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\Invoice;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ERPInvoiceSyncService
@@ -71,6 +72,35 @@ class ERPInvoiceSyncService
     }
 
     /**
+     * Sync a student unless a recent sync already ran (avoids slowing every page load).
+     */
+    public function syncForStudentIfNeeded(Student $student, int $ttlMinutes = 5): int
+    {
+        if (!$student->erp_student_name) {
+            return 0;
+        }
+
+        $cacheKey = 'erp_invoice_sync_student_' . $student->id;
+        if (Cache::has($cacheKey)) {
+            return 0;
+        }
+
+        try {
+            $synced = $this->syncForStudent($student);
+            Cache::put($cacheKey, true, now()->addMinutes(max(1, $ttlMinutes)));
+            return $synced;
+        } catch (\Throwable $e) {
+            Log::warning('ERP invoice sync failed', [
+                'student_id' => $student->student_id,
+                'error' => $e->getMessage(),
+            ]);
+            // Short backoff so a failing ERP does not block every request.
+            Cache::put($cacheKey, true, now()->addMinutes(2));
+            return 0;
+        }
+    }
+
+    /**
      * Sync invoices for all students with erp_student_name.
      */
     public function syncAll(): array
@@ -100,6 +130,28 @@ class ERPInvoiceSyncService
             'students_processed' => $students->count(),
             'errors' => $errors,
         ];
+    }
+
+    /**
+     * Sync all students unless a recent full sync already ran.
+     */
+    public function syncAllIfNeeded(int $ttlMinutes = 10): array
+    {
+        $cacheKey = 'erp_invoice_sync_all';
+        if (Cache::has($cacheKey)) {
+            return [
+                'synced' => 0,
+                'students_processed' => 0,
+                'errors' => [],
+                'skipped' => true,
+            ];
+        }
+
+        $result = $this->syncAll();
+        Cache::put($cacheKey, true, now()->addMinutes(max(1, $ttlMinutes)));
+        $result['skipped'] = false;
+
+        return $result;
     }
 
     protected function mapErpStatusToSip(string $erpStatus): string

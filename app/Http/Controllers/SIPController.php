@@ -19,17 +19,20 @@ use App\Models\Download;
 use App\Models\SipDocument;
 use App\Models\AdmissionFormData;
 use App\Services\ActivityLogService;
+use App\Services\ERPInvoiceSyncService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 class SIPController extends Controller
 {
     protected $activityLogService;
+    protected $invoiceSyncService;
 
-    public function __construct(ActivityLogService $activityLogService)
+    public function __construct(ActivityLogService $activityLogService, ERPInvoiceSyncService $invoiceSyncService)
     {
         $this->middleware('auth');
         $this->activityLogService = $activityLogService;
+        $this->invoiceSyncService = $invoiceSyncService;
     }
 
     /**
@@ -74,6 +77,10 @@ class SIPController extends Controller
             'model_id' => $student->id,
             'system_source' => 'SIP',
         ]);
+
+        // Pull latest invoices from ERP so dashboard balance is up to date
+        // without requiring the student to open "View Invoices" first.
+        $this->invoiceSyncService->syncForStudentIfNeeded($student, 5);
 
         $stats = [
             'total_invoices' => $student->invoices()->count(),

@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('erp:sync-invoices')->daily()->at('02:00');
+        $schedule->command('erp:sync-invoices')->hourly();
     }
 
     /**
