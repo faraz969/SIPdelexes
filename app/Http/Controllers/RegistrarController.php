@@ -29,6 +29,7 @@ class RegistrarController extends Controller
         $academicYear = trim((string) $request->get('academic_year', ''));
         $departmentId = $request->get('department_id');
         $programId = $request->get('program_id');
+        $search = trim((string) $request->get('search', ''));
 
         $departments = Department::orderBy('name')->get();
 
@@ -65,6 +66,10 @@ class RegistrarController extends Controller
 
         if (!empty($programId)) {
             $baseQuery->whereSelectedProgram($programId);
+        }
+
+        if ($search !== '') {
+            $baseQuery->search($search);
         }
 
         $pendingApplications = (clone $baseQuery)
@@ -105,7 +110,8 @@ class RegistrarController extends Controller
             'academicYear',
             'departmentId',
             'programs',
-            'programId'
+            'programId',
+            'search'
         ));
     }
 
@@ -121,6 +127,7 @@ class RegistrarController extends Controller
         $academicYear = trim((string) $request->get('academic_year', ''));
         $departmentId = $request->get('department_id');
         $programId = $request->get('program_id');
+        $search = trim((string) $request->get('search', ''));
 
         $departments = Department::orderBy('name')->get();
 
@@ -159,6 +166,10 @@ class RegistrarController extends Controller
             $baseQuery->whereSelectedProgram($programId);
         }
 
+        if ($search !== '') {
+            $baseQuery->search($search);
+        }
+
         if ($status === 'pending') {
             $baseQuery->where('hod_status', 'approved')->where('registrar_status', 'pending');
             $baseQuery->orderBy('hod_reviewed_at', 'desc');
@@ -187,6 +198,7 @@ class RegistrarController extends Controller
             'departmentId' => $departmentId,
             'programs' => $programs,
             'programId' => $programId,
+            'search' => $search,
         ]);
     }
 

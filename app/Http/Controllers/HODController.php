@@ -31,6 +31,7 @@ class HODController extends Controller
 
         $academicYear = trim((string) $request->get('academic_year', ''));
         $programId = $request->get('program_id');
+        $search = trim((string) $request->get('search', ''));
 
         $baseQuery = Application::query()
             ->where('status', '!=', 'draft')
@@ -59,6 +60,9 @@ class HODController extends Controller
         }
         if (!empty($programId)) {
             $filteredQuery->whereSelectedProgram($programId);
+        }
+        if ($search !== '') {
+            $filteredQuery->search($search);
         }
 
         $pendingApplications = (clone $filteredQuery)
@@ -87,6 +91,7 @@ class HODController extends Controller
             'academicYear',
             'programs',
             'programId',
+            'search',
             'stats'
         ));
     }
@@ -109,6 +114,7 @@ class HODController extends Controller
 
         $academicYear = trim((string) $request->get('academic_year', ''));
         $programId = $request->get('program_id');
+        $search = trim((string) $request->get('search', ''));
 
         $baseQuery = Application::query()
             ->where('status', '!=', 'draft')
@@ -137,6 +143,9 @@ class HODController extends Controller
         }
         if (!empty($programId)) {
             $filteredQuery->whereSelectedProgram($programId);
+        }
+        if ($search !== '') {
+            $filteredQuery->search($search);
         }
 
         $filteredQuery->where('hod_status', $status);
@@ -166,6 +175,7 @@ class HODController extends Controller
             'academicYear' => $academicYear,
             'programs' => $programs,
             'programId' => $programId,
+            'search' => $search,
         ]);
     }
 

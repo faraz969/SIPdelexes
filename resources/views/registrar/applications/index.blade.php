@@ -20,6 +20,12 @@
     <form method="GET" action="{{ route('registrar.applications.' . $status) }}" class="card mb-4">
         <div class="card-body">
             <div class="row align-items-end g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="{{ $search ?? '' }}"
+                           placeholder="Search name, email, phone, serial, application #, session, campus, program...">
+                </div>
                 <div class="col-md-3">
                     <label for="department_id" class="form-label">Department</label>
                     <select name="department_id" id="department_id" class="form-select" onchange="this.form.submit()">
@@ -51,12 +57,20 @@
                         @endforeach
                     </select>
                 </div>
-                @if($academicYear || $departmentId || !empty($programId))
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                @if($academicYear || $departmentId || !empty($programId) || !empty($search))
                     <div class="col-md-2">
-                        <a href="{{ route('registrar.applications.' . $status) }}" class="btn btn-outline-secondary">Clear</a>
+                        <a href="{{ route('registrar.applications.' . $status) }}" class="btn btn-outline-secondary w-100">Clear</a>
                     </div>
                 @endif
             </div>
+            @if(!empty($search))
+                <small class="text-muted d-block mt-2">Searching for: "{{ $search }}" ({{ $applications->count() }} result(s))</small>
+            @endif
         </div>
     </form>
 

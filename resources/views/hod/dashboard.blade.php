@@ -42,7 +42,13 @@
     <form method="GET" action="{{ route('hod.dashboard') }}" class="card mb-4">
         <div class="card-body">
             <div class="row align-items-end g-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="{{ $search ?? '' }}"
+                           placeholder="Search name, email, phone, serial, application #, session, campus, program...">
+                </div>
+                <div class="col-md-3">
                     <label for="academic_year" class="form-label">Academic Year</label>
                     <select name="academic_year" id="academic_year" class="form-select" onchange="this.form.submit()">
                         <option value="">All academic years</option>
@@ -51,7 +57,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="program_id" class="form-label">Program</label>
                     <select name="program_id" id="program_id" class="form-select" onchange="this.form.submit()">
                         <option value="">All programs</option>
@@ -62,12 +68,20 @@
                         @endforeach
                     </select>
                 </div>
-                @if($academicYear || !empty($programId))
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                @if($academicYear || !empty($programId) || !empty($search))
                     <div class="col-md-2">
-                        <a href="{{ route('hod.dashboard') }}" class="btn btn-outline-secondary">Clear</a>
+                        <a href="{{ route('hod.dashboard') }}" class="btn btn-outline-secondary w-100">Clear</a>
                     </div>
                 @endif
             </div>
+            @if(!empty($search))
+                <small class="text-muted d-block mt-2">Searching for: "{{ $search }}"</small>
+            @endif
         </div>
     </form>
 
