@@ -189,7 +189,7 @@
         <div class="col-md-6"><strong>Passport #:</strong> {{ $form->passport_number }}</div>
         <div class="col-md-12"><strong>Address:</strong> {{ $form->mailing_address }}</div>
         <div class="col-md-6"><strong>Emergency Contact:</strong> {{ $form->emergency_contact }}</div>
-        <div class="col-md-6"><strong>Telephone:</strong> {{ $form->telephone }}</div>
+        <div class="col-md-6"><strong>Telephone:</strong> {{ $application->user->phone ?? '-' }}</div>
         <div class="col-md-6"><strong>Email:</strong> {{ $form->email }}</div>
         <div class="col-md-6"><strong>Hostel Required:</strong> {{ $form->hostel_required ? 'Yes' : 'No' }}</div>
         <div class="col-md-12"><strong>Disability:</strong> {{ $form->has_disability ? 'Yes' : 'No' }} - {{ $form->disability_details }}</div>
