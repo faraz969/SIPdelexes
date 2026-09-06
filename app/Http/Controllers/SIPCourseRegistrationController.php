@@ -11,6 +11,8 @@ use App\Models\SemesterCourseOffering;
 use App\Models\SiteSetting;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class SIPCourseRegistrationController extends Controller
 {
@@ -231,5 +233,148 @@ class SIPCourseRegistrationController extends Controller
             ->get();
 
         return view('sip.course-registration.list', compact('student', 'registrations'));
+    }
+
+    /**
+     * Download Proof of Registration PDF for a completed course registration.
+     */
+    public function downloadProof(CourseRegistration $registration)
+    {
+        $student = $this->getStudent();
+
+        if ((int) $registration->student_id !== (int) $student->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $student->load(['user', 'program', 'preferredSession', 'application.admissionForm']);
+
+        $admissionForm = optional($student->application)->admissionForm;
+        $applicationData = is_array(optional($student->application)->data)
+            ? $student->application->data
+            : [];
+        $studentName = optional($student->user)->name
+            ?: ($admissionForm->full_name ?? $student->student_id);
+        $programmeName = optional($student->program)->name ?: 'N/A';
+        $level = Student::normalizeLevel($student->level ?? null);
+        $levelLabel = $level . 'L';
+
+        $doaDate = $student->admission_date
+            ?: optional($registration->registered_at)
+            ?: now();
+        $doa = strtoupper(Carbon::parse($doaDate)->format('MY'));
+
+        $durationYears = $this->estimateProgramYears(optional($student->program)->duration);
+        $doc = strtoupper(Carbon::parse($doaDate)->copy()->addYears($durationYears)->format('MY'));
+
+        $campus = $admissionForm->preferred_campus
+            ?? ($applicationData['preferred_campus'] ?? null)
+            ?? '—';
+        $session = optional($student->preferredSession)->name
+            ?? $admissionForm->preferred_session
+            ?? ($applicationData['preferred_session'] ?? null)
+            ?? '—';
+
+        $semesterLabel = trim($registration->academic_year . ' ' . $this->formatSemesterLabel($registration->semester));
+
+        $courses = [];
+        $totalCredits = 0;
+        foreach (($registration->courses ?? []) as $course) {
+            $credits = $course['credit_units'] ?? $course['credits'] ?? 0;
+            $credits = is_numeric($credits) ? (float) $credits : 0;
+            $totalCredits += $credits;
+            $courses[] = [
+                'code' => $course['course_code'] ?? $course['code'] ?? 'N/A',
+                'title' => strtoupper((string) ($course['course_title'] ?? $course['name'] ?? 'N/A')),
+                'credits' => $credits == (int) $credits ? (int) $credits : rtrim(rtrim(number_format($credits, 2), '0'), '.'),
+            ];
+        }
+
+        $logoPath = public_path('images/logo_blue.png');
+        if (!file_exists($logoPath)) {
+            $logoPath = public_path('images/logo.png');
+        }
+        $logoSrc = file_exists($logoPath) ? $logoPath : null;
+
+        $photoSrc = $this->resolveStudentPhotoSrc($admissionForm);
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'course_registration_proof_downloaded',
+            'model_type' => CourseRegistration::class,
+            'model_id' => $registration->id,
+            'system_source' => 'SIP',
+            'description' => "Downloaded proof of registration for {$registration->semester} {$registration->academic_year}",
+        ]);
+
+        $pdf = Pdf::loadView('sip.course-registration.proof-pdf', [
+            'student' => $student,
+            'studentName' => $studentName,
+            'programmeName' => $programmeName,
+            'levelLabel' => $levelLabel,
+            'doa' => $doa,
+            'doc' => $doc,
+            'campus' => $campus,
+            'session' => $session,
+            'semesterLabel' => $semesterLabel,
+            'printedOn' => now()->format('F j, Y'),
+            'courses' => $courses,
+            'totalCredits' => $totalCredits == (int) $totalCredits ? (int) $totalCredits : rtrim(rtrim(number_format($totalCredits, 2), '0'), '.'),
+            'logoSrc' => $logoSrc,
+            'photoSrc' => $photoSrc,
+        ])->setPaper('a4', 'portrait')
+          ->setOption('enable-remote', false);
+
+        $fileName = 'Proof_of_Registration_' . $student->student_id . '_' . str_replace(['/', ' '], ['-', '_'], $registration->academic_year . '_' . $registration->semester) . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    protected function formatSemesterLabel(?string $semester): string
+    {
+        $semester = trim((string) $semester);
+        $map = [
+            'First Semester' => 'Semester 1',
+            'Second Semester' => 'Semester 2',
+            'Third Semester' => 'Semester 3',
+            'Semester 1' => 'Semester 1',
+            'Semester 2' => 'Semester 2',
+            'Semester 3' => 'Semester 3',
+        ];
+
+        return $map[$semester] ?? $semester;
+    }
+
+    protected function estimateProgramYears(?string $duration): int
+    {
+        if ($duration && preg_match('/(\d+)/', $duration, $matches)) {
+            $years = (int) $matches[1];
+            if ($years > 0 && $years <= 10) {
+                return $years;
+            }
+        }
+
+        return 4;
+    }
+
+    protected function resolveStudentPhotoSrc($admissionForm): ?string
+    {
+        if (!$admissionForm || !is_array($admissionForm->uploads ?? null)) {
+            return null;
+        }
+
+        $relative = $admissionForm->uploads['passport_picture'] ?? null;
+        if (empty($relative)) {
+            return null;
+        }
+
+        $fullPath = storage_path('app/public/' . ltrim($relative, '/'));
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
     }
 }

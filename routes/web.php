@@ -242,6 +242,7 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::get('/', [App\Http\Controllers\SIPCourseRegistrationController::class, 'showRegistrationForm'])->name('show');
         Route::post('/', [App\Http\Controllers\SIPCourseRegistrationController::class, 'registerCourses'])->name('register');
         Route::get('/list', [App\Http\Controllers\SIPCourseRegistrationController::class, 'showRegisteredCourses'])->name('list');
+        Route::get('/{registration}/proof', [App\Http\Controllers\SIPCourseRegistrationController::class, 'downloadProof'])->name('proof');
     });
     
     // Exam PIN

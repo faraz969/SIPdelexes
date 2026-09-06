@@ -19,17 +19,20 @@
     @else
         @foreach($registrations as $registration)
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         {{ $registration->semester }} - {{ $registration->academic_year }}
                         @if($registration->status === 'registered')
-                            <span class="badge bg-success float-end">Registered</span>
+                            <span class="badge bg-success">Registered</span>
                         @elseif($registration->status === 'late')
-                            <span class="badge bg-warning float-end">Late Registration</span>
+                            <span class="badge bg-warning">Late Registration</span>
                         @else
-                            <span class="badge bg-secondary float-end">{{ ucfirst($registration->status) }}</span>
+                            <span class="badge bg-secondary">{{ ucfirst($registration->status) }}</span>
                         @endif
                     </h5>
+                    <a href="{{ route('sip.course-registration.proof', $registration) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-file-pdf"></i> Download Proof of Registration
+                    </a>
                 </div>
                 <div class="card-body">
                     @if($registration->is_late_registration && $registration->late_fee > 0)
