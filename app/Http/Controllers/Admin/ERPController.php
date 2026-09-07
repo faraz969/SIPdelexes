@@ -10,6 +10,8 @@ use App\Models\Payment;
 use App\Services\ERPIntegrationService;
 use App\Services\ERPInvoiceSyncService;
 use App\Services\ActivityLogService;
+use App\Services\PaystackService;
+use App\Http\Controllers\SIPPaymentController;
 use App\Models\SiteSetting;
 
 class ERPController extends Controller
@@ -17,15 +19,18 @@ class ERPController extends Controller
     protected $erpService;
     protected $invoiceSyncService;
     protected $activityLogService;
+    protected $paystackService;
 
     public function __construct(
         ERPIntegrationService $erpService,
         ERPInvoiceSyncService $invoiceSyncService,
-        ActivityLogService $activityLogService
+        ActivityLogService $activityLogService,
+        PaystackService $paystackService
     ) {
         $this->erpService = $erpService;
         $this->invoiceSyncService = $invoiceSyncService;
         $this->activityLogService = $activityLogService;
+        $this->paystackService = $paystackService;
     }
 
     /**
@@ -265,37 +270,108 @@ class ERPController extends Controller
     }
 
     /**
-     * Manually process payment (mock ERP confirmation)
+     * Process / recover a payment.
+     * - Paystack (processing/pending): re-verify with Paystack and finalize + sync ERP
+     * - Completed but ERP pending: retry ERP Payment Entry sync
+     * - Other (e.g. bank slip): manual SIP status update
      */
     public function processPayment(Request $request, Payment $payment)
     {
+        $payment->load(['invoice', 'student']);
+
+        // Recover / complete Paystack payments that are stuck after a successful gateway charge.
+        if ($payment->payment_method === 'paystack' && in_array($payment->status, ['processing', 'pending'], true)) {
+            $verification = $this->paystackService->verify($payment->payment_reference);
+
+            if (!$verification['success']) {
+                return redirect()->route('admin.erp.payments')
+                    ->with('error', 'Paystack verification failed: ' . ($verification['message'] ?? 'Unknown error'));
+            }
+
+            $verifiedAmount = round((float) ($verification['amount_ghs'] ?? 0), 2);
+            $expectedAmount = round((float) $payment->amount, 2);
+            $charged = round((float) ($verification['charged_amount_ghs'] ?? 0), 2);
+            $fees = round(((float) ($verification['fees_pesewas'] ?? 0)) / 100, 2);
+            $netCharged = round($charged - $fees, 2);
+
+            if (
+                $verifiedAmount > 0
+                && abs($verifiedAmount - $expectedAmount) > 0.01
+                && abs($netCharged - $expectedAmount) > 0.01
+            ) {
+                return redirect()->route('admin.erp.payments')
+                    ->with('error', 'Paystack amount does not match SIP payment amount.');
+            }
+
+            $result = app(SIPPaymentController::class)->finalizePayment($payment, $verification['data'] ?? []);
+
+            return redirect()->route('admin.erp.payments')
+                ->with(
+                    $result['erp_synced'] ? 'success' : 'info',
+                    $result['erp_synced']
+                        ? 'Paystack payment verified and synced to ERP successfully.'
+                        : 'Paystack payment marked completed in SIP, but ERP sync is still pending. Check ERP connectivity / invoice link.'
+                );
+        }
+
+        // Retry ERP sync for already-completed SIP payments.
+        if (
+            $payment->status === 'completed'
+            && $payment->erp_status !== 'synced'
+            && $payment->invoice
+            && $payment->invoice->erp_invoice_id
+        ) {
+            try {
+                $result = $this->erpService->submitPaymentEntry(
+                    $payment->invoice->erp_invoice_id,
+                    (float) $payment->amount,
+                    $payment->payment_reference
+                );
+
+                if (!empty($result['erp_payment_id'])) {
+                    $payment->update([
+                        'erp_payment_id' => $result['erp_payment_id'],
+                        'erp_status' => 'synced',
+                        'erp_synced_at' => now(),
+                        'erp_response' => $result,
+                    ]);
+
+                    if ($payment->invoice) {
+                        $payment->invoice->updateBalance();
+                    }
+
+                    return redirect()->route('admin.erp.payments')
+                        ->with('success', 'Payment synced to ERP successfully.');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Admin ERP payment retry failed', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return redirect()->route('admin.erp.payments')
+                    ->with('error', 'ERP sync failed: ' . $e->getMessage());
+            }
+        }
+
         $request->validate([
             'status' => 'required|in:completed,failed',
             'erp_payment_id' => 'nullable|string',
         ]);
 
         $oldStatus = $payment->status;
-        
+
         $payment->update([
             'status' => $request->status,
-            'erp_payment_id' => $request->erp_payment_id ?? 'ERP-PAY-' . uniqid(),
-            'erp_status' => 'synced',
-            'erp_synced_at' => now(),
+            'erp_payment_id' => $request->erp_payment_id ?? $payment->erp_payment_id ?? ('ERP-PAY-' . uniqid()),
+            'erp_status' => $request->status === 'completed' ? 'synced' : ($payment->erp_status ?: 'pending'),
+            'erp_synced_at' => $request->status === 'completed' ? now() : $payment->erp_synced_at,
             'erp_response' => json_encode(['status' => $request->status, 'processed_by' => auth()->id()]),
         ]);
 
-        // Update invoice balance if payment is completed
         if ($request->status === 'completed' && $payment->invoice) {
             $payment->invoice->updateBalance();
         }
-
-        \Log::info("Payment Processed Manually", [
-            'payment_id' => $payment->id,
-            'payment_reference' => $payment->payment_reference,
-            'old_status' => $oldStatus,
-            'new_status' => $request->status,
-            'processed_by' => auth()->id(),
-        ]);
 
         $this->activityLogService->log([
             'user_id' => auth()->id(),

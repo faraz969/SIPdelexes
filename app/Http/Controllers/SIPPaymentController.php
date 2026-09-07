@@ -344,15 +344,26 @@ class SIPPaymentController extends Controller
         }
 
         $verifiedAmount = round((float) ($verification['amount_ghs'] ?? 0), 2);
-        if ($verifiedAmount > 0 && abs($verifiedAmount - (float) $payment->amount) > 0.01) {
-            \Log::warning('Paystack amount mismatch', [
-                'payment_id' => $payment->id,
-                'expected' => $payment->amount,
-                'verified' => $verifiedAmount,
-            ]);
+        $expectedAmount = round((float) $payment->amount, 2);
+        if ($verifiedAmount > 0 && abs($verifiedAmount - $expectedAmount) > 0.01) {
+            // Fallback: charged amount minus fees should still match the invoice amount.
+            $charged = round((float) ($verification['charged_amount_ghs'] ?? 0), 2);
+            $fees = round(((float) ($verification['fees_pesewas'] ?? 0)) / 100, 2);
+            $netCharged = round($charged - $fees, 2);
 
-            return redirect()->route('sip.payments.pay', $payment->invoice_id)
-                ->with('error', 'Payment amount mismatch. Please contact support.');
+            if (abs($netCharged - $expectedAmount) > 0.01) {
+                \Log::warning('Paystack amount mismatch', [
+                    'payment_id' => $payment->id,
+                    'expected' => $expectedAmount,
+                    'verified_requested' => $verifiedAmount,
+                    'charged' => $charged,
+                    'fees' => $fees,
+                    'net_charged' => $netCharged,
+                ]);
+
+                return redirect()->route('sip.payments.pay', $payment->invoice_id)
+                    ->with('error', 'Payment amount mismatch. Please contact support.');
+            }
         }
 
         $completed = $this->finalizePayment($payment, $verification['data'] ?? []);
@@ -368,8 +379,9 @@ class SIPPaymentController extends Controller
 
     /**
      * Mark payment complete and sync to ERP when possible.
+     * Public so admin can recover stuck Paystack payments.
      */
-    protected function finalizePayment(Payment $payment, array $paystackData = []): array
+    public function finalizePayment(Payment $payment, array $paystackData = []): array
     {
         if ($payment->status === 'completed') {
             return ['erp_synced' => $payment->erp_status === 'synced'];

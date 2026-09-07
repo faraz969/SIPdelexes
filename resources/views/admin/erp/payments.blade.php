@@ -96,8 +96,16 @@
                                 <td>
                                     @if($payment->status === 'processing' || $payment->status === 'pending')
                                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#processModal{{ $payment->id }}">
-                                            <i class="fas fa-check"></i> Process
+                                            <i class="fas fa-check"></i>
+                                            {{ $payment->payment_method === 'paystack' ? 'Verify & Sync' : 'Process' }}
                                         </button>
+                                    @elseif($payment->status === 'completed' && $payment->erp_status !== 'synced')
+                                        <form method="POST" action="{{ route('admin.erp.payments.process', $payment->id) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Retry ERP sync for this completed payment?');">
+                                                <i class="fas fa-sync"></i> Retry ERP Sync
+                                            </button>
+                                        </form>
                                     @endif
                                 </td>
                             </tr>

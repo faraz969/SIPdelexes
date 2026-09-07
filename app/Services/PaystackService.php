@@ -151,8 +151,13 @@ class PaystackService
             return [
                 'success' => true,
                 'data' => $transaction,
-                'amount_pesewas' => (int) ($transaction['amount'] ?? 0),
-                'amount_ghs' => ((int) ($transaction['amount'] ?? 0)) / 100,
+                // Paystack "amount" can include gateway fees when the customer pays fees.
+                // Prefer requested_amount (what SIP asked for) for invoice matching.
+                'amount_pesewas' => (int) ($transaction['requested_amount'] ?? $transaction['amount'] ?? 0),
+                'amount_ghs' => ((int) ($transaction['requested_amount'] ?? $transaction['amount'] ?? 0)) / 100,
+                'charged_amount_pesewas' => (int) ($transaction['amount'] ?? 0),
+                'charged_amount_ghs' => ((int) ($transaction['amount'] ?? 0)) / 100,
+                'fees_pesewas' => (int) ($transaction['fees'] ?? 0),
                 'transaction_id' => $transaction['id'] ?? null,
                 'reference' => $transaction['reference'] ?? $reference,
             ];
