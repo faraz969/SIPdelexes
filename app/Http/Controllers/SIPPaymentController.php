@@ -14,6 +14,7 @@ use App\Services\ERPIntegrationService;
 use App\Services\ERPInvoiceSyncService;
 use App\Services\ActivityLogService;
 use App\Services\PaystackService;
+use App\Services\PaystackReconciliationService;
 use Illuminate\Support\Str;
 
 class SIPPaymentController extends Controller
@@ -22,18 +23,21 @@ class SIPPaymentController extends Controller
     protected $invoiceSyncService;
     protected $activityLogService;
     protected $paystackService;
+    protected $paystackReconciliation;
 
     public function __construct(
         ERPIntegrationService $erpService,
         ERPInvoiceSyncService $invoiceSyncService,
         ActivityLogService $activityLogService,
-        PaystackService $paystackService
+        PaystackService $paystackService,
+        PaystackReconciliationService $paystackReconciliation
     ) {
         $this->middleware('auth');
         $this->erpService = $erpService;
         $this->invoiceSyncService = $invoiceSyncService;
         $this->activityLogService = $activityLogService;
         $this->paystackService = $paystackService;
+        $this->paystackReconciliation = $paystackReconciliation;
     }
 
     /**
@@ -80,6 +84,17 @@ class SIPPaymentController extends Controller
     public function paymentHistory()
     {
         $student = $this->getStudent();
+
+        // Auto-mark abandoned Paystack attempts as failed (and finalize successes).
+        try {
+            $this->paystackReconciliation->reconcilePendingIfNeeded($student->id);
+        } catch (\Throwable $e) {
+            \Log::warning('Paystack reconcile on payment history failed', [
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $payments = $student->payments()
             ->with('invoice')
             ->orderBy('created_at', 'desc')

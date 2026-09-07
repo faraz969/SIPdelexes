@@ -11,6 +11,7 @@ use App\Services\ERPIntegrationService;
 use App\Services\ERPInvoiceSyncService;
 use App\Services\ActivityLogService;
 use App\Services\PaystackService;
+use App\Services\PaystackReconciliationService;
 use App\Http\Controllers\SIPPaymentController;
 use App\Models\SiteSetting;
 
@@ -20,17 +21,20 @@ class ERPController extends Controller
     protected $invoiceSyncService;
     protected $activityLogService;
     protected $paystackService;
+    protected $paystackReconciliation;
 
     public function __construct(
         ERPIntegrationService $erpService,
         ERPInvoiceSyncService $invoiceSyncService,
         ActivityLogService $activityLogService,
-        PaystackService $paystackService
+        PaystackService $paystackService,
+        PaystackReconciliationService $paystackReconciliation
     ) {
         $this->erpService = $erpService;
         $this->invoiceSyncService = $invoiceSyncService;
         $this->activityLogService = $activityLogService;
         $this->paystackService = $paystackService;
+        $this->paystackReconciliation = $paystackReconciliation;
     }
 
     /**
@@ -254,6 +258,14 @@ class ERPController extends Controller
      */
     public function payments()
     {
+        try {
+            $this->paystackReconciliation->reconcilePendingIfNeeded();
+        } catch (\Throwable $e) {
+            \Log::warning('Paystack reconcile on admin payments failed', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $payments = Payment::with(['student.user', 'invoice'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -261,7 +273,7 @@ class ERPController extends Controller
         $stats = [
             'total' => Payment::count(),
             'completed' => Payment::where('status', 'completed')->count(),
-            'pending' => Payment::where('status', 'pending')->count(),
+            'pending' => Payment::whereIn('status', ['pending', 'processing'])->count(),
             'failed' => Payment::where('status', 'failed')->count(),
             'total_amount' => Payment::where('status', 'completed')->sum('amount'),
         ];

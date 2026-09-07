@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('erp:sync-invoices')->hourly();
+        $schedule->command('paystack:reconcile-payments')->everyFifteenMinutes();
     }
 
     /**
