@@ -141,10 +141,16 @@ class PaystackService
             $transaction = $payload['data'] ?? [];
 
             if (($payload['status'] ?? false) !== true || ($transaction['status'] ?? '') !== 'success') {
+                $gatewayStatus = (string) ($transaction['status'] ?? 'unknown');
+                $gatewayMessage = $transaction['gateway_response']
+                    ?? $payload['message']
+                    ?? 'Payment was not successful.';
+
                 return [
                     'success' => false,
-                    'message' => $transaction['gateway_response'] ?? 'Payment was not successful.',
+                    'message' => trim($gatewayMessage),
                     'data' => $transaction,
+                    'paystack_status' => $gatewayStatus,
                 ];
             }
 

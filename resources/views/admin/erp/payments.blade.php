@@ -8,6 +8,25 @@
         <div class="col-12">
             <h2 class="mb-4"><i class="fas fa-credit-card"></i> Payments</h2>
             <a href="{{ route('admin.erp.dashboard') }}" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> Back to ERP Dashboard</a>
+
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    {{ session('info') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -94,10 +113,16 @@
                                 </td>
                                 <td>{{ $payment->created_at->format('d M Y H:i') }}</td>
                                 <td>
-                                    @if($payment->status === 'processing' || $payment->status === 'pending')
+                                    @if(($payment->status === 'processing' || $payment->status === 'pending') && $payment->payment_method === 'paystack')
+                                        <form method="POST" action="{{ route('admin.erp.payments.process', $payment->id) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Verify this Paystack payment and sync to ERP if successful?');">
+                                                <i class="fas fa-check"></i> Verify & Sync
+                                            </button>
+                                        </form>
+                                    @elseif($payment->status === 'processing' || $payment->status === 'pending')
                                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#processModal{{ $payment->id }}">
-                                            <i class="fas fa-check"></i>
-                                            {{ $payment->payment_method === 'paystack' ? 'Verify & Sync' : 'Process' }}
+                                            <i class="fas fa-check"></i> Process
                                         </button>
                                     @elseif($payment->status === 'completed' && $payment->erp_status !== 'synced')
                                         <form method="POST" action="{{ route('admin.erp.payments.process', $payment->id) }}" class="d-inline">
@@ -110,8 +135,8 @@
                                 </td>
                             </tr>
 
-                            <!-- Process Payment Modal -->
-                            @if($payment->status === 'processing' || $payment->status === 'pending')
+                            <!-- Process Payment Modal (non-Paystack only) -->
+                            @if(($payment->status === 'processing' || $payment->status === 'pending') && $payment->payment_method !== 'paystack')
                             <div class="modal fade" id="processModal{{ $payment->id }}" tabindex="-1">
                                 <div class="modal-dialog">
                                     <div class="modal-content">

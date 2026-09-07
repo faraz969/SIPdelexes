@@ -284,8 +284,32 @@ class ERPController extends Controller
             $verification = $this->paystackService->verify($payment->payment_reference);
 
             if (!$verification['success']) {
+                $paystackStatus = $verification['data']['status'] ?? $verification['paystack_status'] ?? null;
+                $message = $verification['message'] ?? 'Payment was not successful.';
+
+                // Only mark failed when Paystack confirmed a non-success terminal/incomplete state.
+                $markFailed = in_array($paystackStatus, ['abandoned', 'failed', 'reversed'], true);
+
+                if ($markFailed) {
+                    $payment->update([
+                        'status' => 'failed',
+                        'payment_details' => array_merge($payment->payment_details ?? [], [
+                            'paystack' => $verification['data'] ?? [],
+                            'verification_error' => $message,
+                            'marked_failed_by' => 'admin_verify',
+                            'marked_failed_at' => now()->toIso8601String(),
+                        ]),
+                    ]);
+                }
+
                 return redirect()->route('admin.erp.payments')
-                    ->with('error', 'Paystack verification failed: ' . ($verification['message'] ?? 'Unknown error'));
+                    ->with(
+                        'error',
+                        'Paystack payment incomplete'
+                            . ($paystackStatus ? " (status: {$paystackStatus})" : '')
+                            . ': ' . $message
+                            . ($markFailed ? ' Marked as failed in SIP.' : '')
+                    );
             }
 
             $verifiedAmount = round((float) ($verification['amount_ghs'] ?? 0), 2);
