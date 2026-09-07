@@ -383,16 +383,132 @@
                                     @endif
                                 </p>
                                 <p><strong>Reviewed At:</strong> {{ $application->registrar_reviewed_at ? $application->registrar_reviewed_at->format('M d, Y H:i') : '-' }}</p>
+                                @if($application->registrar_status === 'approved' && isset($admissionFormData) && $admissionFormData)
+                                    <p><strong>Current Offer Type:</strong>
+                                        <span class="badge bg-info">{{ ucfirst(str_replace('-', ' ', $admissionFormData->offer_type ?? 'regular')) }}</span>
+                                    </p>
+                                    @if(($admissionFormData->offer_type ?? '') === 'conditional')
+                                        <p><strong>Conditional Subject:</strong> {{ $admissionFormData->conditional_subject ?? '-' }}</p>
+                                    @endif
+                                    @if(isset($student) && $student)
+                                        <p><strong>Student Level:</strong> {{ $student->level ?? '-' }}</p>
+                                        <p><strong>Offer Accepted:</strong>
+                                            @if($admissionFormData->offer_accepted_at)
+                                                <span class="badge bg-success">Yes</span>
+                                                <small class="text-muted">({{ $admissionFormData->offer_accepted_at->format('M d, Y H:i') }})</small>
+                                            @else
+                                                <span class="badge bg-warning text-dark">Not yet</span>
+                                            @endif
+                                        </p>
+                                    @endif
+                                @endif
                             </div>
                             <div class="col-md-6">
                                 @if($application->registrar_comments)
                                     <p><strong>Comments:</strong></p>
-                                    <p>{{ $application->registrar_comments }}</p>
+                                    <p style="white-space: pre-wrap;">{{ $application->registrar_comments }}</p>
                                 @endif
                             </div>
                         </div>
                     </div>
                 </div>
+
+                @if($application->registrar_status === 'approved' && isset($admissionFormData) && $admissionFormData && isset($student) && $student)
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Reissue Admission Letter</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Use this if the wrong offer type was issued (e.g. Conditional → Regular).
+                                The student’s SIP/ERP account is kept; only the letter wording (and optional level) is updated.
+                            </p>
+                            <form method="POST" action="{{ route('registrar.applications.reissue-offer', $application->id) }}" id="reissueOfferForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="reissue_level" class="form-label">Student Level <span class="text-danger">*</span></label>
+                                    <select class="form-select @error('level') is-invalid @enderror" id="reissue_level" name="level" required>
+                                        @foreach(\App\Models\Student::LEVELS as $levelOption)
+                                            <option value="{{ $levelOption }}" {{ old('level', $student->level ?? '100') == $levelOption ? 'selected' : '' }}>
+                                                Level {{ $levelOption }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('level')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reissue_offer_type" class="form-label">Admission Offer Type <span class="text-danger">*</span></label>
+                                    <select class="form-select @error('offer_type') is-invalid @enderror" id="reissue_offer_type" name="offer_type" required>
+                                        @foreach(\App\Models\AdmissionFormData::OFFER_TYPES as $type)
+                                            <option value="{{ $type }}" {{ old('offer_type', $admissionFormData->offer_type ?? 'regular') === $type ? 'selected' : '' }}>
+                                                {{ ucfirst(str_replace('-', ' ', $type)) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted">This controls the wording on the student admission letter.</small>
+                                    @error('offer_type')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3" id="reissueConditionalSubjectWrapper" style="display: none;">
+                                    <label for="reissue_conditional_subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('conditional_subject') is-invalid @enderror"
+                                           id="reissue_conditional_subject" name="conditional_subject"
+                                           value="{{ old('conditional_subject', $admissionFormData->conditional_subject) }}"
+                                           placeholder="e.g., Core Mathematics">
+                                    <small class="text-muted">Required for Conditional offers.</small>
+                                    @error('conditional_subject')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reissue_comments" class="form-label">Comments (Optional)</label>
+                                    <textarea class="form-control" id="reissue_comments" name="comments" rows="2"
+                                              placeholder="Reason for reissue...">{{ old('comments') }}</textarea>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="hidden" name="require_reaccept" value="0">
+                                    <input class="form-check-input" type="checkbox" value="1" id="require_reaccept" name="require_reaccept" checked>
+                                    <label class="form-check-label" for="require_reaccept">
+                                        Require student to accept the new offer again
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary"
+                                        onclick="return confirm('Reissue the admission letter with the selected offer type?');">
+                                    <i class="fas fa-redo"></i> Reissue Admission Letter
+                                </button>
+                            </form>
+
+                            <script>
+                                (function () {
+                                    const offerType = document.getElementById('reissue_offer_type');
+                                    const subjectWrapper = document.getElementById('reissueConditionalSubjectWrapper');
+                                    const subjectInput = document.getElementById('reissue_conditional_subject');
+
+                                    function syncSubjectField() {
+                                        const isConditional = offerType && offerType.value === 'conditional';
+                                        if (subjectWrapper) {
+                                            subjectWrapper.style.display = isConditional ? 'block' : 'none';
+                                        }
+                                        if (subjectInput) {
+                                            subjectInput.required = isConditional;
+                                            if (!isConditional) {
+                                                subjectInput.value = '';
+                                            }
+                                        }
+                                    }
+
+                                    if (offerType) {
+                                        offerType.addEventListener('change', syncSubjectField);
+                                        syncSubjectField();
+                                    }
+                                })();
+                            </script>
+                        </div>
+                    </div>
+                @endif
             @endif
         </div>
     </div>

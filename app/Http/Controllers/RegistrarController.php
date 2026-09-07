@@ -224,12 +224,15 @@ class RegistrarController extends Controller
             abort(403, 'You cannot view draft applications.');
         }
         
-        $application->load(['user', 'department', 'admissionForm']);
+        $application->load(['user', 'department', 'admissionForm', 'student.admissionFormData']);
         $examRecords = \App\Models\ExamRecord::with('subjects')
             ->where('application_id', $application->id)
             ->get();
+
+        $student = $application->student;
+        $admissionFormData = $student ? $student->admissionFormData : null;
         
-        return view('registrar.application.show', compact('application', 'examRecords'));
+        return view('registrar.application.show', compact('application', 'examRecords', 'student', 'admissionFormData'));
     }
 
     public function approveApplication(Request $request, Application $application)
@@ -321,6 +324,119 @@ class RegistrarController extends Controller
             return redirect()->route('registrar.applications.show', $application->id)
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Reissue / update admission offer letter for an already-approved application.
+     * Does not recreate SIP/ERP accounts — only updates offer wording (and optional level).
+     */
+    public function reissueAdmissionOffer(Request $request, Application $application)
+    {
+        if ($application->status === 'draft') {
+            abort(403, 'You cannot reissue offers for draft applications.');
+        }
+
+        if ($application->registrar_status !== 'approved') {
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', 'You can only reissue an admission letter after the application has been approved.');
+        }
+
+        $request->validate([
+            'level' => 'required|in:' . implode(',', \App\Models\Student::LEVELS),
+            'offer_type' => 'required|in:' . implode(',', AdmissionFormData::OFFER_TYPES),
+            'conditional_subject' => 'required_if:offer_type,conditional|nullable|string|max:255',
+            'comments' => 'nullable|string|max:1000',
+            'require_reaccept' => 'nullable|boolean',
+        ]);
+
+        $student = $application->student;
+        if (!$student) {
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', 'No student record found for this application. Approve the application first.');
+        }
+
+        $formData = $student->admissionFormData;
+        if (!$formData) {
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', 'Admission form data not found for this student.');
+        }
+
+        $offerType = AdmissionFormData::normalizeOfferType($request->offer_type);
+        $conditionalSubject = $offerType === 'conditional'
+            ? trim((string) $request->conditional_subject)
+            : null;
+
+        $oldOfferType = $formData->offer_type;
+        $oldSubject = $formData->conditional_subject;
+        $oldLevel = $student->level;
+        $offerChanged = $oldOfferType !== $offerType
+            || (string) ($oldSubject ?? '') !== (string) ($conditionalSubject ?? '');
+
+        $student->update([
+            'level' => $request->level,
+        ]);
+
+        $updates = [
+            'offer_type' => $offerType,
+            'conditional_subject' => $conditionalSubject,
+        ];
+
+        // If the offer wording changed, require the student to accept again (default on).
+        $requireReaccept = $request->boolean('require_reaccept', true);
+        if ($offerChanged && $requireReaccept) {
+            $updates['offer_accepted_at'] = null;
+        }
+
+        $formData->update($updates);
+
+        if ($request->filled('comments')) {
+            $application->update([
+                'registrar_comments' => trim(
+                    trim((string) $application->registrar_comments)
+                    . "\n[Reissue " . now()->format('Y-m-d H:i') . '] '
+                    . $request->comments
+                ),
+            ]);
+        }
+
+        try {
+            \App\Models\Download::firstOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'document_type' => 'admission_form',
+                ],
+                [
+                    'file_path' => 'html',
+                    'file_name' => 'Admission Form - ' . $student->student_id,
+                    'academic_year' => $student->academic_year,
+                ]
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Reissue: ensure admission download record failed', [
+                'student_id' => $student->student_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        \Log::info('Admission offer reissued by registrar', [
+            'application_id' => $application->id,
+            'student_id' => $student->student_id,
+            'old_offer_type' => $oldOfferType,
+            'new_offer_type' => $offerType,
+            'old_level' => $oldLevel,
+            'new_level' => $request->level,
+            'registrar_id' => Auth::id(),
+        ]);
+
+        $message = 'Admission letter reissued as '
+            . ucfirst(str_replace('-', ' ', $offerType))
+            . '. The student will see the updated letter in SIP.';
+        if ($offerChanged && $requireReaccept && $formData->fresh()->offer_accepted_at === null) {
+            $message .= ' They must accept the new offer again before downloading the PDF.';
+        }
+
+        return redirect()->route('registrar.applications.show', $application->id)
+            ->with('success', $message);
     }
 
     public function rejectApplication(Request $request, Application $application)

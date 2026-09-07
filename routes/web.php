@@ -137,6 +137,7 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
     Route::get('/applications/rejected', [App\Http\Controllers\RegistrarController::class, 'rejectedApplications'])->name('applications.rejected');
     Route::get('/applications/{application}', [App\Http\Controllers\RegistrarController::class, 'showApplication'])->name('applications.show');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\RegistrarController::class, 'approveApplication'])->name('applications.approve');
+    Route::post('/applications/{application}/reissue-offer', [App\Http\Controllers\RegistrarController::class, 'reissueAdmissionOffer'])->name('applications.reissue-offer');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\RegistrarController::class, 'rejectApplication'])->name('applications.reject');
     
     // Deferment Management
