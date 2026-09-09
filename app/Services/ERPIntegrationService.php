@@ -225,6 +225,78 @@ class ERPIntegrationService
     }
 
     /**
+     * Delete ERP Student (and related enrollment/applicant) for SIP re-admission.
+     */
+    public function deleteStudentRecord(?string $erpStudentName = null, ?string $indexNumber = null, ?string $studentEmail = null): array
+    {
+        if (!$erpStudentName && !$indexNumber && !$studentEmail) {
+            return ['success' => true, 'deleted' => false, 'message' => 'Nothing to delete'];
+        }
+
+        $method = 'education.education.api.delete_student_from_sip';
+        $url = $this->getMethodUrl($method);
+        $body = $this->getMethodBody($method, array_filter([
+            'student_name' => $erpStudentName,
+            'index_number' => $indexNumber,
+            'student_email' => $studentEmail,
+        ], function ($v) {
+            return $v !== null && $v !== '';
+        }));
+
+        try {
+            $response = Http::timeout(30)
+                ->withHeaders([
+                    'Authorization' => $this->getAuthHeader(),
+                    'Accept' => 'application/json',
+                ])
+                ->asForm()
+                ->post($url, $body);
+
+            if (!$response->successful()) {
+                $friendlyMessage = self::parseErrorMessage($response->body(), $response->status());
+                Log::error('ERP Student Delete Failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'erp_student_name' => $erpStudentName,
+                    'index_number' => $indexNumber,
+                    'friendly_message' => $friendlyMessage,
+                ]);
+                throw new \RuntimeException($friendlyMessage);
+            }
+
+            $payload = $response->json();
+            $message = $payload['message'] ?? $payload;
+
+            Log::info('ERP Student Delete Result', [
+                'erp_student_name' => $erpStudentName,
+                'index_number' => $indexNumber,
+                'result' => $message,
+            ]);
+
+            $this->activityLogService->log([
+                'action' => 'erp_student_deleted',
+                'system_source' => 'ERP',
+                'description' => 'ERP student deleted for SIP re-admission',
+                'metadata' => [
+                    'erp_student_name' => $erpStudentName,
+                    'index_number' => $indexNumber,
+                    'student_email' => $studentEmail,
+                    'result' => $message,
+                ],
+            ]);
+
+            return is_array($message) ? $message : ['success' => true, 'message' => $message];
+        } catch (\Exception $e) {
+            Log::error('ERP Student Delete Error', [
+                'message' => $e->getMessage(),
+                'erp_student_name' => $erpStudentName,
+                'index_number' => $indexNumber,
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Update ERPNext Student with index_number (SIP student_id) for linking
      */
     protected function updateErpStudentIndexNumber(string $erpStudentName, string $indexNumber): void

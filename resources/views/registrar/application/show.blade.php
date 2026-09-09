@@ -392,6 +392,8 @@
                                     @endif
                                     @if(isset($student) && $student)
                                         <p><strong>Student Level:</strong> {{ $student->level ?? '-' }}</p>
+                                        <p><strong>Current Program:</strong> {{ optional($student->program)->name ?? '-' }}</p>
+                                        <p><strong>Student ID:</strong> {{ $student->student_id ?? '-' }}</p>
                                         <p><strong>Offer Accepted:</strong>
                                             @if($admissionFormData->offer_accepted_at)
                                                 <span class="badge bg-success">Yes</span>
@@ -500,6 +502,105 @@
                                         }
                                     }
 
+                                    if (offerType) {
+                                        offerType.addEventListener('change', syncSubjectField);
+                                        syncSubjectField();
+                                    }
+                                })();
+                            </script>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3 border-warning">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0">Change Program (Re-admit)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <strong>Warning:</strong> Changing the program deletes the current SIP student
+                                (invoices, registrations, downloads) and the ERP student, then re-admits them
+                                on the new program with a new ERP record and new login PIN.
+                                Completed payments block this action.
+                            </div>
+                            <form method="POST" action="{{ route('registrar.applications.change-program', $application->id) }}" id="changeProgramForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="change_program_id" class="form-label">New Program <span class="text-danger">*</span></label>
+                                    <select class="form-select @error('program_id') is-invalid @enderror" id="change_program_id" name="program_id" required>
+                                        <option value="">-- Select Program --</option>
+                                        @foreach(($programs ?? collect()) as $programOption)
+                                            <option value="{{ $programOption->id }}"
+                                                {{ (int) old('program_id', $student->program_id) === (int) $programOption->id ? 'selected' : '' }}>
+                                                {{ $programOption->name }}
+                                                @if($programOption->department)
+                                                    ({{ $programOption->department->name }})
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('program_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="change_level" class="form-label">Student Level</label>
+                                    <select class="form-select" id="change_level" name="level">
+                                        @foreach(\App\Models\Student::LEVELS as $levelOption)
+                                            <option value="{{ $levelOption }}" {{ old('level', $student->level ?? '100') == $levelOption ? 'selected' : '' }}>
+                                                Level {{ $levelOption }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="change_offer_type" class="form-label">Offer Type</label>
+                                    <select class="form-select" id="change_offer_type" name="offer_type">
+                                        @foreach(\App\Models\AdmissionFormData::OFFER_TYPES as $type)
+                                            <option value="{{ $type }}" {{ old('offer_type', $admissionFormData->offer_type ?? 'regular') === $type ? 'selected' : '' }}>
+                                                {{ ucfirst(str_replace('-', ' ', $type)) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="changeConditionalSubjectWrapper" style="display: none;">
+                                    <label for="change_conditional_subject" class="form-label">Conditional Subject</label>
+                                    <input type="text" class="form-control" id="change_conditional_subject" name="conditional_subject"
+                                           value="{{ old('conditional_subject', $admissionFormData->conditional_subject) }}"
+                                           placeholder="e.g., Core Mathematics">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="change_comments" class="form-label">Reason / Comments</label>
+                                    <textarea class="form-control" id="change_comments" name="comments" rows="2"
+                                              placeholder="Why is the program being changed?">{{ old('comments') }}</textarea>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input @error('confirm_readmit') is-invalid @enderror"
+                                           type="checkbox" value="1" id="confirm_readmit" name="confirm_readmit" required>
+                                    <label class="form-check-label" for="confirm_readmit">
+                                        I understand the current student will be deleted and re-admitted on the new program (SIP + ERP).
+                                    </label>
+                                    @error('confirm_readmit')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-warning"
+                                        onclick="return confirm('This will DELETE the current SIP and ERP student and re-admit them on the new program. Continue?');">
+                                    <i class="fas fa-exchange-alt"></i> Change Program &amp; Re-admit
+                                </button>
+                            </form>
+                            <script>
+                                (function () {
+                                    const offerType = document.getElementById('change_offer_type');
+                                    const subjectWrapper = document.getElementById('changeConditionalSubjectWrapper');
+                                    const subjectInput = document.getElementById('change_conditional_subject');
+                                    function syncSubjectField() {
+                                        const isConditional = offerType && offerType.value === 'conditional';
+                                        if (subjectWrapper) subjectWrapper.style.display = isConditional ? 'block' : 'none';
+                                        if (subjectInput) {
+                                            subjectInput.required = isConditional;
+                                            if (!isConditional) subjectInput.value = '';
+                                        }
+                                    }
                                     if (offerType) {
                                         offerType.addEventListener('change', syncSubjectField);
                                         syncSubjectField();

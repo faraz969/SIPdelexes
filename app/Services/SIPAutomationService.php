@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Program;
 use App\Models\Session;
 use App\Models\Department;
+use App\Models\AdmissionFormData;
 use App\Services\ERPIntegrationService;
 use App\Services\ActivityLogService;
 use App\Services\SmsService;
@@ -38,8 +39,13 @@ class SIPAutomationService
      *
      * @throws \Exception If ERP or SIP setup fails (application remains unapproved)
      */
-    public function processAdmissionApproval(Application $application, $registrarComments = null, ?string $level = '100')
-    {
+    public function processAdmissionApproval(
+        Application $application,
+        $registrarComments = null,
+        ?string $level = '100',
+        ?string $preferredStudentId = null,
+        ?Program $forcedProgram = null
+    ) {
         if (Student::where('application_id', $application->id)->exists()) {
             throw new \RuntimeException('A SIP student account already exists for this application.');
         }
@@ -49,10 +55,10 @@ class SIPAutomationService
         DB::beginTransaction();
         try {
             // 1. Generate Unique Student ID / Index Number FIRST (required field)
-            $studentId = $this->generateStudentId($application);
+            $studentId = $this->generateStudentId($application, $preferredStudentId);
 
             // 2. Create Student SIP Account with the generated ID
-            $student = $this->createStudentAccount($application, $studentId, $level);
+            $student = $this->createStudentAccount($application, $studentId, $level, $forcedProgram);
 
             // 3. Create student email and update user email
             $studentEmail = $studentId . '@delexesuniversity.edu.gh';
@@ -81,11 +87,15 @@ class SIPAutomationService
             ]);
 
             // 5. Create student applicant in ERPNext (must succeed before approval is finalized)
+            $programName = $forcedProgram
+                ? $forcedProgram->name
+                : $application->getPrimaryProgramName();
+
             $result = $this->erpService->createStudentRecord([
                 'student_id' => $studentId,
                 'biodata' => $student->biodata,
                 'program_id' => $student->program_id,
-                'program_name' => $application->getPrimaryProgramName(),
+                'program_name' => $programName,
                 'academic_year' => $student->academic_year,
             ]);
 
@@ -146,10 +156,164 @@ class SIPAutomationService
     }
 
     /**
+     * Change admitted student's program: delete SIP + ERP student, re-admit with new program.
+     */
+    public function changeProgramAndReadmit(
+        Application $application,
+        Program $newProgram,
+        ?string $level = null,
+        ?string $offerType = null,
+        ?string $conditionalSubject = null,
+        ?string $comments = null
+    ): Student {
+        $oldStudent = $application->student;
+        if (!$oldStudent) {
+            throw new \RuntimeException('No admitted student found for this application.');
+        }
+
+        if ((int) $oldStudent->program_id === (int) $newProgram->id) {
+            throw new \RuntimeException('Student is already on the selected program.');
+        }
+
+        $completedPayments = $oldStudent->payments()
+            ->where('status', 'completed')
+            ->count();
+        if ($completedPayments > 0) {
+            throw new \RuntimeException(
+                "Cannot change program: this student has {$completedPayments} completed payment(s). "
+                . 'Resolve or reverse those payments first to avoid losing the financial record.'
+            );
+        }
+
+        $oldStudent->loadMissing(['admissionFormData', 'program']);
+        $preservedLevel = Student::normalizeLevel($level ?: ($oldStudent->level ?: '100'));
+        $preservedOfferType = AdmissionFormData::normalizeOfferType(
+            $offerType ?: optional($oldStudent->admissionFormData)->offer_type
+        );
+        $preservedSubject = $preservedOfferType === 'conditional'
+            ? trim((string) ($conditionalSubject !== null
+                ? $conditionalSubject
+                : optional($oldStudent->admissionFormData)->conditional_subject))
+            : null;
+
+        $oldErpName = $oldStudent->erp_student_name;
+        $oldStudentId = $oldStudent->student_id;
+        $oldProgramName = optional($oldStudent->program)->name;
+        $oldEmail = $oldStudentId . '@delexesuniversity.edu.gh';
+
+        // 1. Delete ERP student (and related enrollments/applicant)
+        try {
+            $this->erpService->deleteStudentRecord($oldErpName, $oldStudentId, $oldEmail);
+        } catch (\Exception $e) {
+            \Log::error('ERP delete failed during program change', [
+                'application_id' => $application->id,
+                'old_student_id' => $oldStudentId,
+                'error' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException(
+                'Could not delete the existing ERP student before re-admission: ' . $e->getMessage()
+            );
+        }
+
+        // 2. Delete SIP student (cascades invoices, payments, downloads, letter data, etc.)
+        $oldStudent->delete();
+
+        // 3. Point application at the new program
+        $application->assignAdmissionProgram($newProgram);
+        $application->refresh();
+
+        if ($comments) {
+            $note = '[Program change ' . now()->format('Y-m-d H:i') . '] '
+                . ($oldProgramName ?: 'previous') . ' → ' . $newProgram->name
+                . '. ' . $comments;
+            $application->registrar_comments = trim(
+                trim((string) $application->registrar_comments) . "\n" . $note
+            );
+            $application->save();
+        }
+
+        // 4. Re-admit (new SIP + ERP student). Reuse index when department digit still matches.
+        $student = $this->processAdmissionApproval(
+            $application,
+            $application->registrar_comments,
+            $preservedLevel,
+            $oldStudentId,
+            $newProgram
+        );
+
+        // 5. Restore / recreate admission letter data for the new student
+        $academicYear = $application->academic_year;
+        $defaults = \App\Models\AdmissionFormDefault::where('academic_year', $academicYear)->first()
+            ?: \App\Models\AdmissionFormDefault::first();
+        $totalFees = $newProgram->price !== null ? $newProgram->price : null;
+
+        AdmissionFormData::updateOrCreate(
+            ['student_id' => $student->id],
+            [
+                'application_id' => $application->id,
+                'offer_type' => $preservedOfferType,
+                'conditional_subject' => $preservedSubject,
+                'offer_accepted_at' => null,
+                'total_fees' => $totalFees,
+                'minimum_fee_percentage' => $defaults->minimum_fee_percentage ?? null,
+                'balance_percentage' => $defaults->balance_percentage ?? null,
+                'paid_fees_by_date' => $defaults->paid_fees_by_date ?? null,
+                'registration_begins' => $defaults->registration_begins ?? null,
+                'orientation_new_students' => $defaults->orientation_new_students ?? null,
+                'faculty_orientation' => $defaults->faculty_orientation ?? null,
+                'lectures_begin' => $defaults->lectures_begin ?? null,
+            ]
+        );
+
+        try {
+            \App\Models\Download::firstOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'document_type' => 'admission_form',
+                ],
+                [
+                    'file_path' => 'html',
+                    'file_name' => 'Admission Form - ' . $student->student_id,
+                    'academic_year' => $student->academic_year,
+                ]
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Program change: admission download record failed', [
+                'student_id' => $student->student_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $this->activityLogService->log([
+            'user_id' => auth()->id(),
+            'role' => auth()->user()->role ?? 'system',
+            'action' => 'student_program_changed_readmit',
+            'model_type' => Student::class,
+            'model_id' => $student->id,
+            'system_source' => 'SIP',
+            'description' => "Student re-admitted after program change: {$oldProgramName} → {$newProgram->name}",
+            'metadata' => [
+                'old_student_id' => $oldStudentId,
+                'new_student_id' => $student->student_id,
+                'old_program' => $oldProgramName,
+                'new_program' => $newProgram->name,
+                'old_erp_student_name' => $oldErpName,
+                'new_erp_student_name' => $student->erp_student_name,
+            ],
+        ]);
+
+        return $student;
+    }
+
+    /**
      * Create Student SIP Account
      */
-    protected function createStudentAccount(Application $application, $studentId, string $level = '100')
-    {
+    protected function createStudentAccount(
+        Application $application,
+        $studentId,
+        string $level = '100',
+        ?Program $forcedProgram = null
+    ) {
         $user = $application->user;
         if (!$user) {
             throw new \Exception('Application does not have an associated user.');
@@ -158,7 +322,7 @@ class SIPAutomationService
         $admissionForm = $application->admissionForm;
 
         // Get program from application
-        $program = $this->getProgramFromApplication($application);
+        $program = $forcedProgram ?: $this->getProgramFromApplication($application);
 
         // Resolve preferred session from admission form (stored as session name)
         $preferredSessionId = null;
@@ -184,7 +348,7 @@ class SIPAutomationService
             'application_id' => $application->id,
             'student_id' => $studentId,
             'program_id' => $program->id ?? null,
-            'department_id' => $application->department_id,
+            'department_id' => $program->department_id ?? $application->department_id,
             'preferred_session_id' => $preferredSessionId,
             'academic_year' => $application->academic_year,
             'level' => Student::normalizeLevel($level),
@@ -206,15 +370,26 @@ class SIPAutomationService
      * - Digits 3-7: sequential student number within dept/year (00001-99999)
      * - Digits 8-9: admission year suffix (e.g. 26 for 2026)
      */
-    protected function generateStudentId(Application $application)
+    protected function generateStudentId(Application $application, ?string $preferredStudentId = null)
     {
         $application->loadMissing(['department', 'user.formType']);
 
         $degreeTypeDigit = $this->resolveDegreeTypeDigit($application);
         $departmentCodeDigit = $this->resolveDepartmentCodeDigit($application);
         $yearSuffix = $this->resolveAdmissionYearSuffix($application);
-
         $prefix = $degreeTypeDigit . $departmentCodeDigit;
+
+        $preferredStudentId = trim((string) $preferredStudentId);
+        if (
+            $preferredStudentId !== ''
+            && !Student::where('student_id', $preferredStudentId)->exists()
+            && strlen($preferredStudentId) >= 4
+            && substr($preferredStudentId, 0, 2) === $prefix
+            && substr($preferredStudentId, -2) === $yearSuffix
+        ) {
+            return $preferredStudentId;
+        }
+
         $likePattern = $prefix . '_____' . $yearSuffix;
 
         $lastStudent = Student::where('student_id', 'like', $likePattern)

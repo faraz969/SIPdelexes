@@ -449,6 +449,31 @@ class Application extends Model
     }
 
     /**
+     * Set a single admission program on the application (clears other prog_* choices).
+     * Used when registrar changes program after admission / for re-admission.
+     */
+    public function assignAdmissionProgram(Program $program): void
+    {
+        $data = is_array($this->data) ? $this->data : [];
+
+        foreach (array_keys($data) as $key) {
+            if (strpos($key, 'prog_') === 0) {
+                unset($data[$key]);
+            }
+        }
+
+        $data['prog_' . $program->department_id] = $program->name;
+        if (!empty($program->mode)) {
+            $data['prog_' . $program->department_id . '_mode'] = $program->mode;
+        }
+
+        $this->data = $data;
+        $this->department_id = $program->department_id;
+        $this->department_ids = [$program->department_id];
+        $this->save();
+    }
+
+    /**
      * Program fields from application data keyed by department.
      */
     public function getProgramFieldsFromData()

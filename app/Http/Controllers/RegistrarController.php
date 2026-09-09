@@ -224,15 +224,25 @@ class RegistrarController extends Controller
             abort(403, 'You cannot view draft applications.');
         }
         
-        $application->load(['user', 'department', 'admissionForm', 'student.admissionFormData']);
+        $application->load(['user', 'department', 'admissionForm', 'student.admissionFormData', 'student.program']);
         $examRecords = \App\Models\ExamRecord::with('subjects')
             ->where('application_id', $application->id)
             ->get();
 
         $student = $application->student;
         $admissionFormData = $student ? $student->admissionFormData : null;
+        $programs = Program::with('department')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
         
-        return view('registrar.application.show', compact('application', 'examRecords', 'student', 'admissionFormData'));
+        return view('registrar.application.show', compact(
+            'application',
+            'examRecords',
+            'student',
+            'admissionFormData',
+            'programs'
+        ));
     }
 
     public function approveApplication(Request $request, Application $application)
@@ -437,6 +447,64 @@ class RegistrarController extends Controller
 
         return redirect()->route('registrar.applications.show', $application->id)
             ->with('success', $message);
+    }
+
+    /**
+     * Change admitted student's program: delete SIP/ERP student and re-admit.
+     */
+    public function changeProgram(Request $request, Application $application)
+    {
+        if ($application->status === 'draft') {
+            abort(403, 'You cannot change program for draft applications.');
+        }
+
+        if ($application->registrar_status !== 'approved') {
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', 'You can only change program after the application has been approved.');
+        }
+
+        $request->validate([
+            'program_id' => 'required|exists:programs,id',
+            'level' => 'nullable|in:' . implode(',', \App\Models\Student::LEVELS),
+            'offer_type' => 'nullable|in:' . implode(',', AdmissionFormData::OFFER_TYPES),
+            'conditional_subject' => 'required_if:offer_type,conditional|nullable|string|max:255',
+            'comments' => 'nullable|string|max:1000',
+            'confirm_readmit' => 'accepted',
+        ], [
+            'confirm_readmit.accepted' => 'You must confirm that the student will be deleted and re-admitted.',
+        ]);
+
+        $program = Program::with('department')->findOrFail($request->program_id);
+
+        try {
+            $student = $this->sipAutomationService->changeProgramAndReadmit(
+                $application,
+                $program,
+                $request->input('level'),
+                $request->input('offer_type'),
+                $request->input('conditional_subject'),
+                $request->input('comments')
+            );
+
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with(
+                    'success',
+                    'Program changed and student re-admitted as '
+                    . $program->name
+                    . '. New Student ID: '
+                    . $student->student_id
+                    . '. New login credentials were sent by SMS/email.'
+                );
+        } catch (\Exception $e) {
+            \Log::error('Registrar program change failed', [
+                'application_id' => $application->id,
+                'program_id' => $program->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('registrar.applications.show', $application->id)
+                ->with('error', $e->getMessage());
+        }
     }
 
     public function rejectApplication(Request $request, Application $application)
