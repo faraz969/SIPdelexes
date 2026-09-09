@@ -383,6 +383,13 @@
                                     @endif
                                 </p>
                                 <p><strong>Reviewed At:</strong> {{ $application->registrar_reviewed_at ? $application->registrar_reviewed_at->format('M d, Y H:i') : '-' }}</p>
+                                @if($application->registrar_status === 'approved' && empty($student))
+                                    <div class="alert alert-danger mb-0 mt-2">
+                                        <strong>SIP student missing.</strong>
+                                        Re-admission did not finish (often because the ERP program name does not exist).
+                                        Use <em>Complete Re-admission</em> below after creating the program in ERP.
+                                    </div>
+                                @endif
                                 @if($application->registrar_status === 'approved' && isset($admissionFormData) && $admissionFormData)
                                     <p><strong>Current Offer Type:</strong>
                                         <span class="badge bg-info">{{ ucfirst(str_replace('-', ' ', $admissionFormData->offer_type ?? 'regular')) }}</span>
@@ -415,7 +422,109 @@
                     </div>
                 </div>
 
-                @if($application->registrar_status === 'approved' && isset($admissionFormData) && $admissionFormData && isset($student) && $student)
+                @if(!empty($needsReadmit))
+                    @php
+                        $pendingProgramId = old(
+                            'program_id',
+                            $pendingReadmit['program_id']
+                                ?? optional(($application->getSelectedPrograms()->first()))->id
+                        );
+                        $pendingLevel = old('level', $pendingReadmit['level'] ?? '100');
+                        $pendingOffer = old('offer_type', $pendingReadmit['offer_type'] ?? 'regular');
+                        $pendingSubject = old('conditional_subject', $pendingReadmit['conditional_subject'] ?? '');
+                    @endphp
+                    <div class="card mt-3 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Complete Re-admission</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-danger">
+                                This application is approved, but there is <strong>no SIP student</strong>.
+                                The previous student was deleted during a program change, and ERP create failed
+                                (e.g. program not found in ERP).
+                                @if(!empty($pendingReadmit['error']))
+                                    <br><strong>Last error:</strong> {{ $pendingReadmit['error'] }}
+                                @endif
+                            </div>
+                            <p class="text-muted">
+                                Create the correct program in ERP first, then submit this form to recreate the SIP + ERP student and admission letter.
+                            </p>
+                            <form method="POST" action="{{ route('registrar.applications.change-program', $application->id) }}">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="recover_program_id" class="form-label">Program <span class="text-danger">*</span></label>
+                                    <select class="form-select @error('program_id') is-invalid @enderror" id="recover_program_id" name="program_id" required>
+                                        <option value="">-- Select Program --</option>
+                                        @foreach(($programs ?? collect()) as $programOption)
+                                            <option value="{{ $programOption->id }}"
+                                                {{ (int) $pendingProgramId === (int) $programOption->id ? 'selected' : '' }}>
+                                                {{ $programOption->name }}
+                                                @if($programOption->department)
+                                                    ({{ $programOption->department->name }})
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('program_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="recover_level" class="form-label">Student Level</label>
+                                    <select class="form-select" id="recover_level" name="level">
+                                        @foreach(\App\Models\Student::LEVELS as $levelOption)
+                                            <option value="{{ $levelOption }}" {{ $pendingLevel == $levelOption ? 'selected' : '' }}>
+                                                Level {{ $levelOption }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="recover_offer_type" class="form-label">Offer Type</label>
+                                    <select class="form-select" id="recover_offer_type" name="offer_type">
+                                        @foreach(\App\Models\AdmissionFormData::OFFER_TYPES as $type)
+                                            <option value="{{ $type }}" {{ $pendingOffer === $type ? 'selected' : '' }}>
+                                                {{ ucfirst(str_replace('-', ' ', $type)) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="recoverConditionalSubjectWrapper" style="display: none;">
+                                    <label for="recover_conditional_subject" class="form-label">Conditional Subject</label>
+                                    <input type="text" class="form-control" id="recover_conditional_subject" name="conditional_subject"
+                                           value="{{ $pendingSubject }}" placeholder="e.g., Core Mathematics">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="recover_comments" class="form-label">Comments</label>
+                                    <textarea class="form-control" id="recover_comments" name="comments" rows="2">{{ old('comments') }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Create the SIP and ERP student for this approved application now?');">
+                                    <i class="fas fa-user-plus"></i> Complete Re-admission
+                                </button>
+                            </form>
+                            <script>
+                                (function () {
+                                    const offerType = document.getElementById('recover_offer_type');
+                                    const subjectWrapper = document.getElementById('recoverConditionalSubjectWrapper');
+                                    const subjectInput = document.getElementById('recover_conditional_subject');
+                                    function syncSubjectField() {
+                                        const isConditional = offerType && offerType.value === 'conditional';
+                                        if (subjectWrapper) subjectWrapper.style.display = isConditional ? 'block' : 'none';
+                                        if (subjectInput) {
+                                            subjectInput.required = isConditional;
+                                            if (!isConditional) subjectInput.value = '';
+                                        }
+                                    }
+                                    if (offerType) {
+                                        offerType.addEventListener('change', syncSubjectField);
+                                        syncSubjectField();
+                                    }
+                                })();
+                            </script>
+                        </div>
+                    </div>
+                @elseif($application->registrar_status === 'approved' && isset($admissionFormData) && $admissionFormData && isset($student) && $student)
                     <div class="card mt-3">
                         <div class="card-header">
                             <h5 class="mb-0">Reissue Admission Letter</h5>

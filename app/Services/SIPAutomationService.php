@@ -167,8 +167,17 @@ class SIPAutomationService
         ?string $comments = null
     ): Student {
         $oldStudent = $application->student;
+
+        // Recovery path: approved but SIP student already missing (failed mid-change).
         if (!$oldStudent) {
-            throw new \RuntimeException('No admitted student found for this application.');
+            return $this->completeReadmitForApprovedApplication(
+                $application,
+                $newProgram,
+                $level,
+                $offerType,
+                $conditionalSubject,
+                $comments
+            );
         }
 
         if ((int) $oldStudent->program_id === (int) $newProgram->id) {
@@ -218,7 +227,7 @@ class SIPAutomationService
         // 2. Delete SIP student (cascades invoices, payments, downloads, letter data, etc.)
         $oldStudent->delete();
 
-        // 3. Point application at the new program
+        // 3. Point application at the new program + stash retry payload if ERP create fails next.
         $application->assignAdmissionProgram($newProgram);
         $application->refresh();
 
@@ -232,16 +241,166 @@ class SIPAutomationService
             $application->save();
         }
 
-        // 4. Re-admit (new SIP + ERP student). Reuse index when department digit still matches.
+        $this->storePendingReadmit($application, [
+            'program_id' => $newProgram->id,
+            'level' => $preservedLevel,
+            'offer_type' => $preservedOfferType,
+            'conditional_subject' => $preservedSubject,
+            'preferred_student_id' => $oldStudentId,
+            'old_program' => $oldProgramName,
+        ]);
+
+        try {
+            return $this->finalizeReadmit(
+                $application,
+                $newProgram,
+                $preservedLevel,
+                $preservedOfferType,
+                $preservedSubject,
+                $oldStudentId,
+                $oldProgramName,
+                $oldErpName
+            );
+        } catch (\Exception $e) {
+            $this->storePendingReadmit($application, [
+                'program_id' => $newProgram->id,
+                'level' => $preservedLevel,
+                'offer_type' => $preservedOfferType,
+                'conditional_subject' => $preservedSubject,
+                'preferred_student_id' => $oldStudentId,
+                'old_program' => $oldProgramName,
+                'error' => $e->getMessage(),
+                'failed_at' => now()->toDateTimeString(),
+            ]);
+
+            throw new \RuntimeException(
+                'SIP/ERP student was removed, but re-admission failed: ' . $e->getMessage()
+                . ' Open this application again and use “Complete Re-admission” after fixing the ERP program.'
+            );
+        }
+    }
+
+    /**
+     * Complete admission for an approved application that has no SIP student
+     * (e.g. program-change failed after delete).
+     */
+    public function completeReadmitForApprovedApplication(
+        Application $application,
+        ?Program $program = null,
+        ?string $level = null,
+        ?string $offerType = null,
+        ?string $conditionalSubject = null,
+        ?string $comments = null
+    ): Student {
+        if ($application->registrar_status !== 'approved') {
+            throw new \RuntimeException('Application is not registrar-approved.');
+        }
+
+        if ($application->student) {
+            throw new \RuntimeException('A SIP student already exists for this application.');
+        }
+
+        $pending = $this->getPendingReadmit($application);
+
+        if (!$program) {
+            $programId = $pending['program_id'] ?? null;
+            if ($programId) {
+                $program = Program::find($programId);
+            }
+            if (!$program) {
+                $program = $this->getProgramFromApplication($application);
+            }
+        }
+
+        if (!$program) {
+            throw new \RuntimeException('Select a program to complete re-admission.');
+        }
+
+        $application->assignAdmissionProgram($program);
+        $application->refresh();
+
+        $preservedLevel = Student::normalizeLevel(
+            $level ?: ($pending['level'] ?? '100')
+        );
+        $preservedOfferType = AdmissionFormData::normalizeOfferType(
+            $offerType ?: ($pending['offer_type'] ?? 'regular')
+        );
+        $preservedSubject = $preservedOfferType === 'conditional'
+            ? trim((string) ($conditionalSubject !== null
+                ? $conditionalSubject
+                : ($pending['conditional_subject'] ?? '')))
+            : null;
+        $preferredStudentId = $pending['preferred_student_id'] ?? null;
+
+        if ($comments) {
+            $note = '[Complete re-admission ' . now()->format('Y-m-d H:i') . '] ' . $comments;
+            $application->registrar_comments = trim(
+                trim((string) $application->registrar_comments) . "\n" . $note
+            );
+            $application->save();
+        }
+
+        // Best-effort cleanup if a partial ERP record exists from a previous attempt.
+        try {
+            $email = $preferredStudentId
+                ? ($preferredStudentId . '@delexesuniversity.edu.gh')
+                : null;
+            $this->erpService->deleteStudentRecord(null, $preferredStudentId, $email);
+        } catch (\Exception $e) {
+            \Log::warning('Complete readmit: ERP cleanup skipped/failed', [
+                'application_id' => $application->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            return $this->finalizeReadmit(
+                $application,
+                $program,
+                $preservedLevel,
+                $preservedOfferType,
+                $preservedSubject,
+                $preferredStudentId,
+                $pending['old_program'] ?? null,
+                null
+            );
+        } catch (\Exception $e) {
+            $this->storePendingReadmit($application, [
+                'program_id' => $program->id,
+                'level' => $preservedLevel,
+                'offer_type' => $preservedOfferType,
+                'conditional_subject' => $preservedSubject,
+                'preferred_student_id' => $preferredStudentId,
+                'old_program' => $pending['old_program'] ?? null,
+                'error' => $e->getMessage(),
+                'failed_at' => now()->toDateTimeString(),
+            ]);
+
+            throw new \RuntimeException(
+                'Re-admission failed: ' . $e->getMessage()
+                . ' Ensure the program exists in ERP, then try Complete Re-admission again.'
+            );
+        }
+    }
+
+    protected function finalizeReadmit(
+        Application $application,
+        Program $newProgram,
+        string $preservedLevel,
+        string $preservedOfferType,
+        ?string $preservedSubject,
+        ?string $preferredStudentId,
+        ?string $oldProgramName = null,
+        ?string $oldErpName = null
+    ): Student {
         $student = $this->processAdmissionApproval(
             $application,
             $application->registrar_comments,
             $preservedLevel,
-            $oldStudentId,
+            $preferredStudentId,
             $newProgram
         );
 
-        // 5. Restore / recreate admission letter data for the new student
         $academicYear = $application->academic_year;
         $defaults = \App\Models\AdmissionFormDefault::where('academic_year', $academicYear)->first()
             ?: \App\Models\AdmissionFormDefault::first();
@@ -278,11 +437,13 @@ class SIPAutomationService
                 ]
             );
         } catch (\Exception $e) {
-            \Log::warning('Program change: admission download record failed', [
+            \Log::warning('Readmit: admission download record failed', [
                 'student_id' => $student->student_id,
                 'error' => $e->getMessage(),
             ]);
         }
+
+        $this->clearPendingReadmit($application);
 
         $this->activityLogService->log([
             'user_id' => auth()->id(),
@@ -291,9 +452,10 @@ class SIPAutomationService
             'model_type' => Student::class,
             'model_id' => $student->id,
             'system_source' => 'SIP',
-            'description' => "Student re-admitted after program change: {$oldProgramName} → {$newProgram->name}",
+            'description' => "Student re-admitted after program change: "
+                . ($oldProgramName ?: 'previous') . " → {$newProgram->name}",
             'metadata' => [
-                'old_student_id' => $oldStudentId,
+                'preferred_student_id' => $preferredStudentId,
                 'new_student_id' => $student->student_id,
                 'old_program' => $oldProgramName,
                 'new_program' => $newProgram->name,
@@ -303,6 +465,32 @@ class SIPAutomationService
         ]);
 
         return $student;
+    }
+
+    protected function storePendingReadmit(Application $application, array $payload): void
+    {
+        $data = is_array($application->data) ? $application->data : [];
+        $data['_pending_readmit'] = $payload;
+        $application->data = $data;
+        $application->save();
+    }
+
+    protected function clearPendingReadmit(Application $application): void
+    {
+        $data = is_array($application->data) ? $application->data : [];
+        if (isset($data['_pending_readmit'])) {
+            unset($data['_pending_readmit']);
+            $application->data = $data;
+            $application->save();
+        }
+    }
+
+    protected function getPendingReadmit(Application $application): array
+    {
+        $data = is_array($application->data) ? $application->data : [];
+        $pending = $data['_pending_readmit'] ?? [];
+
+        return is_array($pending) ? $pending : [];
     }
 
     /**

@@ -235,13 +235,20 @@ class RegistrarController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+        $data = is_array($application->data) ? $application->data : [];
+        $pendingReadmit = (isset($data['_pending_readmit']) && is_array($data['_pending_readmit']))
+            ? $data['_pending_readmit']
+            : [];
+        $needsReadmit = $application->registrar_status === 'approved' && !$student;
         
         return view('registrar.application.show', compact(
             'application',
             'examRecords',
             'student',
             'admissionFormData',
-            'programs'
+            'programs',
+            'pendingReadmit',
+            'needsReadmit'
         ));
     }
 
@@ -451,6 +458,7 @@ class RegistrarController extends Controller
 
     /**
      * Change admitted student's program: delete SIP/ERP student and re-admit.
+     * Also used to complete re-admission when the SIP student is missing after a failed change.
      */
     public function changeProgram(Request $request, Application $application)
     {
@@ -463,13 +471,15 @@ class RegistrarController extends Controller
                 ->with('error', 'You can only change program after the application has been approved.');
         }
 
+        $needsReadmit = !$application->student;
+
         $request->validate([
             'program_id' => 'required|exists:programs,id',
             'level' => 'nullable|in:' . implode(',', \App\Models\Student::LEVELS),
             'offer_type' => 'nullable|in:' . implode(',', AdmissionFormData::OFFER_TYPES),
             'conditional_subject' => 'required_if:offer_type,conditional|nullable|string|max:255',
             'comments' => 'nullable|string|max:1000',
-            'confirm_readmit' => 'accepted',
+            'confirm_readmit' => $needsReadmit ? 'nullable' : 'accepted',
         ], [
             'confirm_readmit.accepted' => 'You must confirm that the student will be deleted and re-admitted.',
         ]);
@@ -477,6 +487,27 @@ class RegistrarController extends Controller
         $program = Program::with('department')->findOrFail($request->program_id);
 
         try {
+            if ($needsReadmit) {
+                $student = $this->sipAutomationService->completeReadmitForApprovedApplication(
+                    $application,
+                    $program,
+                    $request->input('level'),
+                    $request->input('offer_type'),
+                    $request->input('conditional_subject'),
+                    $request->input('comments')
+                );
+
+                return redirect()->route('registrar.applications.show', $application->id)
+                    ->with(
+                        'success',
+                        'Re-admission completed for '
+                        . $program->name
+                        . '. Student ID: '
+                        . $student->student_id
+                        . '. Login credentials were sent by SMS/email.'
+                    );
+            }
+
             $student = $this->sipAutomationService->changeProgramAndReadmit(
                 $application,
                 $program,
@@ -491,14 +522,15 @@ class RegistrarController extends Controller
                     'success',
                     'Program changed and student re-admitted as '
                     . $program->name
-                    . '. New Student ID: '
+                    . '. Student ID: '
                     . $student->student_id
                     . '. New login credentials were sent by SMS/email.'
                 );
         } catch (\Exception $e) {
-            \Log::error('Registrar program change failed', [
+            \Log::error('Registrar program change / readmit failed', [
                 'application_id' => $application->id,
                 'program_id' => $program->id,
+                'needs_readmit' => $needsReadmit,
                 'error' => $e->getMessage(),
             ]);
 
