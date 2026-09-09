@@ -96,6 +96,7 @@
                                 <a class="{{ $navActive('hod.applications.pending') }}" href="{{ route('hod.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
                                 <a class="{{ $navActive('hod.applications.approved') }}" href="{{ route('hod.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
                                 <a class="{{ $navActive('hod.applications.rejected') }}" href="{{ route('hod.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
+                                <a class="{{ $navActive('waec.*') }}" href="{{ route('waec.search') }}"><i class="fas fa-file-signature"></i> WAEC Lookup</a>
                                 <div class="sidebar-group-label">COURSES</div>
                                 <a class="{{ request()->routeIs('hod.courses.*') && !request()->routeIs('hod.courses.create') ? 'active' : '' }}" href="{{ route('hod.courses.index') }}"><i class="fas fa-book"></i> Manage Courses</a>
                                 <a class="{{ $navActive('hod.courses.create') }}" href="{{ route('hod.courses.create') }}"><i class="fas fa-plus"></i> Add Course</a>
@@ -111,6 +112,7 @@
                                 <a class="{{ $navActive('registrar.applications.pending') }}" href="{{ route('registrar.applications.pending') }}"><i class="fas fa-clock"></i> Pending Applications</a>
                                 <a class="{{ $navActive('registrar.applications.approved') }}" href="{{ route('registrar.applications.approved') }}"><i class="fas fa-check-circle"></i> Approved Applications</a>
                                 <a class="{{ $navActive('registrar.applications.rejected') }}" href="{{ route('registrar.applications.rejected') }}"><i class="fas fa-times-circle"></i> Rejected Applications</a>
+                                <a class="{{ $navActive('waec.*') }}" href="{{ route('waec.search') }}"><i class="fas fa-file-signature"></i> WAEC Lookup</a>
                                 <div class="sidebar-group-label">COURSES</div>
                                 <a class="{{ $navActive('registrar.semester-offerings*') }}" href="{{ route('registrar.semester-offerings.index') }}"><i class="fas fa-clipboard-list"></i> Course Registrations</a>
                                 <a class="{{ $navActive('registrar.course-enrollments*') }}" href="{{ route('registrar.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
