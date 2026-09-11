@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
                     <h4>Create New Course</h4>
@@ -92,10 +92,11 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="assessment_split" class="form-label">Assessment Split</label>
+                            <label for="assessment_split" class="form-label">Assessment Split (summary label)</label>
                             <input type="text" class="form-control @error('assessment_split') is-invalid @enderror"
-                                   id="assessment_split" name="assessment_split" value="{{ old('assessment_split') }}"
+                                   id="assessment_split" name="assessment_split" value="{{ old('assessment_split', 'Class 30%, Exam 70%') }}"
                                    placeholder="e.g. Class 30%, Exam 70%">
+                            <small class="text-muted">Optional display text. Detailed components are configured below.</small>
                             @error('assessment_split')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -124,6 +125,8 @@
                             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">Active</label>
                         </div>
+
+                        @include('admin.courses._assessment_components')
 
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('admin.courses.index') }}" class="btn btn-secondary">Cancel</a>

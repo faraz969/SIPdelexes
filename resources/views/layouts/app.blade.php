@@ -87,7 +87,8 @@
                         @elseif($user->isBank())
                             <a class="{{ $navActive('bank.*') }}" href="{{ route('bank.dashboard') }}"><i class="fas fa-building-columns"></i> Bank Dashboard</a>
                         @elseif($user->isLecturer())
-                            <a class="{{ $navActive('lecturer.*') }}" href="{{ route('lecturer.dashboard') }}"><i class="fas fa-chalkboard-teacher"></i> Lecturer Dashboard</a>
+                            <a class="{{ $navActive('lecturer.dashboard') }}" href="{{ route('lecturer.dashboard') }}"><i class="fas fa-chalkboard-teacher"></i> Lecturer Dashboard</a>
+                            <a class="{{ $navActive('lecturer.results.*') }}" href="{{ route('lecturer.results.index') }}"><i class="fas fa-chart-bar"></i> Course Results</a>
                         @else
                             <div class="sidebar-group-label">DASHBOARD</div>
                             @if($user->isHOD())
@@ -102,6 +103,7 @@
                                 <a class="{{ $navActive('hod.courses.create') }}" href="{{ route('hod.courses.create') }}"><i class="fas fa-plus"></i> Add Course</a>
                                 <a class="{{ $navActive('hod.semester-offerings*') }}" href="{{ route('hod.semester-offerings.index') }}"><i class="fas fa-clipboard-list"></i> Course Registrations</a>
                                 <a class="{{ $navActive('hod.course-enrollments*') }}" href="{{ route('hod.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
+                                <a class="{{ $navActive('hod.results.*') }}" href="{{ route('hod.results.index') }}"><i class="fas fa-chart-bar"></i> Course Results</a>
                                 <div class="sidebar-group-label">DEFERMENTS</div>
                                 <a class="{{ $navActive('hod.deferments*') }}" href="{{ route('hod.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
                             @elseif($user->isPresident())
@@ -116,6 +118,7 @@
                                 <div class="sidebar-group-label">COURSES</div>
                                 <a class="{{ $navActive('registrar.semester-offerings*') }}" href="{{ route('registrar.semester-offerings.index') }}"><i class="fas fa-clipboard-list"></i> Course Registrations</a>
                                 <a class="{{ $navActive('registrar.course-enrollments*') }}" href="{{ route('registrar.course-enrollments') }}"><i class="fas fa-users"></i> Course Enrollments</a>
+                                <a class="{{ $navActive('registrar.results.*') }}" href="{{ route('registrar.results.index') }}"><i class="fas fa-chart-bar"></i> Course Results</a>
                                 <div class="sidebar-group-label">DEFERMENTS</div>
                                 <a class="{{ $navActive('registrar.deferments*') }}" href="{{ route('registrar.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
                             @else

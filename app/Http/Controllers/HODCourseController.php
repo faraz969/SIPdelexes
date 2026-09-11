@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Program;
 use App\Models\SiteSetting;
+use App\Services\CourseAssessmentService;
 use App\Services\CourseEnrollmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,12 @@ use Illuminate\Validation\Rule;
 
 class HODCourseController extends Controller
 {
+    protected $assessmentService;
+
+    public function __construct(CourseAssessmentService $assessmentService)
+    {
+        $this->assessmentService = $assessmentService;
+    }
     public function index(Request $request)
     {
         $department = $this->requireDepartment();
@@ -56,7 +63,9 @@ class HODCourseController extends Controller
     {
         $department = $this->requireDepartment();
         $validated = $this->validateCourse($request, $department->id);
-        Course::create($validated);
+        unset($validated['components']);
+        $course = Course::create($validated);
+        $this->assessmentService->syncForCourse($course, $request->input('components', []));
 
         return redirect()->route('hod.courses.index')
             ->with('success', 'Course created successfully.');
@@ -66,7 +75,7 @@ class HODCourseController extends Controller
     {
         $department = $this->requireDepartment();
         $this->assertCourseBelongsToDepartment($course, $department->id);
-        $course->load('program');
+        $course->load(['program', 'assessmentComponents']);
 
         return view('hod.courses.show', compact('course', 'department'));
     }
@@ -79,6 +88,7 @@ class HODCourseController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+        $course->load('assessmentComponents');
 
         return view('hod.courses.edit', compact('course', 'programs', 'department'));
     }
@@ -88,7 +98,9 @@ class HODCourseController extends Controller
         $department = $this->requireDepartment();
         $this->assertCourseBelongsToDepartment($course, $department->id);
         $validated = $this->validateCourse($request, $department->id, $course->id);
+        unset($validated['components']);
         $course->update($validated);
+        $this->assessmentService->syncForCourse($course, $request->input('components', []));
 
         return redirect()->route('hod.courses.index')
             ->with('success', 'Course updated successfully.');
@@ -188,6 +200,7 @@ class HODCourseController extends Controller
             'is_elective' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
+            'components' => 'nullable|array',
         ]);
 
         $validated['is_elective'] = $request->boolean('is_elective');

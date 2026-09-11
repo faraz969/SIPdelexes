@@ -21,6 +21,23 @@
                 <tr><th>Semester</th><td>{{ $course->semester ?: '—' }}</td></tr>
                 <tr><th>Credit Units</th><td>{{ $course->credit_units }}{{ $course->total_credit_units ? ' / ' . $course->total_credit_units : '' }}</td></tr>
                 <tr><th>Assessment Split</th><td>{{ $course->assessment_split ?: '—' }}</td></tr>
+                <tr>
+                    <th>Assessment Components</th>
+                    <td>
+                        @if($course->assessmentComponents->isEmpty())
+                            <span class="text-muted">None configured</span>
+                        @else
+                            <ul class="mb-0 ps-3">
+                                @foreach($course->assessmentComponents as $component)
+                                    <li>
+                                        <strong>{{ $component->code }}</strong> — {{ $component->name }}
+                                        ({{ ucfirst($component->category) }}, max {{ $component->max_mark }}, contrib {{ $component->contribution }})
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </td>
+                </tr>
                 <tr><th>Type</th><td>{{ $course->type_label }}</td></tr>
                 <tr><th>Status</th><td>{{ $course->is_active ? 'Active' : 'Inactive' }}</td></tr>
             </table>

@@ -13,6 +13,9 @@ class Lecturer extends Model
         'user_id',
         'course_id',
         'session_id',
+        'semester_course_offering_id',
+        'academic_year',
+        'semester',
     ];
 
     public function user()
@@ -28,6 +31,11 @@ class Lecturer extends Model
     public function session()
     {
         return $this->belongsTo(Session::class);
+    }
+
+    public function semesterCourseOffering()
+    {
+        return $this->belongsTo(SemesterCourseOffering::class);
     }
 
     /**

@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">Edit Course — {{ $department->name }}</h4>
@@ -92,6 +92,8 @@
                             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {{ old('is_active', $course->is_active) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">Active</label>
                         </div>
+
+                        @include('admin.courses._assessment_components')
 
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('hod.courses.index') }}" class="btn btn-secondary">Cancel</a>

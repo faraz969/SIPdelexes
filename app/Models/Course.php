@@ -35,6 +35,21 @@ class Course extends Model
         return $this->belongsTo(Program::class);
     }
 
+    public function assessmentComponents()
+    {
+        return $this->hasMany(CourseAssessmentComponent::class)->orderBy('sequence')->orderBy('id');
+    }
+
+    public function resultSheets()
+    {
+        return $this->hasMany(CourseResultSheet::class);
+    }
+
+    public function lecturers()
+    {
+        return $this->hasMany(Lecturer::class);
+    }
+
     /** Credit units to use for registration (total_credit_units if set, else credit_units). */
     public function getEffectiveCreditUnitsAttribute(): float
     {

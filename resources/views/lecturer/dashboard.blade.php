@@ -3,6 +3,12 @@
 @section('content')
 <div class="container">
     <h3>Lecturer Dashboard</h3>
+
+    <div class="mb-3">
+        <a href="{{ route('lecturer.results.index') }}" class="btn btn-primary">
+            <i class="fas fa-chart-bar"></i> Course Results / Upload Marks
+        </a>
+    </div>
     
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -30,6 +36,9 @@
                     </h5>
                     <a href="{{ route('lecturer.students', $lecturer) }}" class="btn btn-sm btn-outline-primary">
                         View Students ({{ $students->count() }})
+                    </a>
+                    <a href="{{ route('lecturer.results.index') }}" class="btn btn-sm btn-primary ms-1">
+                        <i class="fas fa-chart-bar"></i> Results
                     </a>
                 </div>
                 <div class="card-body">

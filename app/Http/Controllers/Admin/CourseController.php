@@ -6,12 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Program;
 use App\Models\SiteSetting;
+use App\Services\CourseAssessmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CourseController extends Controller
 {
+    protected $assessmentService;
+
+    public function __construct(CourseAssessmentService $assessmentService)
+    {
+        $this->assessmentService = $assessmentService;
+    }
     public function index(Request $request)
     {
         $query = Course::with('program');
@@ -50,23 +57,29 @@ class CourseController extends Controller
             'is_elective' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
+            'components' => 'nullable|array',
         ]);
         $validated['is_elective'] = $request->boolean('is_elective');
         $validated['is_active'] = $request->boolean('is_active', true);
-        Course::create($validated);
+        unset($validated['components']);
+
+        $course = Course::create($validated);
+        $this->assessmentService->syncForCourse($course, $request->input('components', []));
+
         return redirect()->route('admin.courses.index')
             ->with('success', 'Course created successfully.');
     }
 
     public function show(Course $course)
     {
-        $course->load('program');
+        $course->load(['program', 'assessmentComponents']);
         return view('admin.courses.show', compact('course'));
     }
 
     public function edit(Course $course)
     {
         $programs = Program::where('is_active', true)->orderBy('name')->get();
+        $course->load('assessmentComponents');
         return view('admin.courses.edit', compact('course', 'programs'));
     }
 
@@ -84,10 +97,15 @@ class CourseController extends Controller
             'is_elective' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
+            'components' => 'nullable|array',
         ]);
         $validated['is_elective'] = $request->boolean('is_elective');
         $validated['is_active'] = $request->boolean('is_active', true);
+        unset($validated['components']);
+
         $course->update($validated);
+        $this->assessmentService->syncForCourse($course, $request->input('components', []));
+
         return redirect()->route('admin.courses.index')
             ->with('success', 'Course updated successfully.');
     }

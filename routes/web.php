@@ -119,6 +119,12 @@ Route::middleware(['auth', 'role:hod'])->prefix('hod')->name('hod.')->group(func
 
     Route::resource('semester-offerings', App\Http\Controllers\SemesterCourseOfferingController::class);
     Route::post('/semester-offerings/{semester_offering}/toggle-publish', [App\Http\Controllers\SemesterCourseOfferingController::class, 'togglePublish'])->name('semester-offerings.toggle-publish');
+
+    // Course Results (HOD approval)
+    Route::get('/results', [App\Http\Controllers\HODResultsController::class, 'index'])->name('results.index');
+    Route::get('/results/{sheet}', [App\Http\Controllers\HODResultsController::class, 'show'])->name('results.show');
+    Route::post('/results/{sheet}/approve', [App\Http\Controllers\HODResultsController::class, 'approve'])->name('results.approve');
+    Route::post('/results/{sheet}/return', [App\Http\Controllers\HODResultsController::class, 'returnSheet'])->name('results.return');
 });
 
 // President Routes
@@ -152,12 +158,32 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
 
     Route::resource('semester-offerings', App\Http\Controllers\SemesterCourseOfferingController::class);
     Route::post('/semester-offerings/{semester_offering}/toggle-publish', [App\Http\Controllers\SemesterCourseOfferingController::class, 'togglePublish'])->name('semester-offerings.toggle-publish');
+
+    // Course Results (Registrar final approval + publish)
+    Route::get('/results', [App\Http\Controllers\RegistrarResultsController::class, 'index'])->name('results.index');
+    Route::post('/results/publish-semester', [App\Http\Controllers\RegistrarResultsController::class, 'publishSemester'])->name('results.publish-semester');
+    Route::get('/results/{sheet}', [App\Http\Controllers\RegistrarResultsController::class, 'show'])->name('results.show');
+    Route::post('/results/{sheet}/approve', [App\Http\Controllers\RegistrarResultsController::class, 'approve'])->name('results.approve');
+    Route::post('/results/{sheet}/return', [App\Http\Controllers\RegistrarResultsController::class, 'returnSheet'])->name('results.return');
+    Route::post('/results/{sheet}/publish', [App\Http\Controllers\RegistrarResultsController::class, 'publish'])->name('results.publish');
 });
 
 // Lecturer Routes
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\LecturerController::class, 'dashboard'])->name('dashboard');
     Route::get('/students/{lecturer}', [App\Http\Controllers\LecturerController::class, 'students'])->name('students');
+
+    // Results / marks
+    Route::get('/results', [App\Http\Controllers\LecturerResultsController::class, 'index'])->name('results.index');
+    Route::post('/results/{lecturer}/open', [App\Http\Controllers\LecturerResultsController::class, 'open'])->name('results.open');
+    Route::get('/results/{lecturer}/sheets/{sheet}', [App\Http\Controllers\LecturerResultsController::class, 'sheet'])->name('results.sheet');
+    Route::get('/results/{lecturer}/sheets/{sheet}/components/{component}/enter', [App\Http\Controllers\LecturerResultsController::class, 'enterForm'])->name('results.enter');
+    Route::post('/results/{lecturer}/sheets/{sheet}/components/{component}/enter', [App\Http\Controllers\LecturerResultsController::class, 'saveMarks'])->name('results.enter.save');
+    Route::get('/results/{lecturer}/sheets/{sheet}/components/{component}/csv', [App\Http\Controllers\LecturerResultsController::class, 'csvForm'])->name('results.csv');
+    Route::get('/results/{lecturer}/sheets/{sheet}/components/{component}/csv/template', [App\Http\Controllers\LecturerResultsController::class, 'downloadTemplate'])->name('results.csv.template');
+    Route::post('/results/{lecturer}/sheets/{sheet}/components/{component}/csv/validate', [App\Http\Controllers\LecturerResultsController::class, 'validateCsv'])->name('results.csv.validate');
+    Route::post('/results/{lecturer}/sheets/{sheet}/components/{component}/csv/import', [App\Http\Controllers\LecturerResultsController::class, 'importCsv'])->name('results.csv.import');
+    Route::post('/results/{lecturer}/sheets/{sheet}/submit', [App\Http\Controllers\LecturerResultsController::class, 'submit'])->name('results.submit');
 });
 
 // Bank Routes
@@ -224,6 +250,8 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SIPController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [App\Http\Controllers\SIPController::class, 'profile'])->name('profile');
     Route::get('/academic-records', [App\Http\Controllers\SIPController::class, 'academicRecords'])->name('academic-records');
+    Route::get('/results', [App\Http\Controllers\SIPController::class, 'results'])->name('results');
+    Route::get('/results/pdf', [App\Http\Controllers\SIPController::class, 'resultsPdf'])->name('results.pdf');
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{download}/file', [App\Http\Controllers\SIPController::class, 'downloadDocument'])->name('downloads.file');
     Route::get('/downloads/{download}/pdf', [App\Http\Controllers\SIPController::class, 'downloadAdmissionFormPdf'])->name('downloads.pdf');

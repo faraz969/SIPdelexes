@@ -56,6 +56,11 @@
             <a href="{{ route('sip.profile') }}" class="btn btn-outline-primary">View Profile</a>
         </article>
         <article class="sip-feature-card">
+            <div class="feature-title"><i class="fas fa-chart-line icon-cyan"></i><span>My Results</span><i class="fas fa-chevron-right ms-auto"></i></div>
+            <p>View published semester results, GPA, and download slip</p>
+            <a href="{{ route('sip.results') }}" class="btn btn-outline-info">View Results</a>
+        </article>
+        <article class="sip-feature-card">
             <div class="feature-title"><i class="fas fa-book-reader icon-cyan"></i><span>Academic Records</span><i class="fas fa-chevron-right ms-auto"></i></div>
             <p>View registered courses, results, and GPA</p>
             <a href="{{ route('sip.academic-records') }}" class="btn btn-outline-info">View Records</a>

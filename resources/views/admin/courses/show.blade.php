@@ -44,6 +44,23 @@
                             <td>{{ $course->assessment_split ?: '—' }}</td>
                         </tr>
                         <tr>
+                            <td><strong>Assessment Components:</strong></td>
+                            <td>
+                                @if($course->assessmentComponents->isEmpty())
+                                    <span class="text-muted">None configured</span>
+                                @else
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($course->assessmentComponents as $component)
+                                            <li>
+                                                <strong>{{ $component->code }}</strong> — {{ $component->name }}
+                                                ({{ ucfirst($component->category) }}, max {{ $component->max_mark }}, contrib {{ $component->contribution }})
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>Type:</strong></td>
                             <td>{{ $course->type_label }}</td>
                         </tr>

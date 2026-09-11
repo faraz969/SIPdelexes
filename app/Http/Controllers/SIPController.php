@@ -20,6 +20,7 @@ use App\Models\SipDocument;
 use App\Models\AdmissionFormData;
 use App\Services\ActivityLogService;
 use App\Services\ERPInvoiceSyncService;
+use App\Services\ResultsApprovalService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
@@ -191,6 +192,32 @@ class SIPController extends Controller
             ->get();
 
         return view('sip.academic-records', compact('student', 'records'));
+    }
+
+    /**
+     * Published course results (semester slip).
+     */
+    public function results(ResultsApprovalService $approvalService)
+    {
+        $student = $this->getStudent();
+        $student->load(['user', 'program']);
+        $results = $approvalService->studentPublishedResults($student);
+
+        return view('sip.results.index', compact('student', 'results'));
+    }
+
+    /**
+     * Download published results as a simple PDF slip.
+     */
+    public function resultsPdf(ResultsApprovalService $approvalService)
+    {
+        $student = $this->getStudent();
+        $student->load(['user', 'program']);
+        $results = $approvalService->studentPublishedResults($student);
+
+        $pdf = Pdf::loadView('sip.results.pdf', compact('student', 'results'));
+
+        return $pdf->download('result-slip-' . $student->student_id . '.pdf');
     }
 
     /**
