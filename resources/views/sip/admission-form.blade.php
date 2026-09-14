@@ -457,16 +457,13 @@
             You are obliged to undergo medical examination at a facility of your choice. Submit the report to your faculty during registration.
         </p>
         <p>
+        Kindly note that accommodation is not in any way linked to the offer of admission. However, there are hostels available to which you may request for hostel accommodation to be arranged on your behalf
+        </p>
+        <p>
             You will be required to adhere to ALL University rules and regulations as contained in the <strong>Student Handbook</strong>, a copy of which will be made available to you during orientation.
         </p>
         <p>
-            If at any time the University discovers that you do not, in fact, possess the qualifications by virtue of which you have been offered admission into your programme of study, you will be withdrawn.
-        </p>
-        <p>
-            Should you decide to withdraw within four (4) weeks of registration, the University shall refund your fees to you less 40% to be retained as administrative charges. <strong>NO REFUND</strong> will be made after the fourth week.
-        </p>
-        <p>
-            Once again, please accept our congratulations. We look forward to seeing you.
+        Should the University at any time discover that information you have provided to gain admission into your programme of study is false, your admission will be withdrawn.
         </p>
     </div>
 
