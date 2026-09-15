@@ -349,7 +349,7 @@
             @elseif($offerType === 'mature')
                 The Admissions Committee has considered your application and is delighted to offer you admission to
                 <strong>level {{ $data['level'] }}</strong> of a 4-Year {{ $courseTitle }} degree programme
-                <strong>as a mature student subject to passing a written exam</strong>.
+                <strong>as a mature student.</strong>.
                 Kindly note that {{ $data['academic_year'] }} academic year starts in
                 <strong>{{ $data['programme_start_date'] }}</strong>.
                 Other details of your admission are as follows:
