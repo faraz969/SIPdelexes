@@ -312,7 +312,7 @@
     <!-- Student Name and Date -->
     <div class="student-name-date">
         <div class="student-name">
-            <span><strong>Mr/Ms. {{ $data['student_name'] }}</strong></span>
+            <span><strong>{{ $data['student_name'] }}</strong></span>
         </div>
         <div class="document-date">{{ $data['date'] }}</div>
     </div>
