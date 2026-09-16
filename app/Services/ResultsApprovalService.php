@@ -233,7 +233,10 @@ class ResultsApprovalService
     }
 
     /**
-     * Published semester slip data for a student.
+     * Published semester slip / official transcript data for a student.
+     *
+     * Semesters are chronological (oldest first) so TCR/TGP/GPA and running
+     * CGP/CCR/FGPA match an official transcript layout.
      *
      * @return array{semesters: array, cumulative: array}
      */
@@ -259,12 +262,20 @@ class ResultsApprovalService
             $creditTotal = 0.0;
             $creditObtained = 0.0;
             $weightedMarks = 0.0;
+            $tgp = 0.0;
 
             foreach ($semesterRecords as $record) {
                 $credits = (float) ($record->credit_hours ?? 0);
                 $final = $record->final_mark !== null ? (float) $record->final_mark : null;
+                $gp = $record->grade_point !== null ? (float) $record->grade_point : null;
+                $qualityPoints = null;
+                if ($gp !== null) {
+                    $qualityPoints = round($credits * $gp, 2);
+                    $tgp += $qualityPoints;
+                }
+
                 $creditTotal += $credits;
-                if ($final !== null && $record->grade_point !== null && (float) $record->grade_point > 0) {
+                if ($final !== null && $gp !== null && $gp > 0) {
                     $creditObtained += $credits;
                 }
                 if ($final !== null) {
@@ -280,6 +291,7 @@ class ResultsApprovalService
                     'final_mark' => $record->final_mark,
                     'grade' => $record->grade,
                     'grade_point' => $record->grade_point,
+                    'quality_points' => $qualityPoints,
                 ];
             }
 
@@ -289,25 +301,38 @@ class ResultsApprovalService
             $semesters[] = [
                 'academic_year' => $year,
                 'semester' => $sem,
+                'heading' => trim($year . ' Academic Year ' . $sem),
                 'courses' => $courses,
                 'total_credit' => $creditTotal,
                 'credit_obtained' => $creditObtained,
                 'weighted_marks' => round($weightedMarks, 2),
                 'weighted_average' => $weightedAverage,
+                'tcr' => round($creditTotal, 2),
+                'tgp' => round($tgp, 2),
                 'gpa' => $gpa,
             ];
 
             $allRecords = $allRecords->merge($semesterRecords);
         }
 
-        // Newest first
+        // Chronological (oldest first) for running cumulative stats
         usort($semesters, function ($a, $b) {
-            $cmp = strcmp($b['academic_year'], $a['academic_year']);
+            $cmp = strcmp($a['academic_year'], $b['academic_year']);
             if ($cmp !== 0) {
                 return $cmp;
             }
-            return strcmp($b['semester'], $a['semester']);
+            return strcmp($a['semester'], $b['semester']);
         });
+
+        $runningCgp = 0.0;
+        $runningCcr = 0.0;
+        foreach ($semesters as $i => $semester) {
+            $runningCgp += (float) $semester['tgp'];
+            $runningCcr += (float) $semester['tcr'];
+            $semesters[$i]['cgp'] = round($runningCgp, 2);
+            $semesters[$i]['ccr'] = round($runningCcr, 2);
+            $semesters[$i]['fgpa'] = $runningCcr > 0 ? round($runningCgp / $runningCcr, 2) : null;
+        }
 
         $cgpa = $this->calculationService->gpaFromRecords($allRecords);
         $classification = $cgpa !== null
@@ -323,6 +348,12 @@ class ResultsApprovalService
             }
             return (float) $r->final_mark * (float) ($r->credit_hours ?? 0);
         });
+        $cumTgp = $allRecords->sum(function ($r) {
+            if ($r->grade_point === null) {
+                return 0;
+            }
+            return (float) ($r->credit_hours ?? 0) * (float) $r->grade_point;
+        });
 
         return [
             'semesters' => $semesters,
@@ -330,7 +361,10 @@ class ResultsApprovalService
                 'total_credit' => round($cumCredits, 2),
                 'weighted_marks' => round($cumWeighted, 2),
                 'weighted_average' => $cumCredits > 0 ? round($cumWeighted / $cumCredits, 2) : null,
+                'cgp' => round($cumTgp, 2),
+                'ccr' => round($cumCredits, 2),
                 'cgpa' => $cgpa,
+                'fgpa' => $cgpa,
                 'classification' => $classification,
             ],
         ];

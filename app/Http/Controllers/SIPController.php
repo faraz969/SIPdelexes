@@ -203,21 +203,129 @@ class SIPController extends Controller
         $student->load(['user', 'program']);
         $results = $approvalService->studentPublishedResults($student);
 
+        // Newest first on the web view
+        $results['semesters'] = array_reverse($results['semesters']);
+
         return view('sip.results.index', compact('student', 'results'));
     }
 
     /**
-     * Download published results as a simple PDF slip.
+     * Download official academic transcript PDF.
      */
     public function resultsPdf(ResultsApprovalService $approvalService)
     {
         $student = $this->getStudent();
-        $student->load(['user', 'program']);
+        $student->load(['user', 'program', 'application.admissionForm']);
         $results = $approvalService->studentPublishedResults($student);
 
-        $pdf = Pdf::loadView('sip.results.pdf', compact('student', 'results'));
+        if (empty($results['semesters'])) {
+            return redirect()->route('sip.results')
+                ->with('error', 'No published results available to generate a transcript.');
+        }
 
-        return $pdf->download('result-slip-' . $student->student_id . '.pdf');
+        $admissionForm = optional($student->application)->admissionForm;
+        $biodata = is_array($student->biodata) ? $student->biodata : [];
+
+        $dobRaw = $biodata['dob'] ?? optional($admissionForm)->dob;
+        $dob = '—';
+        if ($dobRaw) {
+            try {
+                $dob = \Carbon\Carbon::parse($dobRaw)->format('j/n/Y');
+            } catch (\Exception $e) {
+                $dob = (string) $dobRaw;
+            }
+        }
+
+        $genderRaw = $biodata['gender'] ?? optional($admissionForm)->gender;
+        $sex = '—';
+        if ($genderRaw) {
+            $g = strtoupper(substr(trim((string) $genderRaw), 0, 1));
+            $sex = $g === 'M' ? 'MALE' : ($g === 'F' ? 'FEMALE' : strtoupper((string) $genderRaw));
+        }
+
+        $periodStart = $student->admission_date
+            ? $student->admission_date->format('M Y')
+            : null;
+        $lastSemester = end($results['semesters']);
+        $periodEnd = $lastSemester['academic_year'] ?? now()->format('Y');
+        if (preg_match('/(\d{4})\s*\/\s*(\d{2,4})/', (string) $periodEnd, $m)) {
+            $periodEnd = 'MAY' . (strlen($m[2]) === 2 ? ('20' . $m[2]) : $m[2]);
+        } else {
+            $periodEnd = strtoupper(now()->format('M Y'));
+        }
+        $period = ($periodStart ? strtoupper($periodStart) : '—') . ' - ' . $periodEnd;
+
+        $meta = [
+            'name' => $biodata['full_name'] ?? ($student->user->name ?? '—'),
+            'dob' => $dob,
+            'sex' => $sex,
+            'programme' => $student->program->name ?? '—',
+            'student_number' => $student->student_id,
+            'period' => $period,
+        ];
+
+        $logoPath = public_path('images/logo_blue.png');
+        if (!file_exists($logoPath)) {
+            $logoPath = public_path('images/logo.png');
+        }
+        $logoSrc = file_exists($logoPath) ? $logoPath : null;
+        $photoSrc = $this->resolveStudentPhotoSrc($admissionForm);
+
+        $printedOn = now()->format('l, F j, Y');
+        $verificationCode = strtoupper(substr(hash(
+            'sha256',
+            $student->id . '|' . $student->student_id . '|' . now()->format('YmdHis')
+        ), 0, 32));
+        $verificationCode = implode('-', str_split($verificationCode, 8));
+
+        $this->activityLogService->log([
+            'user_id' => Auth::id(),
+            'role' => 'student',
+            'action' => 'official_transcript_downloaded',
+            'model_type' => Student::class,
+            'model_id' => $student->id,
+            'system_source' => 'SIP',
+            'description' => 'Downloaded official transcript of academic record',
+        ]);
+
+        $pdf = Pdf::loadView('sip.results.pdf', [
+            'student' => $student,
+            'results' => $results,
+            'meta' => $meta,
+            'logoSrc' => $logoSrc,
+            'photoSrc' => $photoSrc,
+            'printedOn' => $printedOn,
+            'verificationCode' => $verificationCode,
+        ])->setPaper('a4', 'portrait')
+          ->setOption('enable-remote', false);
+
+        $fileName = 'Official_Transcript_' . $student->student_id . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Resolve passport photo for PDF embedding.
+     */
+    protected function resolveStudentPhotoSrc($admissionForm): ?string
+    {
+        if (!$admissionForm || !is_array($admissionForm->uploads ?? null)) {
+            return null;
+        }
+
+        $relative = $admissionForm->uploads['passport_picture'] ?? null;
+        if (empty($relative)) {
+            return null;
+        }
+
+        $fullPath = storage_path('app/public/' . ltrim($relative, '/'));
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
     }
 
     /**

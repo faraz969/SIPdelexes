@@ -725,7 +725,7 @@ class SIPAutomationService
             $programName = optional($student->program)->name ?? 'your programme';
             $loginUrl = url('/login');
 
-            $smsMessage = "CONGRATULATIONS  {$studentName}! You have been admitted to BSc. {$programName}. Login: Student ID {$student->student_id}, PIN {$tempPassword}. Change your password on first login: {$loginUrl}. Go to DOWNLOAD >Click ACCEPTANCE to download your admission letter.";
+            $smsMessage = "CONGRATULATIONS  {$studentName}! You have been admitted to  {$programName}. Login: Student ID {$student->student_id}, PIN {$tempPassword}. Change your password on first login: {$loginUrl}. Go to DOWNLOAD >Click ACCEPTANCE to download your admission letter.";
             $this->smsService->send($user->phone, $smsMessage);
             
             \Log::info("Admission approval SMS sent successfully", [

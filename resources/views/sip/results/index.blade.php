@@ -9,12 +9,16 @@
         <div>
             @if(!empty($results['semesters']))
                 <a href="{{ route('sip.results.pdf') }}" class="btn btn-outline-primary btn-sm" target="_blank">
-                    <i class="fas fa-file-pdf"></i> Download PDF
+                    <i class="fas fa-file-pdf"></i> Download Official Transcript
                 </a>
             @endif
             <a href="{{ route('sip.dashboard') }}" class="btn btn-secondary btn-sm">Back</a>
         </div>
     </div>
+
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
 
     <div class="card mb-3">
         <div class="card-body">
@@ -35,15 +39,15 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-3 mb-2">
-                        <div class="small text-muted">Total Credit</div>
-                        <strong>{{ $results['cumulative']['total_credit'] }}</strong>
+                        <div class="small text-muted">CCR (Total Credit)</div>
+                        <strong>{{ $results['cumulative']['ccr'] ?? $results['cumulative']['total_credit'] }}</strong>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <div class="small text-muted">Weighted Average</div>
-                        <strong>{{ $results['cumulative']['weighted_average'] ?? '—' }}</strong>
+                        <div class="small text-muted">CGP</div>
+                        <strong>{{ isset($results['cumulative']['cgp']) ? number_format($results['cumulative']['cgp'], 2) : '—' }}</strong>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <div class="small text-muted">CGPA</div>
+                        <div class="small text-muted">CGPA / FGPA</div>
                         <strong>{{ $results['cumulative']['cgpa'] !== null ? number_format($results['cumulative']['cgpa'], 2) : '—' }}</strong>
                     </div>
                     <div class="col-md-3 mb-2">
@@ -57,20 +61,21 @@
         @foreach($results['semesters'] as $semester)
             <div class="card mb-4">
                 <div class="card-header">
-                    <strong>{{ $semester['semester'] }} — {{ $semester['academic_year'] }}</strong>
+                    <strong>{{ $semester['heading'] ?? ($semester['semester'] . ' — ' . $semester['academic_year']) }}</strong>
                     <span class="float-end">GPA: {{ $semester['gpa'] !== null ? number_format($semester['gpa'], 2) : '—' }}</span>
                 </div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered table-sm">
                         <thead class="table-light">
                             <tr>
-                                <th>Course Code</th>
-                                <th>Course Title</th>
+                                <th>CODE</th>
+                                <th>COURSE NAME</th>
                                 <th class="text-center">Credits</th>
-                                <th class="text-center">Class Mark</th>
-                                <th class="text-center">Exam Mark</th>
+                                <th class="text-center">Class</th>
+                                <th class="text-center">Exam</th>
                                 <th class="text-center">Mark</th>
                                 <th class="text-center">Grade</th>
+                                <th class="text-center">Grade Point</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -83,15 +88,18 @@
                                     <td class="text-center">{{ $course['exam_mark'] ?? '—' }}</td>
                                     <td class="text-center"><strong>{{ $course['final_mark'] ?? '—' }}</strong></td>
                                     <td class="text-center">{{ $course['grade'] ?? '—' }}</td>
+                                    <td class="text-center">{{ isset($course['quality_points']) && $course['quality_points'] !== null ? number_format($course['quality_points'], 2) : '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                     <div class="small text-muted">
-                        Total Credit: {{ $semester['total_credit'] }}
-                        · Credit Obtained: {{ $semester['credit_obtained'] }}
-                        · Weighted Marks: {{ $semester['weighted_marks'] }}
-                        · Weighted Average: {{ $semester['weighted_average'] ?? '—' }}
+                        TCR: {{ number_format($semester['tcr'] ?? $semester['total_credit'], 1) }}
+                        · TGP: {{ isset($semester['tgp']) ? number_format($semester['tgp'], 2) : '—' }}
+                        · GPA: {{ $semester['gpa'] !== null ? number_format($semester['gpa'], 2) : '—' }}
+                        · CGP: {{ isset($semester['cgp']) ? number_format($semester['cgp'], 2) : '—' }}
+                        · CCR: {{ isset($semester['ccr']) ? number_format($semester['ccr'], 1) : '—' }}
+                        · FGPA: {{ isset($semester['fgpa']) && $semester['fgpa'] !== null ? number_format($semester['fgpa'], 2) : '—' }}
                     </div>
                 </div>
             </div>
