@@ -106,6 +106,11 @@ class Student extends Model
         return $this->hasMany(Deferment::class);
     }
 
+    public function transcriptRequests()
+    {
+        return $this->hasMany(TranscriptRequest::class);
+    }
+
     public function downloads()
     {
         return $this->hasMany(Download::class);

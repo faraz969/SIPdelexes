@@ -7,11 +7,9 @@
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h2 class="mb-0"><i class="fas fa-chart-line"></i> My Results</h2>
         <div>
-            @if(!empty($results['semesters']))
-                <a href="{{ route('sip.results.pdf') }}" class="btn btn-outline-primary btn-sm" target="_blank">
-                    <i class="fas fa-file-pdf"></i> Download Official Transcript
-                </a>
-            @endif
+            <a href="{{ route('sip.transcript.index') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-scroll"></i> Official Transcript
+            </a>
             <a href="{{ route('sip.dashboard') }}" class="btn btn-secondary btn-sm">Back</a>
         </div>
     </div>

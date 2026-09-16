@@ -383,6 +383,18 @@ class SIPPaymentController extends Controller
 
         $completed = $this->finalizePayment($payment, $verification['data'] ?? []);
 
+        $invoice = $payment->invoice;
+        if ($invoice && $invoice->invoice_type === 'transcript') {
+            $message = $completed['erp_synced']
+                ? 'Transcript fee payment of GHS ' . number_format($payment->amount, 2) . ' completed. Your request is with the Registrar.'
+                : 'Transcript fee payment received. Your request will move to Registrar after confirmation.';
+
+            return redirect()->route('sip.transcript.index')->with(
+                $completed['erp_synced'] ? 'success' : 'info',
+                $message
+            );
+        }
+
         if ($completed['erp_synced']) {
             return redirect()->route('sip.payments.history')
                 ->with('success', 'Payment of GHS ' . number_format($payment->amount, 2) . ' completed successfully.');

@@ -57,8 +57,13 @@
         </article>
         <article class="sip-feature-card">
             <div class="feature-title"><i class="fas fa-chart-line icon-cyan"></i><span>My Results</span><i class="fas fa-chevron-right ms-auto"></i></div>
-            <p>View published results and download official transcript</p>
+            <p>View published semester results, GPA, and classification</p>
             <a href="{{ route('sip.results') }}" class="btn btn-outline-info">View Results</a>
+        </article>
+        <article class="sip-feature-card">
+            <div class="feature-title"><i class="fas fa-scroll icon-amber"></i><span>Official Transcript</span><i class="fas fa-chevron-right ms-auto"></i></div>
+            <p>Request, pay, and view your approved official transcript</p>
+            <a href="{{ route('sip.transcript.index') }}" class="btn btn-outline-warning">Transcript Requests</a>
         </article>
         <article class="sip-feature-card">
             <div class="feature-title"><i class="fas fa-book-reader icon-cyan"></i><span>Academic Records</span><i class="fas fa-chevron-right ms-auto"></i></div>

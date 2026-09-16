@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 class SiteSetting extends Model
 {
     public const KEY_CURRENT_ACADEMIC_YEAR = 'current_academic_year';
+    public const KEY_TRANSCRIPT_FEE = 'transcript_fee';
 
     protected $fillable = ['key', 'value'];
 
@@ -36,5 +37,15 @@ class SiteSetting extends Model
         $fromDb = static::get(static::KEY_CURRENT_ACADEMIC_YEAR, config('university.default_academic_year'));
 
         return $fromDb ?? '2025/2026';
+    }
+
+    /**
+     * Official transcript fee in GHS.
+     */
+    public static function transcriptFeeAmount(): float
+    {
+        $raw = static::get(static::KEY_TRANSCRIPT_FEE, '0');
+
+        return round((float) $raw, 2);
     }
 }

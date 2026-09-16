@@ -153,6 +153,12 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
     Route::post('/deferments/{deferment}/reject', [App\Http\Controllers\RegistrarController::class, 'rejectDeferment'])->name('deferments.reject');
     Route::post('/deferments/{deferment}/reactivate', [App\Http\Controllers\RegistrarController::class, 'reactivateStudent'])->name('deferments.reactivate');
 
+    // Transcript requests
+    Route::get('/transcripts', [App\Http\Controllers\RegistrarTranscriptController::class, 'index'])->name('transcripts.index');
+    Route::post('/transcripts/{transcriptRequest}/approve', [App\Http\Controllers\RegistrarTranscriptController::class, 'approve'])->name('transcripts.approve');
+    Route::post('/transcripts/{transcriptRequest}/reject', [App\Http\Controllers\RegistrarTranscriptController::class, 'reject'])->name('transcripts.reject');
+    Route::get('/transcripts/{transcriptRequest}/download', [App\Http\Controllers\RegistrarTranscriptController::class, 'download'])->name('transcripts.download');
+
     Route::get('/course-enrollments', [App\Http\Controllers\RegistrarController::class, 'courseEnrollments'])->name('course-enrollments');
     Route::get('/course-enrollments/{course}/students', [App\Http\Controllers\RegistrarController::class, 'courseEnrollmentStudents'])->name('course-enrollments.students');
 
@@ -251,7 +257,6 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/profile', [App\Http\Controllers\SIPController::class, 'profile'])->name('profile');
     Route::get('/academic-records', [App\Http\Controllers\SIPController::class, 'academicRecords'])->name('academic-records');
     Route::get('/results', [App\Http\Controllers\SIPController::class, 'results'])->name('results');
-    Route::get('/results/pdf', [App\Http\Controllers\SIPController::class, 'resultsPdf'])->name('results.pdf');
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{download}/file', [App\Http\Controllers\SIPController::class, 'downloadDocument'])->name('downloads.file');
     Route::get('/downloads/{download}/pdf', [App\Http\Controllers\SIPController::class, 'downloadAdmissionFormPdf'])->name('downloads.pdf');
@@ -286,6 +291,13 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::get('/', [App\Http\Controllers\SIPDefermentController::class, 'showDefermentForm'])->name('form');
         Route::post('/', [App\Http\Controllers\SIPDefermentController::class, 'submitDeferment'])->name('submit');
         Route::get('/status', [App\Http\Controllers\SIPDefermentController::class, 'viewDefermentStatus'])->name('status');
+    });
+
+    // Official Transcript requests
+    Route::prefix('transcript')->name('transcript.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SIPTranscriptController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\SIPTranscriptController::class, 'store'])->name('store');
+        Route::get('/{transcriptRequest}/view', [App\Http\Controllers\SIPTranscriptController::class, 'view'])->name('view');
     });
     
     // Password Change (for first-time login)

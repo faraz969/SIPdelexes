@@ -63,6 +63,10 @@ class Invoice extends Model
         }
         
         $this->save();
+
+        if ($this->status === 'paid' && $this->invoice_type === 'transcript') {
+            app(\App\Services\TranscriptRequestService::class)->markPaidFromInvoice($this);
+        }
     }
 }
 

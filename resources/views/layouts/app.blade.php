@@ -121,6 +121,8 @@
                                 <a class="{{ $navActive('registrar.results.*') }}" href="{{ route('registrar.results.index') }}"><i class="fas fa-chart-bar"></i> Course Results</a>
                                 <div class="sidebar-group-label">DEFERMENTS</div>
                                 <a class="{{ $navActive('registrar.deferments*') }}" href="{{ route('registrar.deferments') }}"><i class="fas fa-pause-circle"></i> Deferments</a>
+                                <div class="sidebar-group-label">TRANSCRIPTS</div>
+                                <a class="{{ $navActive('registrar.transcripts.*') }}" href="{{ route('registrar.transcripts.index') }}"><i class="fas fa-scroll"></i> Transcript Requests</a>
                             @else
                                 <a class="{{ $navActive('admin.dashboard', 'admin.applications.*') }}" href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Dashboard</a>
                                 <div class="sidebar-group-label">MANAGE</div>
@@ -149,7 +151,7 @@
                                 <a class="{{ $navActive('admin.sip-documents.*') }}" href="{{ route('admin.sip-documents.index') }}"><i class="fas fa-file-download"></i> SIP Documents</a>
 
                                 <div class="sidebar-group-label">ACADEMIC SETUP</div>
-                                <a class="{{ $navActive('admin.academic-year-settings.*') }}" href="{{ route('admin.academic-year-settings.edit') }}"><i class="fas fa-calendar-check"></i> Academic Year</a>
+                                <a class="{{ $navActive('admin.academic-year-settings.*') }}" href="{{ route('admin.academic-year-settings.edit') }}"><i class="fas fa-calendar-check"></i> Academic Settings</a>
                                 <a class="{{ $navActive('admin.sessions.*') }}" href="{{ route('admin.sessions.index') }}"><i class="fas fa-clock"></i> Sessions</a>
                                 <a class="{{ $navActive('admin.campuses.*') }}" href="{{ route('admin.campuses.index') }}"><i class="fas fa-school"></i> Campuses</a>
                                 <a class="{{ $navActive('admin.intakes.*') }}" href="{{ route('admin.intakes.index') }}"><i class="fas fa-calendar"></i> Intakes</a>
