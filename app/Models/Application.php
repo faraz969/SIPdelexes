@@ -53,6 +53,11 @@ class Application extends Model
         return $this->hasOne(Student::class);
     }
 
+    public function admissionFormData()
+    {
+        return $this->hasOne(AdmissionFormData::class);
+    }
+
     /**
      * Broad text search across application, user, department, admission form, and student fields.
      */

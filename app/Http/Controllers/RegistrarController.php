@@ -179,7 +179,7 @@ class RegistrarController extends Controller
         }
 
         $applications = $baseQuery
-            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm'])
+            ->with(['user', 'department', 'examRecords.subjects', 'admissionForm', 'admissionFormData', 'student.admissionFormData'])
             ->get();
 
         $titles = [

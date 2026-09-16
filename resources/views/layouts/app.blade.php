@@ -124,7 +124,9 @@
                                 <div class="sidebar-group-label">TRANSCRIPTS</div>
                                 <a class="{{ $navActive('registrar.transcripts.*') }}" href="{{ route('registrar.transcripts.index') }}"><i class="fas fa-scroll"></i> Transcript Requests</a>
                             @else
-                                <a class="{{ $navActive('admin.dashboard', 'admin.applications.*') }}" href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Dashboard</a>
+                                <a class="{{ $navActive('admin.dashboard', 'admin.applications.show', 'admin.applications.updateStatus', 'admin.applications.updatePreferences', 'admin.applications.updateAcademicProgram', 'admin.applications.destroy') }}" href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Dashboard</a>
+                                <div class="sidebar-group-label">APPLICATIONS</div>
+                                <a class="{{ $navActive('admin.applications.registrar-approved') }}" href="{{ route('admin.applications.registrar-approved') }}"><i class="fas fa-check-circle"></i> Registrar Approved</a>
                                 <div class="sidebar-group-label">MANAGE</div>
                                 <a class="{{ request()->routeIs('admin.departments.*') && !request()->routeIs('admin.departments.create') ? 'active' : '' }}" href="{{ route('admin.departments.index') }}"><i class="fas fa-building"></i> Departments</a>
                                 <a class="{{ request()->routeIs('admin.programs.*') && !request()->routeIs('admin.programs.create') ? 'active' : '' }}" href="{{ route('admin.programs.index') }}"><i class="fas fa-graduation-cap"></i> Programs</a>

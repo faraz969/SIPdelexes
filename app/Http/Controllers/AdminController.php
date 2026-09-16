@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\AdmissionForm;
+use App\Models\AdmissionFormData;
 use App\Models\AdmissionFormDefault;
+use App\Models\Department;
+use App\Models\Program;
 use App\Models\SiteSetting;
 use App\Models\Student;
 use Illuminate\Support\Facades\Redirect;
@@ -23,6 +26,87 @@ class AdminController extends Controller
         $applications = $query->latest()->paginate(20)->withQueryString();
 
         return view('admin.dashboard', compact('applications'));
+    }
+
+    /**
+     * Applications approved by the Registrar (with issued offer type).
+     */
+    public function registrarApprovedApplications(Request $request)
+    {
+        $academicYear = trim((string) $request->get('academic_year', ''));
+        $departmentId = $request->get('department_id');
+        $programId = $request->get('program_id');
+        $offerType = trim((string) $request->get('offer_type', ''));
+        $search = trim((string) $request->get('search', ''));
+
+        $departments = Department::orderBy('name')->get();
+
+        $academicYears = Application::where('status', '!=', 'draft')
+            ->where('registrar_status', 'approved')
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $programsQuery = Program::where('is_active', true)->orderBy('name');
+        if (!empty($departmentId)) {
+            $programsQuery->where('department_id', $departmentId);
+        }
+        $programs = $programsQuery->get();
+
+        if (!empty($programId) && !$programs->contains('id', (int) $programId)) {
+            $programId = null;
+        }
+
+        $query = Application::query()
+            ->where('status', '!=', 'draft')
+            ->where('registrar_status', 'approved');
+
+        if ($academicYear !== '') {
+            $query->where('academic_year', $academicYear);
+        }
+
+        if (!empty($departmentId)) {
+            $query->where(function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId)
+                    ->orWhereJsonContains('department_ids', (int) $departmentId)
+                    ->orWhereJsonContains('department_ids', (string) $departmentId);
+            });
+        }
+
+        if (!empty($programId)) {
+            $query->whereSelectedProgram($programId);
+        }
+
+        if ($search !== '') {
+            $query->search($search);
+        }
+
+        if ($offerType !== '' && in_array($offerType, AdmissionFormData::OFFER_TYPES, true)) {
+            $query->whereHas('admissionFormData', function ($q) use ($offerType) {
+                $q->where('offer_type', $offerType);
+            });
+        }
+
+        $applications = $query
+            ->with(['user', 'department', 'admissionForm', 'admissionFormData', 'student.admissionFormData', 'student.program'])
+            ->orderByDesc('registrar_reviewed_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('admin.applications.registrar-approved', [
+            'applications' => $applications,
+            'departments' => $departments,
+            'academicYears' => $academicYears,
+            'academicYear' => $academicYear,
+            'departmentId' => $departmentId,
+            'programs' => $programs,
+            'programId' => $programId,
+            'offerType' => $offerType,
+            'search' => $search,
+            'offerTypes' => AdmissionFormData::OFFER_TYPES,
+        ]);
     }
 
     public function show($id)

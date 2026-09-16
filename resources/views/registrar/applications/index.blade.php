@@ -93,6 +93,9 @@
                                 <th>Form Type</th>
                                 <th>Qualification</th>
                                 <th>Department</th>
+                                @if($status === 'approved')
+                                    <th>Offer Type</th>
+                                @endif
                                 @if($status === 'pending')
                                     <th>HOD Status</th>
                                 @else
@@ -126,6 +129,22 @@
                                         @endif
                                     </td>
                                     <td>{{ $app->department->name ?? '-' }}</td>
+                                    @if($status === 'approved')
+                                        @php
+                                            $offerData = $app->admissionFormData
+                                                ?? optional($app->student)->admissionFormData;
+                                        @endphp
+                                        <td>
+                                            @if($offerData)
+                                                <span class="badge bg-info text-dark">{{ $offerData->offer_type_label }}</span>
+                                                @if(($offerData->offer_type ?? '') === 'conditional' && $offerData->conditional_subject)
+                                                    <div class="small text-muted mt-1">{{ $offerData->conditional_subject }}</div>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                     @if($status === 'pending')
                                         <td>
                                             @if($app->hod_status === 'approved')

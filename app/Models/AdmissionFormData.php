@@ -34,6 +34,11 @@ class AdmissionFormData extends Model
         return in_array($type, self::OFFER_TYPES, true) ? $type : 'regular';
     }
 
+    public function getOfferTypeLabelAttribute(): string
+    {
+        return ucfirst(str_replace('-', ' ', self::normalizeOfferType($this->offer_type)));
+    }
+
     protected $casts = [
         'total_fees' => 'decimal:2',
         'minimum_fee_percentage' => 'decimal:2',
