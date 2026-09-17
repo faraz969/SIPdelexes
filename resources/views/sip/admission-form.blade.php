@@ -324,7 +324,7 @@
         if ($offerType === 'conditional') {
             $offerTitle = 'CONDITIONAL OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
         } elseif ($offerType === 'mature') {
-            $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE AS A MATURE STUDENT';
+            $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE ';
         } elseif ($offerType === 'top-up') {
             $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
         } else {
@@ -348,8 +348,8 @@
                 Other details of your admission are as follows:
             @elseif($offerType === 'mature')
                 The Admissions Committee has considered your application and is delighted to offer you admission to
-                <strong>level {{ $data['level'] }}</strong> of a 4-Year {{ $courseTitle }} degree programme
-                <strong>as a mature student.</strong>.
+                <strong>level {{ $data['level'] }}</strong> of a 4-Year {{ $courseTitle }} degree programme as a
+                <strong> Mature Student.</strong>.
                 Kindly note that {{ $data['academic_year'] }} academic year starts in
                 <strong>{{ $data['programme_start_date'] }}</strong>.
                 Other details of your admission are as follows:
