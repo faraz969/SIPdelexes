@@ -327,7 +327,10 @@
             $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE ';
         } elseif ($offerType === 'top-up') {
             $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
-        } else {
+        }elseif ($offerType === 'access') {
+            $offerTitle = 'OFFER OF ADMISSION TO DO ACCESS COURSE';
+        }
+         else {
             $offerTitle = 'OFFER OF ADMISSION FOR ' . $courseTitle . ' DEGREE';
         }
     @endphp
@@ -358,6 +361,12 @@
                 {{ $data['program_duration'] }} BSc. Degree programme in {{ $courseTitle }}, starting from
                 <strong>level {{ $data['level'] }}</strong>.
                 Kindly note that the <strong>{{ $data['academic_year'] }}</strong> academic year starts on
+                <strong>{{ $data['programme_start_date'] }}</strong>.
+                Other details of your admission are as follows:
+            @elseif($offerType === 'access')
+            The Admissions Committee has considered your application and is delighted to offer you admission to do
+                <strong>six week Access Course</strong> in {{ $courseTitle }} You will be admitted into {{ $data['level'] }} of the programme upon successful completion of the access course. 
+                Kindly note that {{ $data['academic_year'] }} academic year starts in
                 <strong>{{ $data['programme_start_date'] }}</strong>.
                 Other details of your admission are as follows:
             @else

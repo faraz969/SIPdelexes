@@ -288,10 +288,11 @@
                             <div class="mb-3">
                                 <label for="offer_type" class="form-label">Admission Offer Type <span class="text-danger">*</span></label>
                                 <select class="form-select @error('offer_type') is-invalid @enderror" id="offer_type" name="offer_type" required>
-                                    <option value="regular" {{ old('offer_type', 'regular') === 'regular' ? 'selected' : '' }}>Regular</option>
-                                    <option value="conditional" {{ old('offer_type') === 'conditional' ? 'selected' : '' }}>Conditional</option>
-                                    <option value="mature" {{ old('offer_type') === 'mature' ? 'selected' : '' }}>Mature</option>
-                                    <option value="top-up" {{ old('offer_type') === 'top-up' ? 'selected' : '' }}>Top-up</option>
+                                    @foreach(\App\Models\AdmissionFormData::OFFER_TYPES as $type)
+                                        <option value="{{ $type }}" {{ old('offer_type', 'regular') === $type ? 'selected' : '' }}>
+                                            {{ ucfirst(str_replace('-', ' ', $type)) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <small class="text-muted">This controls the wording on the student admission letter.</small>
                                 @error('offer_type')
