@@ -74,7 +74,7 @@
                         @elseif($documentType === 'exam_slip')
                             <i class="fas fa-clipboard-list"></i> Exam Slips
                         @elseif($documentType === 'admission_form')
-                            <i class="fas fa-file-alt"></i> Admission Forms
+                            <i class="fas fa-file-alt"></i> Admission Letter
                         @else
                             <i class="fas fa-file"></i> {{ ucfirst(str_replace('_', ' ', $documentType)) }}
                         @endif
