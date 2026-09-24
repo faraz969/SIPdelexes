@@ -26,6 +26,24 @@
         <div class="sip-hero-icon"><i class="fas fa-graduation-cap"></i></div>
     </section>
 
+    @if(!empty($sipNotes) && $sipNotes->isNotEmpty())
+        <section class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong><i class="fas fa-lightbulb text-warning me-1"></i> How to Use SIP</strong>
+                <a href="{{ route('sip.notes') }}" class="btn btn-sm btn-outline-primary">View all</a>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 ps-3">
+                    @foreach($sipNotes as $note)
+                        <li class="mb-1">
+                            <a href="{{ route('sip.notes') }}#collapse-{{ $note->id }}">{{ $note->title }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </section>
+    @endif
+
     <section class="sip-kpi-grid">
         <article class="sip-kpi-card kpi-blue">
             <div class="kpi-head"><i class="fas fa-file-invoice-dollar"></i> Total Balance</div>
@@ -50,6 +68,11 @@
     </section>
 
     <section class="sip-feature-grid">
+        <article class="sip-feature-card">
+            <div class="feature-title"><i class="fas fa-lightbulb icon-amber"></i><span>How to Use SIP</span><i class="fas fa-chevron-right ms-auto"></i></div>
+            <p>Read admin guides on payments, registration, results, and more</p>
+            <a href="{{ route('sip.notes') }}" class="btn btn-outline-warning">View Guides</a>
+        </article>
         <article class="sip-feature-card">
             <div class="feature-title"><i class="fas fa-user-circle icon-blue"></i><span>Student Profile</span><i class="fas fa-chevron-right ms-auto"></i></div>
             <p>View your biodata, programme, and academic status</p>

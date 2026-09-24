@@ -17,6 +17,7 @@ use App\Models\ExamPin;
 use App\Models\Deferment;
 use App\Models\Download;
 use App\Models\SipDocument;
+use App\Models\SipNote;
 use App\Models\AdmissionFormData;
 use App\Services\ActivityLogService;
 use App\Services\ERPInvoiceSyncService;
@@ -92,7 +93,20 @@ class SIPController extends Controller
             'active_deferment' => $student->deferments()->where('status', 'approved')->exists(),
         ];
 
-        return view('sip.dashboard', compact('student', 'stats'));
+        $sipNotes = SipNote::active()->ordered()->limit(3)->get();
+
+        return view('sip.dashboard', compact('student', 'stats', 'sipNotes'));
+    }
+
+    /**
+     * Admin-published guides on how to use SIP.
+     */
+    public function notes()
+    {
+        $student = $this->getStudent();
+        $notes = SipNote::active()->ordered()->get();
+
+        return view('sip.notes.index', compact('student', 'notes'));
     }
 
     /**

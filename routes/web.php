@@ -90,6 +90,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('sip-documents', App\Http\Controllers\Admin\SipDocumentController::class)->except(['show']);
     Route::get('sip-documents/{sip_document}/file', [App\Http\Controllers\Admin\SipDocumentController::class, 'file'])->name('sip-documents.file');
+
+    Route::resource('sip-notes', App\Http\Controllers\Admin\SipNoteController::class)->except(['show']);
     
     // Lecturers Management
     Route::resource('lecturers', App\Http\Controllers\Admin\LecturerController::class);
@@ -256,6 +258,7 @@ Route::get('/sip/login', function () {
 Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SIPController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [App\Http\Controllers\SIPController::class, 'profile'])->name('profile');
+    Route::get('/notes', [App\Http\Controllers\SIPController::class, 'notes'])->name('notes');
     Route::get('/academic-records', [App\Http\Controllers\SIPController::class, 'academicRecords'])->name('academic-records');
     Route::get('/results', [App\Http\Controllers\SIPController::class, 'results'])->name('results');
     Route::get('/downloads', [App\Http\Controllers\SIPController::class, 'downloads'])->name('downloads');
