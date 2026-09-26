@@ -193,6 +193,14 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
     Route::post('/results/{lecturer}/sheets/{sheet}/components/{component}/csv/validate', [App\Http\Controllers\LecturerResultsController::class, 'validateCsv'])->name('results.csv.validate');
     Route::post('/results/{lecturer}/sheets/{sheet}/components/{component}/csv/import', [App\Http\Controllers\LecturerResultsController::class, 'importCsv'])->name('results.csv.import');
     Route::post('/results/{lecturer}/sheets/{sheet}/submit', [App\Http\Controllers\LecturerResultsController::class, 'submit'])->name('results.submit');
+
+    // Course materials
+    Route::get('/materials', [App\Http\Controllers\LecturerCourseMaterialController::class, 'index'])->name('materials.index');
+    Route::get('/materials/{lecturer}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'show'])->name('materials.show');
+    Route::post('/materials/{lecturer}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'store'])->name('materials.store');
+    Route::put('/materials/{lecturer}/{material}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'update'])->name('materials.update');
+    Route::delete('/materials/{lecturer}/{material}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'destroy'])->name('materials.destroy');
+    Route::get('/materials/{lecturer}/{material}/download', [App\Http\Controllers\LecturerCourseMaterialController::class, 'download'])->name('materials.download');
 });
 
 // Bank Routes
@@ -276,6 +284,13 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::get('/paystack/callback', [App\Http\Controllers\SIPPaymentController::class, 'paystackCallback'])->name('paystack.callback');
     });
     
+    // Course Materials
+    Route::prefix('course-materials')->name('course-materials.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SIPCourseMaterialController::class, 'index'])->name('index');
+        Route::get('/course/{course}', [App\Http\Controllers\SIPCourseMaterialController::class, 'course'])->name('course');
+        Route::get('/{material}/download', [App\Http\Controllers\SIPCourseMaterialController::class, 'download'])->name('download');
+    });
+
     // Course Registration
     Route::prefix('course-registration')->name('course-registration.')->group(function () {
         Route::get('/', [App\Http\Controllers\SIPCourseRegistrationController::class, 'showRegistrationForm'])->name('show');

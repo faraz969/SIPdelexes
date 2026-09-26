@@ -89,6 +89,7 @@
                         @elseif($user->isLecturer())
                             <a class="{{ $navActive('lecturer.dashboard') }}" href="{{ route('lecturer.dashboard') }}"><i class="fas fa-chalkboard-teacher"></i> Lecturer Dashboard</a>
                             <a class="{{ $navActive('lecturer.results.*') }}" href="{{ route('lecturer.results.index') }}"><i class="fas fa-chart-bar"></i> Course Results</a>
+                            <a class="{{ $navActive('lecturer.materials.*') }}" href="{{ route('lecturer.materials.index') }}"><i class="fas fa-folder-open"></i> Course Materials</a>
                         @else
                             <div class="sidebar-group-label">DASHBOARD</div>
                             @if($user->isHOD())

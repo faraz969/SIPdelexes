@@ -8,6 +8,9 @@
         <a href="{{ route('lecturer.results.index') }}" class="btn btn-primary">
             <i class="fas fa-chart-bar"></i> Course Results / Upload Marks
         </a>
+        <a href="{{ route('lecturer.materials.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-folder-open"></i> Course Materials
+        </a>
     </div>
     
     @if(session('success'))
