@@ -31,7 +31,7 @@
     <div class="card mb-4">
         <div class="card-header"><strong>Quiz Settings</strong></div>
         <div class="card-body">
-            <form method="POST" action="{{ route('lecturer.quizzes.update', [$lecturer, $quiz]) }}">
+            <form method="POST" action="{{ route('lecturer.quizzes.update', [$lecturer, $quiz]) }}" data-convert-quiz-datetimes>
                 @csrf
                 @method('PUT')
                 <div class="row g-3">
@@ -54,14 +54,14 @@
                         <textarea name="instructions" class="form-control" rows="2">{{ old('instructions', $quiz->instructions) }}</textarea>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Opens at</label>
-                        <input type="datetime-local" name="opens_at" class="form-control"
-                               value="{{ old('opens_at', optional($quiz->opens_at)->format('Y-m-d\TH:i')) }}">
+                        <label class="form-label">Opens at <span class="text-muted small">(your local time)</span></label>
+                        <input type="datetime-local" name="opens_at" class="form-control" data-app-datetime
+                               value="{{ old('opens_at', optional($quiz->opens_at)->timezone(config('app.timezone'))->format('Y-m-d\TH:i')) }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Closes at</label>
-                        <input type="datetime-local" name="closes_at" class="form-control"
-                               value="{{ old('closes_at', optional($quiz->closes_at)->format('Y-m-d\TH:i')) }}">
+                        <label class="form-label">Closes at <span class="text-muted small">(your local time)</span></label>
+                        <input type="datetime-local" name="closes_at" class="form-control" data-app-datetime
+                               value="{{ old('closes_at', optional($quiz->closes_at)->timezone(config('app.timezone'))->format('Y-m-d\TH:i')) }}">
                     </div>
                     <div class="col-md-4 d-flex align-items-end gap-3">
                         <div class="form-check">
@@ -76,6 +76,10 @@
                         </div>
                     </div>
                     <div class="col-12">
+                        <p class="small text-muted mb-2">
+                            Open/close times are saved in college time ({{ config('app.timezone') }}).
+                            Your browser converts automatically from local time.
+                        </p>
                         <button type="submit" class="btn btn-primary btn-sm">Save Settings</button>
                     </div>
                 </div>
@@ -283,4 +287,5 @@
     });
 })();
 </script>
+@include('partials.quiz-datetime-tz')
 @endsection

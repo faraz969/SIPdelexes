@@ -32,10 +32,10 @@
                     <li>Duration: {{ $quiz->duration_minutes }} minutes</li>
                 @endif
                 @if($quiz->opens_at)
-                    <li>Opens: {{ $quiz->opens_at->format('d M Y H:i') }}</li>
+                    <li>Opens: {{ $quiz->opens_at->timezone(config('app.timezone'))->format('d M Y H:i') }} ({{ config('app.timezone') }})</li>
                 @endif
                 @if($quiz->closes_at)
-                    <li>Closes: {{ $quiz->closes_at->format('d M Y H:i') }}</li>
+                    <li>Closes: {{ $quiz->closes_at->timezone(config('app.timezone'))->format('d M Y H:i') }} ({{ config('app.timezone') }})</li>
                 @endif
             </ul>
 
@@ -52,7 +52,7 @@
                     </button>
                 </form>
             @elseif(!$quiz->isOpen())
-                <div class="alert alert-secondary mb-0">This quiz is not open right now.</div>
+                <div class="alert alert-secondary mb-0">{{ $quiz->availabilityMessage() }}</div>
             @else
                 <div class="alert alert-secondary mb-0">You have used all allowed attempts.</div>
             @endif

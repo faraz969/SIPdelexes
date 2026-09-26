@@ -123,8 +123,8 @@ class LecturerQuizController extends Controller
             'semester' => $validated['semester'],
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'max_attempts' => $validated['max_attempts'] ?? 1,
-            'opens_at' => $validated['opens_at'] ?? null,
-            'closes_at' => $validated['closes_at'] ?? null,
+            'opens_at' => $this->normalizeQuizDateTime($validated['opens_at'] ?? null),
+            'closes_at' => $this->normalizeQuizDateTime($validated['closes_at'] ?? null),
             'is_published' => $request->boolean('is_published'),
             'show_score_to_student' => $request->boolean('show_score_to_student', true),
         ]);
@@ -175,13 +175,27 @@ class LecturerQuizController extends Controller
             'instructions' => $validated['instructions'] ?? null,
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'max_attempts' => $validated['max_attempts'] ?? 1,
-            'opens_at' => $validated['opens_at'] ?? null,
-            'closes_at' => $validated['closes_at'] ?? null,
+            'opens_at' => $this->normalizeQuizDateTime($validated['opens_at'] ?? null),
+            'closes_at' => $this->normalizeQuizDateTime($validated['closes_at'] ?? null),
             'is_published' => $request->boolean('is_published'),
             'show_score_to_student' => $request->boolean('show_score_to_student', true),
         ]);
 
         return back()->with('success', 'Quiz settings updated.');
+    }
+
+    /**
+     * Store quiz window times as naive wall-clock in app timezone
+     * (forms convert browser-local datetime-local values before submit).
+     */
+    protected function normalizeQuizDateTime($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return \Carbon\Carbon::parse($value, config('app.timezone'))
+            ->format('Y-m-d H:i:s');
     }
 
     public function destroy(Lecturer $lecturer, Quiz $quiz)

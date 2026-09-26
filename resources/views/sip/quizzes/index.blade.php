@@ -40,7 +40,7 @@
                                 @if($quiz->isOpen())
                                     <span class="badge bg-success">Open</span>
                                 @else
-                                    <span class="badge bg-warning text-dark">Closed / Scheduled</span>
+                                    <span class="badge bg-warning text-dark">{{ ucfirst($quiz->availabilityStatus() === 'scheduled' ? 'Scheduled' : ($quiz->availabilityStatus() === 'closed' ? 'Closed' : 'Unavailable')) }}</span>
                                 @endif
                             </p>
                             @if($latest)

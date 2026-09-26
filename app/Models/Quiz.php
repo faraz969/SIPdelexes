@@ -73,17 +73,47 @@ class Quiz extends Model
 
     public function isOpen(): bool
     {
+        return $this->availabilityStatus() === 'open';
+    }
+
+    /**
+     * open | unpublished | scheduled | closed
+     */
+    public function availabilityStatus(): string
+    {
         if (!$this->is_published) {
-            return false;
+            return 'unpublished';
         }
+
         $now = now();
+
         if ($this->opens_at && $now->lt($this->opens_at)) {
-            return false;
+            return 'scheduled';
         }
+
         if ($this->closes_at && $now->gt($this->closes_at)) {
-            return false;
+            return 'closed';
         }
-        return true;
+
+        return 'open';
+    }
+
+    public function availabilityMessage(): string
+    {
+        switch ($this->availabilityStatus()) {
+            case 'unpublished':
+                return 'This quiz is not published yet.';
+            case 'scheduled':
+                return 'This quiz opens on '
+                    . optional($this->opens_at)->timezone(config('app.timezone'))->format('d M Y H:i')
+                    . ' (' . config('app.timezone') . ').';
+            case 'closed':
+                return 'This quiz closed on '
+                    . optional($this->closes_at)->timezone(config('app.timezone'))->format('d M Y H:i')
+                    . ' (' . config('app.timezone') . ').';
+            default:
+                return 'This quiz is open.';
+        }
     }
 
     public function recalculateTotalMarks(): void

@@ -19,7 +19,7 @@
     <div class="card mb-4">
         <div class="card-header"><strong>Create Quiz</strong></div>
         <div class="card-body">
-            <form method="POST" action="{{ route('lecturer.quizzes.store', $lecturer) }}">
+            <form method="POST" action="{{ route('lecturer.quizzes.store', $lecturer) }}" data-convert-quiz-datetimes>
                 @csrf
                 <input type="hidden" name="academic_year" value="{{ $academicYear }}">
                 <input type="hidden" name="semester" value="{{ $semester }}">
@@ -44,17 +44,19 @@
                         <textarea name="instructions" class="form-control" rows="2">{{ old('instructions') }}</textarea>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Opens at</label>
-                        <input type="datetime-local" name="opens_at" class="form-control" value="{{ old('opens_at') }}">
+                        <label class="form-label">Opens at <span class="text-muted small">(your local time)</span></label>
+                        <input type="datetime-local" name="opens_at" class="form-control" data-app-datetime
+                               value="{{ old('opens_at') }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Closes at</label>
-                        <input type="datetime-local" name="closes_at" class="form-control" value="{{ old('closes_at') }}">
+                        <label class="form-label">Closes at <span class="text-muted small">(your local time)</span></label>
+                        <input type="datetime-local" name="closes_at" class="form-control" data-app-datetime
+                               value="{{ old('closes_at') }}">
                     </div>
                     <div class="col-md-4 d-flex align-items-end gap-3">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" name="is_published" value="1" id="is_published"
-                                   {{ old('is_published') ? 'checked' : '' }}>
+                                   {{ old('is_published', true) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_published">Publish now</label>
                         </div>
                         <div class="form-check">
@@ -64,6 +66,10 @@
                         </div>
                     </div>
                     <div class="col-12">
+                        <p class="small text-muted mb-2">
+                            Open/close times are saved in college time ({{ config('app.timezone') }}).
+                            Your browser converts automatically from local time.
+                        </p>
                         <button type="submit" class="btn btn-primary">Create Quiz</button>
                     </div>
                 </div>
@@ -119,3 +125,7 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+@include('partials.quiz-datetime-tz')
+@endpush
