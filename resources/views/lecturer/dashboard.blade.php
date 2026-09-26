@@ -11,6 +11,9 @@
         <a href="{{ route('lecturer.materials.index') }}" class="btn btn-outline-primary">
             <i class="fas fa-folder-open"></i> Course Materials
         </a>
+        <a href="{{ route('lecturer.quizzes.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-question-circle"></i> Quizzes
+        </a>
     </div>
     
     @if(session('success'))

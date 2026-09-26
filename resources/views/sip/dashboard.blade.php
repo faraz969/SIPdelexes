@@ -104,6 +104,11 @@
             <a href="{{ route('sip.payments.invoices') }}" class="btn btn-outline-warning">Make Payment</a>
         </article>
         <article class="sip-feature-card">
+            <div class="feature-title"><i class="fas fa-question-circle icon-red"></i><span>Quizzes</span><i class="fas fa-chevron-right ms-auto"></i></div>
+            <p>Attempt course quizzes set by your lecturers</p>
+            <a href="{{ route('sip.quizzes.index') }}" class="btn btn-outline-danger">View Quizzes</a>
+        </article>
+        <article class="sip-feature-card">
             <div class="feature-title"><i class="fas fa-folder-open icon-purple"></i><span>Course Materials</span><i class="fas fa-chevron-right ms-auto"></i></div>
             <p>View and download lecture notes, slides, and files</p>
             <a href="{{ route('sip.course-materials.index') }}" class="btn btn-outline-secondary">View Materials</a>

@@ -201,6 +201,18 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
     Route::put('/materials/{lecturer}/{material}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'update'])->name('materials.update');
     Route::delete('/materials/{lecturer}/{material}', [App\Http\Controllers\LecturerCourseMaterialController::class, 'destroy'])->name('materials.destroy');
     Route::get('/materials/{lecturer}/{material}/download', [App\Http\Controllers\LecturerCourseMaterialController::class, 'download'])->name('materials.download');
+
+    // Quizzes
+    Route::get('/quizzes', [App\Http\Controllers\LecturerQuizController::class, 'index'])->name('quizzes.index');
+    Route::get('/quizzes/{lecturer}', [App\Http\Controllers\LecturerQuizController::class, 'course'])->name('quizzes.course');
+    Route::post('/quizzes/{lecturer}', [App\Http\Controllers\LecturerQuizController::class, 'store'])->name('quizzes.store');
+    Route::get('/quizzes/{lecturer}/{quiz}', [App\Http\Controllers\LecturerQuizController::class, 'show'])->name('quizzes.show');
+    Route::put('/quizzes/{lecturer}/{quiz}', [App\Http\Controllers\LecturerQuizController::class, 'update'])->name('quizzes.update');
+    Route::delete('/quizzes/{lecturer}/{quiz}', [App\Http\Controllers\LecturerQuizController::class, 'destroy'])->name('quizzes.destroy');
+    Route::post('/quizzes/{lecturer}/{quiz}/questions', [App\Http\Controllers\LecturerQuizController::class, 'storeQuestion'])->name('quizzes.questions.store');
+    Route::delete('/quizzes/{lecturer}/{quiz}/questions/{question}', [App\Http\Controllers\LecturerQuizController::class, 'destroyQuestion'])->name('quizzes.questions.destroy');
+    Route::get('/quizzes/{lecturer}/{quiz}/attempts/{attempt}', [App\Http\Controllers\LecturerQuizController::class, 'attempt'])->name('quizzes.attempt');
+    Route::post('/quizzes/{lecturer}/{quiz}/attempts/{attempt}/grade', [App\Http\Controllers\LecturerQuizController::class, 'grade'])->name('quizzes.grade');
 });
 
 // Bank Routes
@@ -284,6 +296,17 @@ Route::middleware(['auth'])->prefix('sip')->name('sip.')->group(function () {
         Route::get('/paystack/callback', [App\Http\Controllers\SIPPaymentController::class, 'paystackCallback'])->name('paystack.callback');
     });
     
+    // Quizzes
+    Route::prefix('quizzes')->name('quizzes.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SIPQuizController::class, 'index'])->name('index');
+        Route::get('/{quiz}', [App\Http\Controllers\SIPQuizController::class, 'show'])->name('show');
+        Route::post('/{quiz}/start', [App\Http\Controllers\SIPQuizController::class, 'start'])->name('start');
+        Route::get('/{quiz}/attempts/{attempt}', [App\Http\Controllers\SIPQuizController::class, 'attempt'])->name('attempt');
+        Route::post('/{quiz}/attempts/{attempt}/save', [App\Http\Controllers\SIPQuizController::class, 'save'])->name('save');
+        Route::post('/{quiz}/attempts/{attempt}/submit', [App\Http\Controllers\SIPQuizController::class, 'submit'])->name('submit');
+        Route::get('/{quiz}/attempts/{attempt}/result', [App\Http\Controllers\SIPQuizController::class, 'result'])->name('result');
+    });
+
     // Course Materials
     Route::prefix('course-materials')->name('course-materials.')->group(function () {
         Route::get('/', [App\Http\Controllers\SIPCourseMaterialController::class, 'index'])->name('index');
