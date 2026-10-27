@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionFormDefault;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class AdmissionFormSettingsController extends Controller
 {
@@ -73,9 +72,8 @@ class AdmissionFormSettingsController extends Controller
         ]);
 
         if ($request->hasFile('registrar_signature') && $request->file('registrar_signature')->isValid()) {
-            if ($settings->registrar_signature && Storage::disk('public')->exists($settings->registrar_signature)) {
-                Storage::disk('public')->delete($settings->registrar_signature);
-            }
+            // Keep the previous default image on disk. Issued letters may still
+            // reference it until their own snapshot copy is created.
             $validated['registrar_signature'] = $request->file('registrar_signature')->store('registrar_signatures', 'public');
         } else {
             unset($validated['registrar_signature']);

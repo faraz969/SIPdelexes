@@ -290,7 +290,7 @@ class RegistrarController extends Controller
             $totalFees = $program && $program->price !== null ? $program->price : null;
             $offerType = AdmissionFormData::normalizeOfferType($request->offer_type);
 
-            AdmissionFormData::updateOrCreate(
+            $formData = AdmissionFormData::updateOrCreate(
                 ['student_id' => $student->id],
                 [
                     'application_id' => $application->id,
@@ -308,6 +308,10 @@ class RegistrarController extends Controller
                     'lectures_begin' => $defaults->lectures_begin ?? null,
                 ]
             );
+
+            // Freeze registrar signature/name on this letter so later default updates
+            // do not rewrite previously issued admission forms.
+            $this->admissionFormService->ensureRegistrarSnapshot($formData, $student, $defaults, true);
 
             // Create download record for admission form (HTML/PDF view)
             try {

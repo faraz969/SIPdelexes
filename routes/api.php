@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BankApiController;
+use App\Http\Controllers\Api\BankInvoiceApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +21,7 @@ use App\Http\Controllers\Api\BankApiController;
 | Bank Integration API
 |--------------------------------------------------------------------------
 | Authenticate with a bank account, then use the Bearer token for voucher
-| / applicant creation endpoints (same flow as the bank dashboard).
+| / applicant creation and student invoice payment endpoints.
 */
 Route::prefix('bank')->name('api.bank.')->group(function () {
     Route::post('/login', [BankApiController::class, 'login'])->name('login');
@@ -34,6 +35,12 @@ Route::prefix('bank')->name('api.bank.')->group(function () {
         Route::post('/users', [BankApiController::class, 'createUser'])->name('users.store');
         Route::get('/users/{id}', [BankApiController::class, 'getUser'])->name('users.show');
         Route::get('/users/{id}/receipt', [BankApiController::class, 'getReceipt'])->name('users.receipt');
+
+        // Student invoice payments (bank counter / core-banking webhook)
+        Route::get('/invoices/lookup', [BankInvoiceApiController::class, 'lookup'])->name('invoices.lookup');
+        Route::get('/students/{student_id}/invoices', [BankInvoiceApiController::class, 'studentInvoices'])->name('students.invoices');
+        Route::post('/invoices/pay', [BankInvoiceApiController::class, 'pay'])->name('invoices.pay');
+        Route::get('/payments/{bank_transaction_id}', [BankInvoiceApiController::class, 'paymentStatus'])->name('payments.status');
     });
 });
 

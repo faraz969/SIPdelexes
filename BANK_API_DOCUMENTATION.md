@@ -45,6 +45,10 @@ Only users with `role = bank` can use these endpoints.
 | `GET` | `/api/bank/users` | Yes | List applicants created by this bank |
 | `GET` | `/api/bank/users/{id}` | Yes | Get one applicant |
 | `GET` | `/api/bank/users/{id}/receipt` | Yes | Receipt details (PIN, serial, amount) |
+| `GET` | `/api/bank/invoices/lookup` | Yes | Look up a student fee invoice |
+| `GET` | `/api/bank/students/{student_id}/invoices` | Yes | List outstanding invoices for a student |
+| `POST` | `/api/bank/invoices/pay` | Yes | Record bank payment & update invoice status |
+| `GET` | `/api/bank/payments/{bank_transaction_id}` | Yes | Check payment by bank transaction id |
 
 ---
 
@@ -340,6 +344,219 @@ Common HTTP codes: `200`, `201`, `401`, `403`, `404`, `422`, `500`.
 
 ---
 
+## Student invoice payments (fee invoices)
+
+These endpoints let the bank look up a student's fee invoice and mark it paid when the student pays at the counter / via core banking.
+
+**Typical flow**
+
+1. `POST /api/bank/login` → get Bearer token  
+2. Look up invoice (`GET /invoices/lookup` or `GET /students/{student_id}/invoices`)  
+3. Collect payment at bank  
+4. `POST /api/bank/invoices/pay` with unique `bank_transaction_id`  
+5. SIP creates a completed payment, updates invoice `paid` / `partial` / `pending`, and tries to sync to ERP  
+
+**Idempotency:** sending the same `bank_transaction_id` twice returns the existing payment (`already_processed: true`) and does **not** double-apply the amount.
+
+---
+
+### 10. Look up invoice
+
+`GET /api/bank/invoices/lookup`
+
+### Query params
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `invoice_number` | One of invoice_number / erp_invoice_id | SIP invoice number (also matches `erp_invoice_id` if used as number) |
+| `erp_invoice_id` | One of | ERP Sales Invoice name |
+| `student_id` | No | If sent, must match the invoice's student |
+
+### Example
+
+```bash
+curl -G "https://sip.delexesuniversity.edu.gh/api/bank/invoices/lookup" \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Accept: application/json" \
+  --data-urlencode "invoice_number=ACC-SINV-2026-00041" \
+  --data-urlencode "student_id=DUC/2024/00123"
+```
+
+### Success `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_id": 15,
+    "invoice_number": "ACC-SINV-2026-00041",
+    "erp_invoice_id": "ACC-SINV-2026-00041",
+    "invoice_type": "tuition",
+    "academic_year": "2025/2026",
+    "semester": "First Semester",
+    "total_amount": 2500.0,
+    "paid_amount": 0.0,
+    "balance": 2500.0,
+    "status": "pending",
+    "due_date": "2026-10-30",
+    "issued_date": "2026-09-01",
+    "currency": "GHS",
+    "student": {
+      "student_id": "DUC/2024/00123",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "program": "BSc Computer Science"
+    }
+  }
+}
+```
+
+---
+
+### 11. List outstanding invoices for a student
+
+`GET /api/bank/students/{student_id}/invoices`
+
+Returns invoices with status `pending` or `partial` and balance &gt; 0.
+
+```bash
+curl "https://sip.delexesuniversity.edu.gh/api/bank/students/DUC%2F2024%2F00123/invoices" \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Accept: application/json"
+```
+
+### Success `200`
+
+```json
+{
+  "success": true,
+  "data": {
+    "student": {
+      "student_id": "DUC/2024/00123",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "program": "BSc Computer Science",
+      "total_balance": 2500.0
+    },
+    "invoices": [
+      {
+        "invoice_number": "ACC-SINV-2026-00041",
+        "balance": 2500.0,
+        "status": "pending"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 12. Record payment (updates invoice status) — main bank callback
+
+`POST /api/bank/invoices/pay`
+
+Call this after the bank has successfully collected funds.
+
+### Request body
+
+```json
+{
+  "invoice_number": "ACC-SINV-2026-00041",
+  "student_id": "DUC/2024/00123",
+  "amount": 2500.00,
+  "bank_transaction_id": "GCB-20260929-984512",
+  "paid_at": "2026-09-29T14:30:00",
+  "teller_id": "T-00421",
+  "branch_code": "TEMA-01",
+  "narration": "Tuition fee payment"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `invoice_number` | One of invoice_number / erp_invoice_id | SIP / ERP invoice reference |
+| `erp_invoice_id` | One of | Alternative to invoice_number |
+| `student_id` | Recommended | Must match invoice if provided |
+| `amount` | Yes | GHS; must be &gt; 0 and ≤ outstanding balance |
+| `bank_transaction_id` | Yes | Unique bank txn id (idempotency key) |
+| `paid_at` | No | ISO datetime of payment |
+| `teller_id` | No | Teller / operator code |
+| `branch_code` | No | Branch code |
+| `narration` | No | Free text |
+
+### Success `201` (new) / `200` (duplicate txn)
+
+```json
+{
+  "success": true,
+  "message": "Payment recorded successfully. Invoice status updated.",
+  "data": {
+    "already_processed": false,
+    "erp_synced": true,
+    "payment": {
+      "payment_reference": "BANKTXN-GCB-20260929-984512",
+      "bank_transaction_id": "GCB-20260929-984512",
+      "amount": 2500.0,
+      "status": "completed",
+      "payment_method": "bank",
+      "created_at": "2026-09-29T14:30:05+00:00"
+    },
+    "invoice": {
+      "invoice_number": "ACC-SINV-2026-00041",
+      "total_amount": 2500.0,
+      "paid_amount": 2500.0,
+      "balance": 0.0,
+      "status": "paid"
+    }
+  }
+}
+```
+
+Invoice `status` becomes:
+
+- `paid` when balance ≤ 0  
+- `partial` when some amount paid but balance remains  
+- unchanged / error if already paid or cancelled  
+
+### Errors
+
+- `404` – invoice not found (lookup only)  
+- `422` – validation, student mismatch, amount &gt; balance, already paid, cancelled  
+- `401` / `403` – missing/invalid token or not a bank user  
+
+### cURL
+
+```bash
+curl -X POST "https://sip.delexesuniversity.edu.gh/api/bank/invoices/pay" \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_number": "ACC-SINV-2026-00041",
+    "student_id": "DUC/2024/00123",
+    "amount": 2500.00,
+    "bank_transaction_id": "GCB-20260929-984512",
+    "paid_at": "2026-09-29T14:30:00",
+    "teller_id": "T-00421",
+    "branch_code": "TEMA-01",
+    "narration": "Tuition fee payment"
+  }'
+```
+
+---
+
+### 13. Payment status by bank transaction id
+
+`GET /api/bank/payments/{bank_transaction_id}`
+
+```bash
+curl "https://sip.delexesuniversity.edu.gh/api/bank/payments/GCB-20260929-984512" \
+  -H "Authorization: Bearer {{token}}" \
+  -H "Accept: application/json"
+```
+
+---
+
 ## Security notes
 
 - Keep the Bearer token secret. Prefer short-lived tokens per environment/device and call `/logout` when done.
@@ -351,13 +568,22 @@ Common HTTP codes: `200`, `201`, `401`, `403`, `404`, `422`, `500`.
 
 ## Sample Postman / collection order
 
+**Admission vouchers**
+
 1. Login → copy `data.token`
 2. Form types
 3. Create user
 4. List users
 5. Get receipt
 
-Header for steps 2–5:
+**Student invoice payments**
+
+1. Login → copy `data.token`
+2. Look up invoice **or** list student invoices
+3. Pay invoice (`POST /invoices/pay`)
+4. (Optional) Payment status by `bank_transaction_id`
+
+Header for protected steps:
 
 ```
 Authorization: Bearer {{token}}
@@ -374,5 +600,6 @@ Accept: application/json
 | Create user form | `POST /api/bank/users` |
 | Users table | `GET /api/bank/users` |
 | Download receipt | `GET /api/bank/users/{id}/receipt` |
+| Counter fee payment (new) | `POST /api/bank/invoices/pay` |
 
-Business rules (PIN generation, serial `DUC######`, pricing, receipt JSON) match the web dashboard.
+Business rules (PIN generation, serial `DUC######`, pricing, receipt JSON) match the web dashboard for vouchers. Fee invoice payments update the SIP `invoices` / `payments` tables the same way as completed Paystack payments.

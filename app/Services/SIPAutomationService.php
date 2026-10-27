@@ -406,7 +406,7 @@ class SIPAutomationService
             ?: \App\Models\AdmissionFormDefault::first();
         $totalFees = $newProgram->price !== null ? $newProgram->price : null;
 
-        AdmissionFormData::updateOrCreate(
+        $formData = AdmissionFormData::updateOrCreate(
             ['student_id' => $student->id],
             [
                 'application_id' => $application->id,
@@ -423,6 +423,8 @@ class SIPAutomationService
                 'lectures_begin' => $defaults->lectures_begin ?? null,
             ]
         );
+
+        app(AdmissionFormService::class)->ensureRegistrarSnapshot($formData, $student, $defaults);
 
         try {
             \App\Models\Download::firstOrCreate(

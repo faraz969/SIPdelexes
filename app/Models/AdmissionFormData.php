@@ -23,6 +23,8 @@ class AdmissionFormData extends Model
         'orientation_new_students',
         'faculty_orientation',
         'lectures_begin',
+        'registrar_name',
+        'registrar_signature',
         'generated_file_path',
     ];
 
@@ -54,6 +56,25 @@ class AdmissionFormData extends Model
     public function isOfferAccepted(): bool
     {
         return $this->offer_accepted_at !== null;
+    }
+
+    /**
+     * Data URI for the snapshotted registrar signature (frozen at letter issue).
+     */
+    public function registrarSignatureSrc(): ?string
+    {
+        if (empty($this->registrar_signature)) {
+            return null;
+        }
+
+        $fullPath = storage_path('app/public/' . ltrim($this->registrar_signature, '/'));
+        if (!is_file($fullPath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'image/png';
+
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
     }
 
     public function student()

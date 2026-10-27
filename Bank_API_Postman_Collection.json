@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-bank-api-delexes",
     "name": "Delexes SIP — Bank Integration API",
-    "description": "APIs for banks to create admission-form voucher applicants (same flow as the Bank Dashboard).\n\n**Setup**\n1. Set `base_url` (e.g. https://sip.delexesuniversity.edu.gh or http://localhost:8000)\n2. Set `bank_email` and `bank_password` for a bank-role account\n3. Run **1. Login** first — the token is saved automatically\n4. Run the other requests (Bearer token is applied from `{{token}}`)\n\n**Docs:** See BANK_API_DOCUMENTATION.md in the project.",
+    "description": "APIs for banks to:\n1) Create admission-form voucher applicants (Bank Dashboard flow)\n2) Look up student fee invoices and mark them paid after counter/core-banking payment\n\n**Setup**\n1. Set `base_url` (e.g. https://sip.delexesuniversity.edu.gh or http://localhost:8000)\n2. Set `bank_email` and `bank_password` for a bank-role account\n3. Run **1. Login** first — the token is saved automatically\n4. For fee payments: set `invoice_number`, `student_id`, `amount`, `bank_transaction_id`\n\n**Docs:** See BANK_API_DOCUMENTATION.md in the project.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -34,6 +34,26 @@
     {
       "key": "form_type_id",
       "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "invoice_number",
+      "value": "ACC-SINV-2026-00041",
+      "type": "string"
+    },
+    {
+      "key": "student_id",
+      "value": "DUC/2024/00123",
+      "type": "string"
+    },
+    {
+      "key": "amount",
+      "value": "2500.00",
+      "type": "string"
+    },
+    {
+      "key": "bank_transaction_id",
+      "value": "GCB-20260929-984512",
       "type": "string"
     }
   ],
@@ -367,6 +387,121 @@
               "path": ["api", "bank", "users", "{{user_id}}", "receipt"]
             },
             "description": "Receipt details: PIN, serial, amount, receipt_number, etc.\n\nUse JSON fields for system integration. `receipt_url` is the printable web receipt (browser bank session)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student Invoice Payments",
+      "item": [
+        {
+          "name": "10. Lookup Invoice",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/invoices/lookup?invoice_number={{invoice_number}}&student_id={{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "invoices", "lookup"],
+              "query": [
+                {
+                  "key": "invoice_number",
+                  "value": "{{invoice_number}}"
+                },
+                {
+                  "key": "student_id",
+                  "value": "{{student_id}}"
+                }
+              ]
+            },
+            "description": "Look up a fee invoice before collecting payment.\n\nRequires Bearer token from Login.\nOptional `student_id` must match the invoice."
+          },
+          "response": []
+        },
+        {
+          "name": "11. List Student Outstanding Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/students/{{student_id}}/invoices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "students", "{{student_id}}", "invoices"]
+            },
+            "description": "List pending/partial invoices for a student (balance > 0).\n\nURL-encode student_id if it contains slashes (Postman usually does this for path variables)."
+          },
+          "response": []
+        },
+        {
+          "name": "12. Pay Invoice (Bank Callback)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.payment && json.data.payment.bank_transaction_id) {",
+                  "        pm.collectionVariables.set('bank_transaction_id', json.data.payment.bank_transaction_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_number\": \"{{invoice_number}}\",\n  \"student_id\": \"{{student_id}}\",\n  \"amount\": {{amount}},\n  \"bank_transaction_id\": \"{{bank_transaction_id}}\",\n  \"paid_at\": \"2026-09-29T14:30:00\",\n  \"teller_id\": \"T-00421\",\n  \"branch_code\": \"TEMA-01\",\n  \"narration\": \"Tuition fee payment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bank/invoices/pay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "invoices", "pay"]
+            },
+            "description": "MAIN bank callback: after funds are collected at the bank, call this to create a completed payment and update invoice status (paid / partial).\n\nIdempotent on `bank_transaction_id` — retries return already_processed: true.\n\nChange `bank_transaction_id` for each new real payment."
+          },
+          "response": []
+        },
+        {
+          "name": "13. Payment Status by Bank Txn Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bank/payments/{{bank_transaction_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bank", "payments", "{{bank_transaction_id}}"]
+            },
+            "description": "Check whether a bank transaction was already posted to SIP."
           },
           "response": []
         }

@@ -6,6 +6,8 @@ use App\Models\Student;
 use App\Models\AdmissionFormData;
 use App\Models\AdmissionFormDefault;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdmissionFormService
 {
@@ -36,7 +38,14 @@ class AdmissionFormService
             : ($formData->total_fees !== null ? (float) $formData->total_fees : null);
 
         $defaults = $this->getDefaultsForStudent($student);
-        $registrarName = $defaults ? trim((string) $defaults->registrar_name) : '';
+
+        // Freeze signature/name on first render for older letters that predate snapshots
+        $this->ensureRegistrarSnapshot($formData, $student, $defaults);
+        $formData->refresh();
+
+        $registrarName = trim((string) ($formData->registrar_name ?: ($defaults->registrar_name ?? '')));
+        $registrarSignature = $formData->registrarSignatureSrc()
+            ?: ($defaults ? $defaults->registrarSignatureSrc() : null);
         $level = \App\Models\Student::normalizeLevel($student->level ?? null);
 
         $minimumFeePercentage = $formData->minimum_fee_percentage !== null
@@ -100,7 +109,7 @@ class AdmissionFormService
             'application_pin' => $user->serial_number ?? '',
             'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
             'registrar_title' => 'Deputy Registrar',
-            'registrar_signature' => $defaults ? $defaults->registrarSignatureSrc() : null,
+            'registrar_signature' => $registrarSignature,
             'bank_payment_lines' => $this->buildBankPaymentLines($defaults),
             'bank_name' => $defaults ? trim((string) $defaults->bank_name) : '',
             'bank_account_name' => $defaults ? trim((string) $defaults->bank_account_name) : '',
@@ -178,6 +187,72 @@ class AdmissionFormService
         }
 
         return $defaults;
+    }
+
+    /**
+     * Copy current registrar signature/name onto the student's letter so later
+     * admin signature updates do not rewrite previously issued letters.
+     */
+    public function ensureRegistrarSnapshot(
+        AdmissionFormData $formData,
+        ?Student $student = null,
+        ?AdmissionFormDefault $defaults = null,
+        bool $force = false
+    ): AdmissionFormData {
+        $hasUsableSignature = !empty($formData->registrar_signature)
+            && is_file(storage_path('app/public/' . ltrim($formData->registrar_signature, '/')));
+
+        if (!$force && $hasUsableSignature && trim((string) $formData->registrar_name) !== '') {
+            return $formData;
+        }
+
+        $student = $student ?: $formData->student;
+        if (!$student) {
+            return $formData;
+        }
+
+        $defaults = $defaults ?: $this->getDefaultsForStudent($student);
+        if (!$defaults) {
+            return $formData;
+        }
+
+        $updates = [];
+
+        if ($force || trim((string) $formData->registrar_name) === '') {
+            $name = trim((string) $defaults->registrar_name);
+            if ($name !== '') {
+                $updates['registrar_name'] = $name;
+            }
+        }
+
+        if ($force || !$hasUsableSignature) {
+            $sourceRelative = $defaults->registrar_signature;
+            if (!empty($sourceRelative) && Storage::disk('public')->exists($sourceRelative)) {
+                $extension = pathinfo($sourceRelative, PATHINFO_EXTENSION) ?: 'png';
+                $destRelative = 'admission_letter_signatures/'
+                    . ($formData->id ?: ('s' . $student->id)) . '_'
+                    . Str::random(8) . '.'
+                    . strtolower($extension);
+
+                Storage::disk('public')->copy($sourceRelative, $destRelative);
+
+                if (!empty($formData->registrar_signature)
+                    && $formData->registrar_signature !== $sourceRelative
+                    && Storage::disk('public')->exists($formData->registrar_signature)
+                ) {
+                    Storage::disk('public')->delete($formData->registrar_signature);
+                }
+
+                $updates['registrar_signature'] = $destRelative;
+            }
+        }
+
+        if (!empty($updates)) {
+            $formData->fill($updates);
+            $formData->save();
+        }
+
+        return $formData;
     }
 
     /**
