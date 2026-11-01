@@ -54,6 +54,7 @@ class AdmissionFormSettingsController extends Controller
             'faculty_orientation' => 'nullable|string|max:255',
             'lectures_begin' => 'nullable|string|max:255',
             'registrar_name' => 'nullable|string|max:255',
+            'registrar_title' => 'nullable|string|max:255',
             'registrar_signature' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'bank_name' => 'nullable|string|max:255',
             'bank_account_name' => 'nullable|string|max:255',

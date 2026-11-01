@@ -44,6 +44,7 @@ class AdmissionFormService
         $formData->refresh();
 
         $registrarName = trim((string) ($formData->registrar_name ?: ($defaults->registrar_name ?? '')));
+        $registrarTitle = trim((string) ($formData->registrar_title ?: ($defaults->registrar_title ?? '')));
         $registrarSignature = $formData->registrarSignatureSrc()
             ?: ($defaults ? $defaults->registrarSignatureSrc() : null);
         $level = \App\Models\Student::normalizeLevel($student->level ?? null);
@@ -108,7 +109,7 @@ class AdmissionFormService
             // Additional fields
             'application_pin' => $user->serial_number ?? '',
             'registrar_name' => $registrarName !== '' ? $registrarName : 'A TEYE ABERMOR',
-            'registrar_title' => 'Deputy Registrar',
+            'registrar_title' => $registrarTitle !== '' ? $registrarTitle : 'Deputy Registrar',
             'registrar_signature' => $registrarSignature,
             'bank_payment_lines' => $this->buildBankPaymentLines($defaults),
             'bank_name' => $defaults ? trim((string) $defaults->bank_name) : '',
@@ -202,7 +203,12 @@ class AdmissionFormService
         $hasUsableSignature = !empty($formData->registrar_signature)
             && is_file(storage_path('app/public/' . ltrim($formData->registrar_signature, '/')));
 
-        if (!$force && $hasUsableSignature && trim((string) $formData->registrar_name) !== '') {
+        if (
+            !$force
+            && $hasUsableSignature
+            && trim((string) $formData->registrar_name) !== ''
+            && trim((string) $formData->registrar_title) !== ''
+        ) {
             return $formData;
         }
 
@@ -222,6 +228,13 @@ class AdmissionFormService
             $name = trim((string) $defaults->registrar_name);
             if ($name !== '') {
                 $updates['registrar_name'] = $name;
+            }
+        }
+
+        if ($force || trim((string) $formData->registrar_title) === '') {
+            $title = trim((string) $defaults->registrar_title);
+            if ($title !== '') {
+                $updates['registrar_title'] = $title;
             }
         }
 

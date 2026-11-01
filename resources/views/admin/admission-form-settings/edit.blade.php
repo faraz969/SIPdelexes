@@ -159,6 +159,18 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="registrar_title" class="form-label">Registrar Title</label>
+                            <input type="text" class="form-control @error('registrar_title') is-invalid @enderror"
+                                   id="registrar_title" name="registrar_title"
+                                   value="{{ old('registrar_title', $settings->registrar_title) }}"
+                                   placeholder="e.g., Deputy Registrar">
+                            <small class="form-text text-muted">Shown under the registrar name on the admission letter.</small>
+                            @error('registrar_title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
                             <label for="registrar_signature" class="form-label">Registrar Signature</label>
                             @if($settings->registrar_signature)
                                 <div class="mb-2">

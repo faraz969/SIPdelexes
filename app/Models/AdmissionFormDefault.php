@@ -20,6 +20,7 @@ class AdmissionFormDefault extends Model
         'faculty_orientation',
         'lectures_begin',
         'registrar_name',
+        'registrar_title',
         'registrar_signature',
         'bank_name',
         'bank_account_name',

@@ -24,6 +24,7 @@ class AdmissionFormData extends Model
         'faculty_orientation',
         'lectures_begin',
         'registrar_name',
+        'registrar_title',
         'registrar_signature',
         'generated_file_path',
     ];
