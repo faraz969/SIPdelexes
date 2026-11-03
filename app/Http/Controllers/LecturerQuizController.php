@@ -139,6 +139,7 @@ class LecturerQuizController extends Controller
         $this->quizService->assertOwnsAssignment($lecturer);
         $this->assertQuizBelongs($lecturer, $quiz);
 
+        $lecturer->loadMissing(['session']);
         $quiz->load(['questions.options', 'course']);
         $attempts = $quiz->attempts()
             ->with(['student.user'])

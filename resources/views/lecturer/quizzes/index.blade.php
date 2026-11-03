@@ -50,7 +50,10 @@
                         <div class="card-header">
                             <strong>{{ $assignment->course->course_code ?? 'N/A' }}</strong>
                             — {{ $assignment->course->course_title ?? '' }}
-                            <div class="small text-muted">{{ $card['academic_year'] }} / {{ $card['semester'] }}</div>
+                            <div class="small text-muted">
+                                Session: {{ $assignment->session->name ?? 'N/A' }}
+                                · {{ $card['academic_year'] }} / {{ $card['semester'] }}
+                            </div>
                         </div>
                         <div class="card-body">
                             <p><span class="badge bg-secondary">{{ $card['count'] }} quiz(zes)</span></p>

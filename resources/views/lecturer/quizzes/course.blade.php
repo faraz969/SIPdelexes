@@ -7,7 +7,10 @@
     <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
         <div>
             <h3 class="mb-1">{{ $lecturer->course->course_code }} — {{ $lecturer->course->course_title }}</h3>
-            <div class="text-muted">{{ $academicYear }} · {{ $semester }}</div>
+            <div class="text-muted">
+                Session: {{ $lecturer->session->name ?? 'N/A' }}
+                · {{ $academicYear }} / {{ $semester }}
+            </div>
         </div>
         <a href="{{ route('lecturer.quizzes.index') }}" class="btn btn-outline-secondary btn-sm">Back</a>
     </div>

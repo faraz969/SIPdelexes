@@ -8,7 +8,9 @@
         <div>
             <h3 class="mb-1">{{ $quiz->title }}</h3>
             <div class="text-muted">
-                {{ $quiz->course->course_code ?? '' }} · {{ $quiz->academic_year }} / {{ $quiz->semester }}
+                {{ $quiz->course->course_code ?? '' }}
+                · Session: {{ $lecturer->session->name ?? 'N/A' }}
+                · {{ $quiz->academic_year }} / {{ $quiz->semester }}
                 · Total marks: {{ number_format($quiz->total_marks, 1) }}
             </div>
         </div>
