@@ -9,6 +9,7 @@ use App\Models\SiteSetting;
 use App\Services\CourseAssessmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CourseController extends Controller
@@ -46,7 +47,13 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'course_code' => 'required|string|max:50|unique:courses,course_code',
+            'course_code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('courses', 'course_code')
+                    ->where(fn ($q) => $q->where('program_id', $request->input('program_id'))),
+            ],
             'course_title' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,id',
             'academic_year' => 'nullable|string|max:50',
@@ -86,7 +93,14 @@ class CourseController extends Controller
     public function update(Request $request, Course $course)
     {
         $validated = $request->validate([
-            'course_code' => 'required|string|max:50|unique:courses,course_code,' . $course->id,
+            'course_code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('courses', 'course_code')
+                    ->where(fn ($q) => $q->where('program_id', $request->input('program_id')))
+                    ->ignore($course->id),
+            ],
             'course_title' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,id',
             'academic_year' => 'nullable|string|max:50',
@@ -215,7 +229,9 @@ class CourseController extends Controller
                 continue;
             }
 
-            $existing = Course::where('course_code', $courseCode)->first();
+            $existing = Course::where('course_code', $courseCode)
+                ->where('program_id', $programId)
+                ->first();
             $payload = [
                 'course_code' => $courseCode,
                 'course_title' => $courseTitle,

@@ -185,7 +185,9 @@ class HODCourseController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('courses', 'course_code')->ignore($courseId),
+                Rule::unique('courses', 'course_code')
+                    ->where(fn ($q) => $q->where('program_id', $request->input('program_id')))
+                    ->ignore($courseId),
             ],
             'course_title' => 'required|string|max:255',
             'program_id' => [
