@@ -557,6 +557,24 @@ curl "https://sip.delexesuniversity.edu.gh/api/bank/payments/GCB-20260929-984512
 
 ---
 
+## Troubleshooting `401 Unauthenticated`
+
+`401` means Sanctum did not receive a valid Bearer token (not wrong password — that is usually `422` on login, and wrong role is `403`).
+
+Checklist:
+
+1. Call **`POST /api/bank/login`** first and copy `data.token` exactly (format like `12|xxxxxxxxxxxx`).
+2. On every protected request send:
+   ```
+   Authorization: Bearer 12|xxxxxxxxxxxx
+   Accept: application/json
+   ```
+3. In Postman, set collection variable `base_url` **without** a trailing slash  
+   (`https://sip.delexesuniversity.edu.gh` not `...gh/`). A redirect can drop the Authorization header and cause 401.
+4. Re-run **Login** after importing a new collection (token variable starts empty).
+5. Use a user with `role = bank`. Non-bank accounts get `403`, not `401`.
+6. On the server, ensure `personal_access_tokens` table exists (`php artisan migrate`).
+
 ## Security notes
 
 - Keep the Bearer token secret. Prefer short-lived tokens per environment/device and call `/logout` when done.

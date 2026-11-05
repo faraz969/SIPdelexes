@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "https://sip.delexesuniversity.edu.gh/",
+      "value": "https://sip.delexesuniversity.edu.gh",
       "type": "string"
     },
     {
