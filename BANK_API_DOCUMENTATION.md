@@ -559,14 +559,32 @@ curl "https://sip.delexesuniversity.edu.gh/api/bank/payments/GCB-20260929-984512
 
 ## Troubleshooting `401 Unauthenticated`
 
-`401` means Sanctum did not receive a valid Bearer token (not wrong password — that is usually `422` on login, and wrong role is `403`).
+`401` means Sanctum did not receive a valid API token (not wrong password — that is usually `422` on login, and wrong role is `403`).
 
-Checklist:
+### CPGuard / cPanel antivirus
+
+**Yes — CPGuard (and Imunify360 / ModSecurity on cPanel) often strips or blocks the standard `Authorization` header.** Postman may still show the header on the client, but PHP/Laravel never receives it, so you get `Unauthenticated`.
+
+**Workaround (recommended on cPanel):** send the same token in an alternate header that WAFs usually leave alone:
+
+```
+X-Api-Token: 12|xxxxxxxxxxxx
+Accept: application/json
+```
+
+(or `X-Bank-Token: 12|xxxxxxxxxxxx`)
+
+You can send **both** `Authorization: Bearer …` and `X-Api-Token: …`.
+
+Also in CPGuard / ModSecurity: whitelist `/api/bank/*` or disable rules that strip Authorization for that path.
+
+### Checklist
 
 1. Call **`POST /api/bank/login`** first and copy `data.token` exactly (format like `12|xxxxxxxxxxxx`).
 2. On every protected request send:
    ```
    Authorization: Bearer 12|xxxxxxxxxxxx
+   X-Api-Token: 12|xxxxxxxxxxxx
    Accept: application/json
    ```
 3. In Postman, set collection variable `base_url` **without** a trailing slash  
@@ -574,6 +592,7 @@ Checklist:
 4. Re-run **Login** after importing a new collection (token variable starts empty).
 5. Use a user with `role = bank`. Non-bank accounts get `403`, not `401`.
 6. On the server, ensure `personal_access_tokens` table exists (`php artisan migrate`).
+7. Deploy the latest code that restores Authorization on cPanel and accepts `X-Api-Token`.
 
 ## Security notes
 

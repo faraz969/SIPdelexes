@@ -52,7 +52,7 @@ class Handler extends ExceptionHandler
         if ($request->is('api/*') || $request->expectsJson()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated. Call POST /api/bank/login first, then send header: Authorization: Bearer {token}',
+                'message' => 'Unauthenticated. Call POST /api/bank/login first, then send Authorization: Bearer {token}. On cPanel/CPGuard also send X-Api-Token: {token} (Authorization is often stripped).',
             ], 401);
         }
 

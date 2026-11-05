@@ -67,6 +67,21 @@
       }
     ]
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const t = pm.collectionVariables.get('token');",
+          "if (t) {",
+          "  pm.request.headers.upsert({ key: 'X-Api-Token', value: t });",
+          "  pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
       "name": "Auth",

@@ -5,9 +5,12 @@
 
     RewriteEngine On
 
-    # Handle Authorization Header
+    # Handle Authorization Header (cPanel / CGI / CPGuard often strip this)
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+    SetEnvIf X-Api-Token "(.*)" HTTP_X_API_TOKEN=$1
+    SetEnvIf X-Bank-Token "(.*)" HTTP_X_BANK_TOKEN=$1
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

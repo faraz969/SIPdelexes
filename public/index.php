@@ -46,6 +46,42 @@ require __DIR__.'/../vendor/autoload.php';
 
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+/*
+|--------------------------------------------------------------------------
+| Preserve API Authorization on cPanel / CGI / WAF hosts
+|--------------------------------------------------------------------------
+|
+| Apache CGI, LiteSpeed, Imunify/CPGuard and similar layers often strip or
+| rename the Authorization header before PHP sees it. Restore common
+| aliases, and accept bank-friendly alternate headers.
+|
+*/
+foreach ([
+    'HTTP_AUTHORIZATION',
+    'REDIRECT_HTTP_AUTHORIZATION',
+    'REDIRECT_REDIRECT_HTTP_AUTHORIZATION',
+] as $authKey) {
+    if (!empty($_SERVER[$authKey])) {
+        $_SERVER['HTTP_AUTHORIZATION'] = $_SERVER[$authKey];
+        break;
+    }
+}
+
+if (empty($_SERVER['HTTP_AUTHORIZATION'])) {
+    foreach (['HTTP_X_API_TOKEN', 'HTTP_X_BANK_TOKEN', 'HTTP_X_AUTHORIZATION'] as $altKey) {
+        if (empty($_SERVER[$altKey])) {
+            continue;
+        }
+
+        $value = $_SERVER[$altKey];
+        if (stripos($value, 'Bearer ') !== 0) {
+            $value = 'Bearer '.$value;
+        }
+        $_SERVER['HTTP_AUTHORIZATION'] = $value;
+        break;
+    }
+}
+
 $kernel = $app->make(Kernel::class);
 
 $response = $kernel->handle(
